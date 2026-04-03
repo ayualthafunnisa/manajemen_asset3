@@ -13,6 +13,7 @@ use App\Models\Penghapusan;
 use App\Models\Kerusakan;
 use App\Models\Perbaikan;
 
+
 class DashboardController extends Controller
 {
     public function superAdminDashboard()
@@ -36,37 +37,63 @@ class DashboardController extends Controller
 
     public function adminDashboard()
     {
-        $license = Auth::user()->license;
-
-        if (!$license || !$license->isValid()) {
-            Auth::logout();
-            return redirect()->route('login')
-                ->withErrors(['email' => 'Lisensi Anda sudah expired.']);
-        }
-        $instansiId = Auth::user()->InstansiID;
-
-        $license = Auth::user()->license;
-        $sisaHari = $license ? now()->diffInDays($license->expired_date, false) : 0;
-
-        $totalKategori      = Kategori::where('InstansiID', $instansiId)->count();
-        $totalLokasi        = LokasiAsset::where('InstansiID', $instansiId)->count();
-        $totalAsset         = Asset::where('InstansiID', $instansiId)->count();
-        $assetBaru          = Asset::where('InstansiID', $instansiId)
-                                   ->whereMonth('created_at', now()->month)->count();
-        $assetRusak         = Kerusakan::whereHas('asset', fn($q) => $q->where('InstansiID', $instansiId))
-                                       ->whereNotIn('status_perbaikan', ['selesai', 'ditolak'])->count();
+        $user      = Auth::user();
+        $instansiId = $user->InstansiID;
+ 
+        // ─── Data lisensi ────────────────────────────────────────────
+        // Ini yang dibutuhkan oleh view dashboard (blok status lisensi)
+        $license  = $user->license;
+        $sisaHari = $license ? $license->daysRemaining() : 0;
+ 
+        // ─── Statistik aset ──────────────────────────────────────────
+        $totalAsset = Asset::where('InstansiID', $instansiId)->count();
+ 
+        $assetBaru  = Asset::where('InstansiID', $instansiId)
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+ 
+        $assetRusak = Asset::where('InstansiID', $instansiId)
+            ->whereIn('kondisi', [
+                'rusak_ringan',
+                'rusak_berat',
+                'tidak_berfungsi'
+            ])
+            ->count();
+ 
+        $totalKategori = Kategori::where('InstansiID', $instansiId)->count();
+        $totalLokasi   = LokasiAsset::where('InstansiID', $instansiId)->count();
+ 
+        // ─── Pengajuan penghapusan ───────────────────────────────────
         $penghapusanPending = Penghapusan::whereHas('asset', fn($q) => $q->where('InstansiID', $instansiId))
-                                         ->where('status_penghapusan', 'diajukan')->count();
-        $penghapusanList    = Penghapusan::whereHas('asset', fn($q) => $q->where('InstansiID', $instansiId))
-                                         ->where('status_penghapusan', 'diajukan')
-                                         ->with('asset')->latest()->take(5)->get();
-        $kerusakanTerbaru   = Kerusakan::whereHas('asset', fn($q) => $q->where('InstansiID', $instansiId))
-                                       ->with('asset.lokasi')->latest()->take(5)->get();
+            ->where('status_penghapusan', 'diajukan')
+            ->count();
 
+        $penghapusanList = Penghapusan::with('asset')
+            ->whereHas('asset', fn($q) => $q->where('InstansiID', $instansiId))
+            ->where('status_penghapusan', 'diajukan')
+            ->latest()
+            ->take(5)
+            ->get();
+ 
+        // ─── Kerusakan terbaru ───────────────────────────────────────
+        $kerusakanTerbaru = Kerusakan::with(['asset.lokasi'])
+            ->whereHas('asset', fn($q) => $q->where('InstansiID', $instansiId))
+            ->latest()
+            ->take(5)
+            ->get();
+ 
         return view('dashboard.admin', compact(
-            'totalAsset', 'assetBaru', 'assetRusak',
-            'penghapusanPending', 'totalKategori', 'totalLokasi',
-            'penghapusanList', 'kerusakanTerbaru', 'license', 'sisaHari'
+            'license',
+            'sisaHari',
+            'totalAsset',
+            'assetBaru',
+            'assetRusak',
+            'totalKategori',
+            'totalLokasi',
+            'penghapusanPending',
+            'penghapusanList',
+            'kerusakanTerbaru',
         ));
     }
 
