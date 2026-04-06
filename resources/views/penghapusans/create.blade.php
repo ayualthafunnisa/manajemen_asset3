@@ -273,7 +273,8 @@
                            class="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out">
                             Batal
                         </a>
-                        <button type="submit" 
+                        <button type="button" 
+                                onclick="confirmSubmit()"
                                 class="px-6 py-3 bg-purple-600 border border-transparent rounded-lg font-medium text-white hover:bg-purple-700 transition duration-150 ease-in-out">
                             <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
@@ -344,21 +345,150 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Validasi nilai buku > 0
-    document.getElementById('penghapusanForm').addEventListener('submit', function (e) {
-        if ((parseFloat(nilaiBuku.value) || 0) <= 0) {
-            e.preventDefault();
-            alert('Nilai buku harus lebih dari 0.');
-            nilaiBuku.focus();
-        }
-    });
-
     function fmt(n) {
         return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 
+    // Real-time validation untuk required fields
+    const requiredInputs = document.querySelectorAll('[required]');
+    requiredInputs.forEach(input => {
+        if (input.type !== 'file') {
+            input.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('border-red-500');
+                }
+            });
+            input.addEventListener('change', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('border-red-500');
+                }
+            });
+        }
+    });
+
     // Trigger jika ada old value
     if (assetSelect.value) assetSelect.dispatchEvent(new Event('change'));
 });
+
+// Fungsi konfirmasi sebelum menyimpan
+function confirmSubmit() {
+    const form = document.getElementById('penghapusanForm');
+    
+    // Reset error styles
+    const requiredFields = form.querySelectorAll('[required]');
+    let isValid = true;
+    let firstInvalid = null;
+    let errorMessages = [];
+    
+    // Validasi required fields
+    requiredFields.forEach(field => {
+        let fieldValue = field.value;
+        
+        // Handle khusus untuk file input (opsional)
+        if (field.type === 'file') {
+            // File tidak wajib, skip validasi
+            field.classList.remove('border-red-500');
+            return;
+        }
+        
+        if (!fieldValue.trim()) {
+            isValid = false;
+            field.classList.add('border-red-500');
+            
+            const label = document.querySelector(`label[for="${field.id}"]`);
+            let fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
+            
+            // Handle khusus untuk select aset
+            if (field.id === 'assetID') {
+                fieldName = 'Aset';
+            }
+            
+            errorMessages.push(`${fieldName} wajib diisi`);
+            
+            if (!firstInvalid) firstInvalid = field;
+        } else {
+            field.classList.remove('border-red-500');
+        }
+    });
+    
+    // Validasi khusus: nilai buku harus > 0
+    const nilaiBuku = document.getElementById('nilai_buku');
+    const nilaiBukuValue = parseFloat(nilaiBuku.value) || 0;
+    
+    if (nilaiBukuValue <= 0) {
+        isValid = false;
+        nilaiBuku.classList.add('border-red-500');
+        errorMessages.push('Nilai buku harus lebih dari 0');
+        
+        if (!firstInvalid) firstInvalid = nilaiBuku;
+    }
+    
+    // Validasi dokumen pendukung (jika diupload)
+    const dokumenInput = document.getElementById('dokumen_pendukung');
+    if (dokumenInput.files && dokumenInput.files[0]) {
+        const fileSize = dokumenInput.files[0].size;
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        const fileName = dokumenInput.files[0].name;
+        const fileExt = fileName.split('.').pop().toLowerCase();
+        const allowedExt = ['pdf', 'jpg', 'jpeg', 'png'];
+        
+        if (fileSize > maxSize) {
+            isValid = false;
+            dokumenInput.classList.add('border-red-500');
+            errorMessages.push('Ukuran dokumen maksimal 2MB');
+            
+            if (!firstInvalid) firstInvalid = dokumenInput;
+        } else if (!allowedExt.includes(fileExt)) {
+            isValid = false;
+            dokumenInput.classList.add('border-red-500');
+            errorMessages.push('Format dokumen harus PDF, JPG, JPEG, atau PNG');
+            
+            if (!firstInvalid) firstInvalid = dokumenInput;
+        }
+    }
+    
+    // Validasi deskripsi minimal 20 karakter
+    const deskripsi = document.getElementById('deskripsi_penghapusan');
+    if (deskripsi.value.trim().length < 20) {
+        isValid = false;
+        deskripsi.classList.add('border-red-500');
+        errorMessages.push('Deskripsi penghapusan minimal 20 karakter');
+        
+        if (!firstInvalid) firstInvalid = deskripsi;
+    }
+    
+    // Validasi jika jenis penghapusan "dijual" maka harga jual harus diisi
+    const jenisPenghapusan = document.getElementById('jenis_penghapusan').value;
+    const hargaJual = document.getElementById('harga_jual');
+    
+    if (jenisPenghapusan === 'dijual') {
+        if (!hargaJual.value || parseFloat(hargaJual.value) <= 0) {
+            isValid = false;
+            hargaJual.classList.add('border-red-500');
+            errorMessages.push('Harga jual wajib diisi untuk jenis penghapusan "Dijual"');
+            
+            if (!firstInvalid) firstInvalid = hargaJual;
+        }
+    }
+    
+    if (!isValid) {
+        let errorMessage = 'Mohon lengkapi data berikut:\n\n';
+        errorMessages.forEach(msg => {
+            errorMessage += `• ${msg}\n`;
+        });
+        alert(errorMessage);
+        
+        if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalid.focus();
+        }
+        return;
+    }
+    
+    // Tampilkan konfirmasi
+    if (confirm('Apakah Anda yakin ingin mengajukan penghapusan aset ini?\n\nSetelah diajukan, penghapusan akan diproses oleh admin sekolah.')) {
+        form.submit();
+    }
+}
 </script>
 @endpush

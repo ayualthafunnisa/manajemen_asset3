@@ -13,6 +13,7 @@ use App\Http\Controllers\KerusakanController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\Teknisi\PerbaikanController;
 
 /*
@@ -51,7 +52,16 @@ Route::post('/logout',   [LoginController::class, 'logout'])->name('logout');
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->group(function () {
+    Route::middleware('auth')->group(function () {
+
+    // Laporan Routes
+    Route::prefix('laporan')->name('laporan.')->group(function () {
+        Route::get('/', [LaporanController::class, 'index'])->name('index');
+        Route::post('/filter', [LaporanController::class, 'filter'])->name('filter');
+        Route::post('/preview', [LaporanController::class, 'preview'])->name('preview');
+        Route::get('/export-pdf', [LaporanController::class, 'exportPdf'])->name('export-pdf');
+        Route::get('/export-excel', [LaporanController::class, 'exportExcel'])->name('export-excel');
+    });
 
     /*
     |----------------------------------------------------------------------

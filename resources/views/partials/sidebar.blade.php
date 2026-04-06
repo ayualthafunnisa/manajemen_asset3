@@ -63,14 +63,17 @@
                 $navItems[] = ['route' => 'kategori.index', 'label' => 'Kategori',    'icon' => 'M3 7a2 2 0 012-2h3l2 2h9a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z', 'group' => 'Master Data'];
                 $navItems[] = ['route' => 'lokasi.index',  'label' => 'Lokasi Asset', 'icon' => 'M12 21s-6-5.686-6-10a6 6 0 1112 0c0 4.314-6 10-6 10zM12 11a2 2 0 100-4 2 2 0 000 4z', 'group' => 'Master Data'];
                 $navItems[] = ['route' => 'user.index',    'label' => 'User',         'icon' => 'M17 20h5v-2a4 4 0 00-5.477-3.685M9 20H4v-2a4 4 0 015.477-3.685M15 7a4 4 0 11-8 0 4 4 0 018 0z', 'group' => 'Master Data'];
-                $navItems[] = ['route' => 'penyusutan.index', 'label' => 'Penyusutan', 'icon' => 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6', 'group' => 'Laporan'];
             }
 
             // Admin Sekolah + Staf Asset
-            if (in_array($role, ['admin_sekolah', 'petugas'])) {
+            if (in_array($role, ['admin_sekolah', 'petugas', 'super_admin'])) {
                 $navItems[] = ['route' => 'asset.index',      'label' => 'Asset',      'icon' => 'M20 7l-8-4-8 4m16 0v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7m16 0l-8 4-8-4', 'group' => 'Manajemen'];
                 $navItems[] = ['route' => 'kerusakan.index',  'label' => 'Kerusakan',  'icon' => 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'group' => 'Manajemen'];
                 $navItems[] = ['route' => 'penghapusan.index','label' => 'Penghapusan','icon' => 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', 'group' => 'Manajemen'];
+                $navItems[] = ['route' => 'penyusutan.index','label' => 'Penyusutan',  'icon' => 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6', 'group' => 'Manajemen'];
+                
+                // Menu Laporan untuk admin_sekolah, petugas, dan super_admin
+                $navItems[] = ['route' => 'laporan.index',    'label' => 'Laporan',     'icon' => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'group' => 'Laporan'];
             }
 
             // Teknisi
@@ -166,3 +169,32 @@
     </div>
 
 </aside>
+
+<script>
+// Function untuk toggle sidebar di mobile
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    sidebar.classList.toggle('-translate-x-full');
+    overlay.classList.toggle('hidden');
+}
+
+function closeSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    
+    sidebar.classList.add('-translate-x-full');
+    overlay.classList.add('hidden');
+}
+
+// Menambahkan tombol toggle sidebar untuk mobile (opsional)
+document.addEventListener('DOMContentLoaded', function() {
+    // Cek apakah ada tombol toggle sidebar, jika belum buatkan
+    let toggleBtn = document.querySelector('[data-toggle-sidebar]');
+    if (!toggleBtn) {
+        // Anda bisa menambahkan tombol ini di header
+        console.log('Tambahkan tombol dengan data-toggle-sidebar untuk membuka sidebar di mobile');
+    }
+});
+</script>

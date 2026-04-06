@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Midtrans\Config;
+use Midtrans\Snap;
 
 class RegisterController extends Controller
 {
@@ -106,7 +108,6 @@ class RegisterController extends Controller
             ]);
 
             // 2️⃣ Buat User Admin Sekolah
-            // ✅ TIDAK ada 'kode_lisensi' di sini — kolom itu tidak ada di tabel users
             $user = User::create([
                 'InstansiID' => $instansi->InstansiID,
                 'name'       => $request->name,
@@ -117,21 +118,49 @@ class RegisterController extends Controller
                 'status'     => 'active',
             ]);
 
-            // 3️⃣ Generate License (1 tahun)
+            // 3️⃣ Generate License (BELUM AKTIF)
+            // Pastikan di migration kamu sudah ada kolom 'amount', 'snap_token', dan 'payment_status'
             $license = License::create([
                 'user_id'      => $user->id,
                 'license_key'  => $this->generateLicenseKey(),
                 'start_date'   => now(),
                 'expired_date' => now()->addYear(),
-                'is_active'    => true,
+                'is_active'    => false, // Set false karena belum bayar
+                'amount'       => 500000, // Contoh harga lisensi
+                'payment_status' => 'pending',
             ]);
+
+            // 4️⃣ Konfigurasi Midtrans
+            Config::$serverKey = config('services.midtrans.server_key');
+            Config::$isProduction = config('services.midtrans.is_production');
+            Config::$isSanitized = true;
+            Config::$is3ds = true;
+
+            $params = [
+                'transaction_details' => [
+                    'order_id' => 'LIC-' . $license->id . '-' . time(),
+                    'gross_amount' => (int) $license->amount,
+                ],
+                'customer_details' => [
+                    'first_name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
+                ],
+                // Opsional: Batasi metode pembayaran
+                'enabled_payments' => ['credit_card', 'cimb_clicks', 'bank_transfer', 'gopay', 'shopeepay', 'other_va', 'qris'],
+            ];
+
+            // Dapatkan Snap Token
+            $snapToken = Snap::getSnapToken($params);
+
+            // Simpan token ke database
+            $license->update(['snap_token' => $snapToken]);
 
             DB::commit();
 
-            // ✅ Kirim license_key (dari tabel licenses), bukan dari instansi
-            return redirect()->route('login')
-                ->with('success', 'Registrasi berhasil! Simpan kode lisensi Anda.')
-                ->with('kode_lisensi', $license->license_key);
+            // Redirect ke halaman pembayaran yang kita buat di langkah sebelumnya
+            return redirect()->route('payment.show', $license->id)
+                ->with('info', 'Silakan selesaikan pembayaran untuk mengaktifkan akun Anda.');
 
         } catch (\Exception $e) {
             DB::rollback();

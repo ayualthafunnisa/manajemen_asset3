@@ -73,22 +73,13 @@
                         <!-- Instansi & Kode Lokasi -->
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div class="space-y-2">
-                                <label for="InstansiID" class="block text-sm font-medium text-gray-700">
-                                    Instansi <span class="text-red-500">*</span>
+                                <label class="block text-sm font-medium text-gray-700">
+                                    Instansi
                                 </label>
-                                <select name="InstansiID" id="InstansiID"
-                                        class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('InstansiID') border-red-500 @enderror"
-                                        required>
-                                    <option value="">Pilih Instansi</option>
-                                    @foreach($instansis as $instansi)
-                                        <option value="{{ $instansi->InstansiID }}" {{ old('InstansiID', $lokasi->InstansiID) == $instansi->InstansiID ? 'selected' : '' }}>
-                                            {{ $instansi->KodeInstansi }} - {{ $instansi->NamaSekolah }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                                @error('InstansiID')
-                                    <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                                @enderror
+                                <input type="text" 
+                                    value="{{ auth()->user()->instansi->NamaSekolah ?? '-' }}"
+                                    class="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100"
+                                    readonly>
                             </div>
 
                             <div class="space-y-2">

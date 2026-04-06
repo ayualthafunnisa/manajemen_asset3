@@ -19,6 +19,9 @@ return new class extends Migration
             $table->date('expired_date');
             $table->boolean('is_active')->default(true);
             $table->string('kode_lisensi')->unique()->nullable();
+            $table->string('snap_token')->nullable(); // Untuk menyimpan token pembayaran
+            $table->string('payment_status')->default('pending'); // pending, settlement, expire, cancel
+            $table->integer('amount')->default(500000); // Harga lisensi (misal 500rb)
             $table->timestamps();
         });
     }

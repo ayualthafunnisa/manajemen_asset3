@@ -76,6 +76,7 @@
                                     data-residu="{{ $asset->nilai_residu ?? 0 }}"
                                     data-umur="{{ $asset->umur_ekonomis }}"
                                     data-nama="{{ $asset->nama_asset }}"
+                                    data-kode="{{ $asset->kode_asset }}"
                                     {{ old('assetID') == $asset->assetID ? 'selected' : '' }}>
                                 {{ $asset->kode_asset }} - {{ $asset->nama_asset }} (Rp {{ number_format($asset->nilai_perolehan, 0, ',', '.') }})
                             </option>
@@ -208,7 +209,8 @@
                            class="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out">
                             Batal
                         </a>
-                        <button type="submit" 
+                        <button type="button" 
+                                onclick="confirmSubmit()"
                                 class="px-6 py-3 bg-purple-600 border border-transparent rounded-lg font-medium text-white hover:bg-purple-700 transition duration-150 ease-in-out">
                             <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
@@ -290,9 +292,132 @@ document.addEventListener('DOMContentLoaded', function () {
         return Math.round(angka).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 
+    // Real-time validation untuk required fields
+    const requiredInputs = document.querySelectorAll('[required]');
+    requiredInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            if (this.value.trim()) {
+                this.classList.remove('border-red-500');
+            }
+        });
+    });
+
     // Trigger jika ada old value
     if (assetSelect.value) assetSelect.dispatchEvent(new Event('change'));
     if (metodeSelect.value) metodeSelect.dispatchEvent(new Event('change'));
 });
+
+// Fungsi konfirmasi sebelum menyimpan
+function confirmSubmit() {
+    const form = document.getElementById('penyusutanForm');
+    
+    // Reset error styles
+    const requiredFields = form.querySelectorAll('[required]');
+    let isValid = true;
+    let firstInvalid = null;
+    let errorMessages = [];
+    
+    // Validasi required fields
+    requiredFields.forEach(field => {
+        let fieldValue = field.value;
+        
+        if (!fieldValue.trim()) {
+            isValid = false;
+            field.classList.add('border-red-500');
+            
+            const label = document.querySelector(`label[for="${field.id}"]`);
+            let fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
+            
+            // Handle khusus untuk select aset
+            if (field.id === 'assetID') {
+                fieldName = 'Aset';
+            } else if (field.id === 'persentase_penyusutan') {
+                fieldName = 'Persentase Penyusutan';
+            }
+            
+            errorMessages.push(`${fieldName} wajib diisi`);
+            
+            if (!firstInvalid) firstInvalid = field;
+        } else {
+            field.classList.remove('border-red-500');
+        }
+    });
+    
+    // Validasi khusus: aset harus dipilih
+    const assetSelect = document.getElementById('assetID');
+    if (!assetSelect.value) {
+        isValid = false;
+        assetSelect.classList.add('border-red-500');
+        errorMessages.push('Aset wajib dipilih');
+        
+        if (!firstInvalid) firstInvalid = assetSelect;
+    }
+    
+    // Validasi khusus: jika metode saldo menurun, persentase harus antara 1-100
+    const metode = document.getElementById('metode').value;
+    if (metode === 'saldo_menurun') {
+        const persentase = parseFloat(document.getElementById('persentase_penyusutan').value);
+        if (isNaN(persentase) || persentase <= 0 || persentase > 100) {
+            isValid = false;
+            document.getElementById('persentase_penyusutan').classList.add('border-red-500');
+            errorMessages.push('Persentase penyusutan harus antara 1-100%');
+            
+            if (!firstInvalid) firstInvalid = document.getElementById('persentase_penyusutan');
+        }
+    }
+    
+    // Validasi preview tidak boleh nilai penyusutan = 0 jika nilai > residu
+    const opt = assetSelect.options[assetSelect.selectedIndex];
+    if (opt && opt.value) {
+        const nilai = parseFloat(opt.dataset.nilai) || 0;
+        const residu = parseFloat(opt.dataset.residu) || 0;
+        
+        if (nilai > residu) {
+            let previewPenyusutan = 0;
+            if (metode === 'garis_lurus') {
+                const umur = parseInt(opt.dataset.umur) || 1;
+                previewPenyusutan = (nilai - residu) / umur;
+            } else if (metode === 'saldo_menurun') {
+                const persen = parseFloat(document.getElementById('persentase_penyusutan').value) || 0;
+                previewPenyusutan = nilai * (persen / 100);
+            }
+            
+            if (previewPenyusutan <= 0 && nilai > residu) {
+                isValid = false;
+                errorMessages.push('Perhitungan penyusutan menghasilkan nilai 0. Periksa kembali parameter yang dimasukkan.');
+            }
+        }
+    }
+    
+    if (!isValid) {
+        let errorMessage = 'Mohon lengkapi data berikut:\n\n';
+        errorMessages.forEach(msg => {
+            errorMessage += `• ${msg}\n`;
+        });
+        alert(errorMessage);
+        
+        if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalid.focus();
+        }
+        return;
+    }
+    
+    // Tampilkan konfirmasi dengan preview hasil
+    const nilaiAwal = document.getElementById('previewNilaiAwal').textContent;
+    const nilaiPenyusutan = document.getElementById('previewNilaiPenyusutan').textContent;
+    const nilaiAkhir = document.getElementById('previewNilaiAkhir').textContent;
+    
+    const confirmMessage = `Apakah Anda yakin ingin menghitung dan menyimpan penyusutan ini?\n\n` +
+                          `📊 Preview Perhitungan:\n` +
+                          `• Nilai Awal: ${nilaiAwal}\n` +
+                          `• Nilai Penyusutan: ${nilaiPenyusutan}\n` +
+                          `• Nilai Akhir: ${nilaiAkhir}\n\n` +
+                          `Data penyusutan akan disimpan dan tidak dapat diubah.`;
+    
+    if (confirm(confirmMessage)) {
+        form.submit();
+    }
+}
 </script>
 @endpush

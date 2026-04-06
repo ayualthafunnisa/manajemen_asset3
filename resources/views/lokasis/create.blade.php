@@ -177,7 +177,8 @@
                            class="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out">
                             Batal
                         </a>
-                        <button type="submit" 
+                        <button type="button" 
+                                onclick="confirmSubmit()"
                                 class="px-6 py-3 bg-purple-600 border border-transparent rounded-lg font-medium text-white hover:bg-purple-700 transition duration-150 ease-in-out">
                             <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
@@ -195,9 +196,79 @@
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        document.getElementById('TeleponPenanggungJawab').addEventListener('input', function() {
-            this.value = this.value.replace(/[^0-9+]/g, '');
+        // Validasi telepon hanya angka dan +
+        const teleponInput = document.getElementById('TeleponPenanggungJawab');
+        if (teleponInput) {
+            teleponInput.addEventListener('input', function() {
+                this.value = this.value.replace(/[^0-9+]/g, '');
+            });
+        }
+        
+        // Validasi real-time untuk menghapus border merah
+        const requiredInputs = document.querySelectorAll('[required]');
+        requiredInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('border-red-500');
+                }
+            });
+            input.addEventListener('change', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('border-red-500');
+                }
+            });
         });
     });
+    
+    // Fungsi konfirmasi sebelum menyimpan
+    function confirmSubmit() {
+        // Validasi form terlebih dahulu
+        const form = document.getElementById('lokasiForm');
+        
+        // Cek required fields
+        const requiredFields = form.querySelectorAll('[required]');
+        let isValid = true;
+        let firstInvalid = null;
+        let errorMessages = [];
+        
+        requiredFields.forEach(field => {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('border-red-500');
+                
+                // Dapatkan label untuk field yang tidak valid
+                const label = document.querySelector(`label[for="${field.id}"]`);
+                const fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
+                errorMessages.push(`${fieldName} wajib diisi`);
+                
+                if (!firstInvalid) {
+                    firstInvalid = field;
+                }
+            } else {
+                field.classList.remove('border-red-500');
+            }
+        });
+        
+        if (!isValid) {
+            // Tampilkan pesan error gabungan
+            let errorMessage = 'Mohon lengkapi data berikut:\n\n';
+            errorMessages.forEach(msg => {
+                errorMessage += `• ${msg}\n`;
+            });
+            alert(errorMessage);
+            
+            // Scroll ke field yang tidak valid pertama
+            if (firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstInvalid.focus();
+            }
+            return;
+        }
+        
+        // Tampilkan konfirmasi
+        if (confirm('Apakah Anda yakin ingin menyimpan data lokasi ini?')) {
+            form.submit();
+        }
+    }
 </script>
 @endpush

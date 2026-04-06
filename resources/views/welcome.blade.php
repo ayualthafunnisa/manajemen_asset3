@@ -1,625 +1,846 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>AsetKu — Manajemen Aset Instansi</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>AsetKu — Manajemen Aset Modern & Lebar</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #f9f9f7;
-      --white: #ffffff;
-      --ink: #111111;
-      --muted: #6b6b6b;
-      --faint: #b0b0b0;
-      --border: #e8e8e4;
-      --accent: #2563eb;
-      --accent-light: #eff4ff;
-      --green: #16a34a;
-      --green-light: #f0fdf4;
-      --amber: #d97706;
-      --amber-light: #fffbeb;
-      --radius: 16px;
-      --max: 1100px;
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-
-    html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      background: var(--bg);
-      color: var(--ink);
-      line-height: 1.6;
-      overflow-x: hidden;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #ffffff
+      color: #171717;
+      line-height: 1.5;
+      scroll-behavior: smooth;
     }
 
-    /* NAV */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      background: rgba(249,249,247,0.92);
+    /* LEBAR — max-width lebih besar, padding lebih lega */
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 32px;
+    }
+
+    /* navbar lebih luas */
+    .navbar {
+      position: sticky;
+      top: 0;
+      background: rgba(255, 255, 255, 0.96);
       backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--border);
-      padding: 0 24px;
+      border-bottom: 1px solid #eef2f6;
+      z-index: 50;
+      padding: 16px 0;
     }
-    .nav-inner {
-      max-width: var(--max); margin: 0 auto;
-      height: 60px;
-      display: flex; align-items: center; justify-content: space-between;
+
+    .nav-flex {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 20px;
     }
-    .nav-logo {
-      font-weight: 800; font-size: 1.1rem;
-      color: var(--ink); text-decoration: none;
+
+    .logo {
+      font-weight: 800;
+      font-size: 1.5rem;
       letter-spacing: -0.02em;
-      display: flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
     }
-    .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-    .nav-links { display: flex; gap: 28px; list-style: none; }
+
+    .nav-links {
+      display: flex;
+      gap: 40px;
+      align-items: center;
+    }
+
     .nav-links a {
-      text-decoration: none; font-size: 0.875rem;
-      color: var(--muted); font-weight: 500; transition: color .15s;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #334155;
+      transition: color 0.2s;
     }
-    .nav-links a:hover { color: var(--ink); }
-    .nav-btn {
-      background: var(--ink); color: var(--white);
-      border: none; border-radius: 8px;
-      padding: 9px 20px; font-size: 0.875rem;
-      font-family: inherit; font-weight: 600;
-      cursor: pointer; transition: opacity .15s;
-      text-decoration: none; display: inline-block;
-    }
-    .nav-btn:hover { opacity: 0.82; }
 
-    /* HERO */
-    #hero {
-      max-width: var(--max); margin: 0 auto;
-      padding: 80px 24px 64px;
-      text-align: center;
+    .nav-links a:hover {
+      color: #2563eb;
     }
-    .hero-tag {
-      display: inline-flex; align-items: center; gap: 6px;
-      background: var(--accent-light); color: var(--accent);
-      font-size: 0.75rem; font-weight: 600;
-      padding: 5px 14px; border-radius: 100px;
-      margin-bottom: 24px; border: 1px solid #c7d9ff;
-      animation: fadeUp 0.5s ease both;
+
+    .btn-outline-light {
+      background: transparent;
+      border: 1px solid #e2e8f0;
+      padding: 8px 20px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: #1e293b;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
     }
-    .hero-tag-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
-    h1 {
-      font-size: clamp(2rem, 5vw, 3.25rem);
-      font-weight: 800; line-height: 1.15;
-      letter-spacing: -0.03em; margin-bottom: 20px;
-      animation: fadeUp 0.5s 0.05s ease both;
+
+    .btn-outline-light:hover {
+      border-color: #2563eb;
+      background: #f8fafc;
     }
-    h1 em { color: var(--accent); font-style: normal; }
-    .hero-sub {
-      font-size: 1rem; color: var(--muted);
-      max-width: 500px; margin: 0 auto 36px;
-      animation: fadeUp 0.5s 0.1s ease both;
-    }
-    .hero-actions {
-      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
-      animation: fadeUp 0.5s 0.15s ease both; margin-bottom: 48px;
-    }
+
     .btn-primary {
-      background: var(--accent); color: var(--white);
-      border: none; border-radius: 10px;
-      padding: 12px 28px; font-size: 0.9rem;
-      font-family: inherit; font-weight: 600;
-      cursor: pointer; transition: background .2s;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 8px 22px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: background 0.2s;
       text-decoration: none;
     }
-    .btn-primary:hover { background: #1d4ed8; }
-    .btn-secondary {
-      background: var(--white); color: var(--ink);
-      border: 1.5px solid var(--border); border-radius: 10px;
-      padding: 11px 28px; font-size: 0.9rem;
-      font-family: inherit; font-weight: 500;
-      cursor: pointer; transition: border-color .2s;
-      text-decoration: none;
-    }
-    .btn-secondary:hover { border-color: #bbb; }
 
-    /* Stats row */
-    .hero-stats {
-      display: flex; justify-content: center; gap: 0;
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: 14px; overflow: hidden;
-      max-width: 480px; margin: 0 auto 48px;
-      animation: fadeUp 0.5s 0.2s ease both;
+    .btn-primary:hover {
+      background: #1d4ed8;
     }
-    .stat { flex: 1; padding: 20px 12px; text-align: center; border-right: 1px solid var(--border); }
-    .stat:last-child { border-right: none; }
-    .stat-n { font-size: 1.4rem; font-weight: 800; letter-spacing: -0.03em; }
-    .stat-l { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
 
-    /* Dashboard Preview */
-    .dashboard-preview {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: 20px; overflow: hidden;
-      box-shadow: 0 4px 32px rgba(0,0,0,0.07);
-      max-width: 800px; margin: 0 auto;
-      animation: fadeUp 0.5s 0.25s ease both;
+    /* HERO — layout lebih lebar, tidak terlalu dipusatkan secara kaku */
+    .hero {
+      padding: 72px 0 64px;
     }
-    .preview-header {
-      background: #1a1a1a; padding: 12px 18px;
-      display: flex; align-items: center; gap: 7px;
-    }
-    .wdot { width: 11px; height: 11px; border-radius: 50%; }
-    .wr { background: #ef4444; }
-    .wy { background: #f59e0b; }
-    .wg { background: #22c55e; }
-    .preview-url {
-      flex: 1; margin-left: 8px; background: rgba(255,255,255,0.08);
-      border-radius: 6px; padding: 4px 12px;
-      font-size: 0.72rem; color: rgba(255,255,255,0.45); font-family: monospace;
-    }
-    .preview-body {
-      padding: 20px;
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 12px;
-    }
-    .pcard {
-      background: var(--bg); border: 1px solid var(--border);
-      border-radius: 12px; padding: 16px;
-    }
-    .pcard-label {
-      font-size: 0.67rem; color: var(--muted); font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px;
-    }
-    .pcard-val { font-size: 1.65rem; font-weight: 800; letter-spacing: -0.03em; }
-    .pcard-val.blue { color: var(--accent); }
-    .pcard-val.green { color: var(--green); }
-    .pcard-val.amber { color: var(--amber); }
-    .pcard-sub { font-size: 0.68rem; margin-top: 4px; }
-    .up { color: var(--green); }
-    .dn { color: var(--amber); }
 
-    .plist {
-      grid-column: 1 / -1; background: var(--bg);
-      border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+    .hero-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
     }
-    .plist-head {
-      padding: 10px 16px; border-bottom: 1px solid var(--border);
-      display: grid; grid-template-columns: 1fr auto auto;
-      gap: 12px;
-      font-size: 0.68rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.07em; color: var(--muted);
+
+    .hero-left {
+      max-width: 100%;
     }
-    .plist-row {
-      padding: 11px 16px; border-bottom: 1px solid var(--border);
-      display: grid; grid-template-columns: 1fr auto auto;
-      gap: 12px; align-items: center;
-    }
-    .plist-row:last-child { border-bottom: none; }
-    .pname { font-size: 0.8rem; font-weight: 600; }
-    .ploc { font-size: 0.67rem; color: var(--muted); margin-top: 1px; }
-    .pdept { font-size: 0.72rem; color: var(--muted); }
+
     .badge {
-      font-size: 0.64rem; font-weight: 700;
-      padding: 3px 10px; border-radius: 100px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #eff6ff;
+      padding: 6px 18px;
+      border-radius: 40px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #2563eb;
+      margin-bottom: 24px;
     }
-    .badge-ok { background: var(--green-light); color: var(--green); }
-    .badge-warn { background: var(--amber-light); color: var(--amber); }
 
-    /* FEATURES */
-    #features { padding: 80px 24px; max-width: var(--max); margin: 0 auto; }
+    .hero-left h1 {
+      font-size: clamp(2.2rem, 4vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+      margin-bottom: 20px;
+      color: #0f172a;
+    }
+
+    .hero-left h1 span {
+      color: #2563eb;
+    }
+
+    .hero-desc {
+      font-size: 1rem;
+      color: #475569;
+      max-width: 480px;
+      margin-bottom: 32px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+    }
+
+    .btn-secondary {
+      background: #f1f5f9;
+      color: #1e293b;
+      padding: 12px 28px;
+      border-radius: 40px;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s;
+    }
+
+    .btn-secondary:hover {
+      background: #e2e8f0;
+    }
+
+    /* stats row lebih lebar & natural */
+    .stats-row {
+      display: flex;
+      gap: 48px;
+      flex-wrap: wrap;
+      border-top: 1px solid #eef2f6;
+      padding-top: 32px;
+    }
+
+    .stat-item h3 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #0f172a;
+      line-height: 1.2;
+    }
+
+    .stat-item p {
+      font-size: 0.8rem;
+      color: #5b6e8c;
+      font-weight: 500;
+    }
+
+    /* preview card - full lebar tapi rapi */
+    .preview-card {
+      background: #ffffff;
+      border-radius: 28px;
+      box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.02);
+      overflow: hidden;
+      border: 1px solid #edf2f7;
+    }
+
+    .preview-header {
+      background: #fefefe;
+      padding: 14px 24px;
+      border-bottom: 1px solid #eef2f6;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .mock-dots {
+      display: flex;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #cbd5e1;
+    }
+
+    .dot.red { background: #ef4444; }
+    .dot.yellow { background: #f59e0b; }
+    .dot.green { background: #10b981; }
+
+    .mock-url {
+      font-size: 0.7rem;
+      font-family: monospace;
+      color: #64748b;
+      background: #f1f5f9;
+      padding: 4px 14px;
+      border-radius: 30px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: #f1f5f9;
+    }
+
+    .stat-box {
+      background: white;
+      padding: 24px 20px;
+    }
+
+    .stat-label-sm {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #5b6e8c;
+      letter-spacing: 0.04em;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .stat-value.blue { color: #2563eb; }
+    .stat-value.green { color: #16a34a; }
+    .stat-value.amber { color: #d97706; }
+
+    .asset-list {
+      grid-column: span 3;
+      background: white;
+      padding: 8px 0;
+    }
+
+    .list-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr auto;
+      padding: 14px 24px;
+      border-bottom: 1px solid #f0f2f5;
+      align-items: center;
+    }
+
+    .list-row:last-child {
+      border-bottom: none;
+    }
+
+    .asset-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .asset-loc {
+      font-size: 0.75rem;
+      color: #5b6e8c;
+      margin-top: 2px;
+    }
+
+    .status-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 4px 14px;
+      border-radius: 30px;
+      background: #e6f7ec;
+      color: #15803d;
+    }
+
+    .status-badge.warning {
+      background: #fffbeb;
+      color: #b45309;
+    }
+
+    /* features grid lebih lebar */
+    .section {
+      padding: 96px 0;
+    }
+
+    .section-header {
+      max-width: 700px;
+      margin-bottom: 64px;
+    }
+
     .section-label {
-      font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.1em; color: var(--accent); margin-bottom: 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #2563eb;
+      margin-bottom: 12px;
     }
+
     .section-title {
-      font-size: clamp(1.6rem, 3vw, 2.25rem);
-      font-weight: 800; letter-spacing: -0.03em;
-      margin-bottom: 10px; line-height: 1.2;
+      font-size: clamp(1.8rem, 3.5vw, 2.5rem);
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 16px;
     }
+
     .section-sub {
-      font-size: 0.9rem; color: var(--muted); max-width: 420px;
+      color: #475569;
+      font-size: 1rem;
+      max-width: 560px;
     }
+
     .features-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 14px; margin-top: 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+      gap: 32px;
     }
-    .feat-card {
-      background: var(--white); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 24px;
-      transition: box-shadow .2s;
-    }
-    .feat-card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
-    .feat-icon {
-      width: 40px; height: 40px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 1.15rem; margin-bottom: 14px;
-    }
-    .feat-title { font-size: 0.9rem; font-weight: 700; margin-bottom: 6px; }
-    .feat-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.65; }
 
-    /* TESTIMONIALS */
-    #testimonials { padding: 80px 24px; background: var(--ink); }
-    .testi-inner { max-width: var(--max); margin: 0 auto; }
-    #testimonials .section-label { color: #60a5fa; }
-    #testimonials .section-title { color: var(--white); }
-    #testimonials .section-sub { color: rgba(255,255,255,0.45); }
+    .feature-item {
+      background: #ffffff;
+      border: 1px solid #edf2f7;
+      border-radius: 28px;
+      padding: 32px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .feature-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 24px 36px -12px rgba(0, 0, 0, 0.08);
+      border-color: #e2e8f0;
+    }
+
+    .feature-icon {
+      font-size: 2rem;
+      margin-bottom: 24px;
+    }
+
+    .feature-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+    }
+
+    .feature-desc {
+      font-size: 0.85rem;
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    /* testimoni grid lebar */
     .testi-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr);
-      gap: 14px; margin-top: 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 32px;
     }
+
     .testi-card {
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-      border-radius: var(--radius); padding: 24px;
-      transition: background .2s;
+      background: #f9fafb;
+      border-radius: 28px;
+      padding: 32px;
+      border: 1px solid #f0f2f5;
     }
-    .testi-card:hover { background: rgba(255,255,255,0.08); }
-    .testi-stars { color: #f59e0b; font-size: 0.78rem; margin-bottom: 14px; letter-spacing: 1px; }
+
+    .stars {
+      color: #f59e0b;
+      font-size: 0.9rem;
+      letter-spacing: 2px;
+      margin-bottom: 20px;
+    }
+
     .testi-text {
-      font-size: 0.875rem; color: rgba(255,255,255,0.72);
-      line-height: 1.7; margin-bottom: 20px; font-style: italic;
+      font-size: 0.95rem;
+      color: #1e293b;
+      margin-bottom: 24px;
+      line-height: 1.6;
     }
-    .testi-author { display: flex; align-items: center; gap: 10px; }
-    .testi-av {
-      width: 34px; height: 34px; border-radius: 50%;
-      background: rgba(255,255,255,0.12);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 0.72rem; font-weight: 700; color: white; flex-shrink: 0;
-    }
-    .testi-name { font-size: 0.82rem; font-weight: 700; color: white; }
-    .testi-role { font-size: 0.68rem; color: rgba(255,255,255,0.38); margin-top: 2px; }
 
-    /* CTA */
-    #cta { padding: 80px 24px; max-width: var(--max); margin: 0 auto; }
-    .cta-box {
-      background: var(--accent); border-radius: 20px;
-      padding: 56px 40px; text-align: center;
-      position: relative; overflow: hidden;
+    .testi-author {
+      display: flex;
+      align-items: center;
+      gap: 14px;
     }
-    .cta-box::before {
-      content: '';
-      position: absolute; inset: 0;
-      background: radial-gradient(ellipse at 80% 20%, rgba(255,255,255,0.12), transparent 60%);
+
+    .avatar {
+      width: 44px;
+      height: 44px;
+      background: #e2e8f0;
+      border-radius: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #0f172a;
     }
+
+    .author-name {
+      font-weight: 700;
+      font-size: 0.9rem;
+    }
+
+    .author-role {
+      font-size: 0.7rem;
+      color: #5b6e8c;
+    }
+
+    /* CTA lebar tapi proporsional */
+    .cta-block {
+      background: #0f172a;
+      border-radius: 32px;
+      padding: 64px 48px;
+      text-align: center;
+      color: white;
+    }
+
     .cta-title {
-      font-size: clamp(1.5rem, 3vw, 2.1rem);
-      font-weight: 800; color: white; letter-spacing: -0.03em;
-      margin-bottom: 12px; position: relative;
+      font-size: clamp(1.8rem, 3vw, 2.3rem);
+      font-weight: 700;
+      margin-bottom: 18px;
     }
-    .cta-sub {
-      font-size: 0.95rem; color: rgba(255,255,255,0.8);
-      max-width: 420px; margin: 0 auto 32px; position: relative;
+
+    .cta-desc {
+      max-width: 560px;
+      margin: 0 auto 32px;
+      color: #cbd5e1;
     }
-    .cta-acts { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; position: relative; }
+
+    .cta-buttons {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
     .btn-white {
-      background: white; color: var(--accent);
-      border: none; border-radius: 10px;
-      padding: 12px 28px; font-size: 0.9rem;
-      font-family: inherit; font-weight: 700;
-      cursor: pointer; transition: opacity .15s; text-decoration: none;
+      background: white;
+      color: #0f172a;
+      padding: 14px 34px;
+      border-radius: 50px;
+      font-weight: 700;
+      text-decoration: none;
     }
-    .btn-white:hover { opacity: 0.9; }
-    .btn-ghost {
-      background: transparent; color: white;
-      border: 1.5px solid rgba(255,255,255,0.4); border-radius: 10px;
-      padding: 11px 26px; font-size: 0.9rem;
-      font-family: inherit; font-weight: 500;
-      cursor: pointer; transition: background .15s; text-decoration: none;
-    }
-    .btn-ghost:hover { background: rgba(255,255,255,0.1); }
 
-    /* FOOTER */
-    footer { background: #0a0a0a; padding: 48px 24px 32px; }
-    .footer-inner { max-width: var(--max); margin: 0 auto; }
-    .footer-top {
-      display: grid; grid-template-columns: 2fr 1fr 1fr 1fr;
-      gap: 40px; margin-bottom: 40px;
+    .btn-outline-white {
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      background: transparent;
+      color: white;
+      padding: 14px 34px;
+      border-radius: 50px;
+      font-weight: 600;
+      text-decoration: none;
     }
+
+    /* footer lebar */
+    footer {
+      background: #ffffff;
+      border-top: 1px solid #edf2f7;
+      padding: 64px 0 40px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr 1.5fr;
+      gap: 48px;
+      margin-bottom: 56px;
+    }
+
     .footer-logo {
-      font-weight: 800; font-size: 1rem; color: white;
-      display: flex; align-items: center; gap: 7px; margin-bottom: 12px;
+      font-weight: 800;
+      font-size: 1.3rem;
+      color: #0f172a;
+      margin-bottom: 14px;
     }
-    .footer-tagline { font-size: 0.8rem; color: rgba(255,255,255,0.38); line-height: 1.6; max-width: 240px; }
-    .footer-col h5 {
-      font-size: 0.78rem; font-weight: 700; color: white;
-      margin-bottom: 14px; letter-spacing: 0.03em;
+
+    .footer-desc {
+      font-size: 0.85rem;
+      color: #475569;
+      max-width: 260px;
     }
-    .footer-col ul { list-style: none; }
-    .footer-col ul li { margin-bottom: 8px; }
-    .footer-col ul a {
-      font-size: 0.78rem; color: rgba(255,255,255,0.38);
-      text-decoration: none; transition: color .15s;
+
+    .footer-col h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 20px;
+      color: #0f172a;
     }
-    .footer-col ul a:hover { color: white; }
+
+    .footer-col ul {
+      list-style: none;
+    }
+
+    .footer-col li {
+      margin-bottom: 12px;
+    }
+
+    .footer-col a {
+      text-decoration: none;
+      font-size: 0.85rem;
+      color: #5b6e8c;
+      transition: color 0.2s;
+    }
+
+    .footer-col a:hover {
+      color: #2563eb;
+    }
+
     .footer-bottom {
-      border-top: 1px solid rgba(255,255,255,0.08);
-      padding-top: 24px;
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 20px;
+      padding-top: 28px;
+      border-top: 1px solid #edf2f7;
+      font-size: 0.8rem;
+      color: #64748b;
     }
-    .footer-copy { font-size: 0.74rem; color: rgba(255,255,255,0.28); }
-    .footer-bl { display: flex; gap: 20px; }
-    .footer-bl a { font-size: 0.74rem; color: rgba(255,255,255,0.28); text-decoration: none; transition: color .15s; }
-    .footer-bl a:hover { color: white; }
 
-    /* ANIMATIONS */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(14px); }
-      to   { opacity: 1; transform: translateY(0); }
+    .footer-links {
+      display: flex;
+      gap: 32px;
     }
-    .reveal { opacity: 0; transform: translateY(18px); transition: opacity .5s ease, transform .5s ease; }
-    .reveal.on { opacity: 1; transform: none; }
 
-    /* RESPONSIVE */
-    @media (max-width: 900px) {
-      .features-grid { grid-template-columns: 1fr 1fr; }
-      .testi-grid { grid-template-columns: 1fr; }
-      .footer-top { grid-template-columns: 1fr 1fr; }
-      .preview-body { grid-template-columns: 1fr 1fr; }
-      .plist { grid-column: auto; }
+    /* responsive lebar lebih nyaman */
+    @media (max-width: 1100px) {
+      .hero-grid {
+        grid-template-columns: 1fr;
+        gap: 48px;
+      }
+      .hero-left {
+        max-width: 100%;
+        text-align: left;
+      }
+      .stats-row {
+        justify-content: flex-start;
+      }
     }
+
+    @media (max-width: 800px) {
+      .container {
+        padding: 0 24px;
+      }
+      .footer-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+      }
+      .dashboard-grid {
+        grid-template-columns: 1fr;
+      }
+      .asset-list {
+        grid-column: span 1;
+      }
+      .hero-actions {
+        justify-content: flex-start;
+      }
+    }
+
     @media (max-width: 640px) {
-      .nav-links { display: none; }
-      .features-grid { grid-template-columns: 1fr; }
-      .hero-stats { max-width: 100%; }
-      .footer-top { grid-template-columns: 1fr; gap: 24px; }
-      .footer-bottom { flex-direction: column; gap: 10px; text-align: center; }
-      .cta-box { padding: 40px 22px; }
-      .preview-body { grid-template-columns: 1fr; }
+      .nav-links {
+        display: none;
+      }
+      .footer-grid {
+        grid-template-columns: 1fr;
+      }
+      .stats-row {
+        flex-direction: column;
+        gap: 24px;
+      }
+      .cta-block {
+        padding: 48px 24px;
+      }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
     }
   </style>
 </head>
 <body>
 
-  <!-- NAV -->
-  <nav>
-    <div class="nav-inner">
-      <a href="#" class="nav-logo">
-        <span class="logo-dot"></span>AsetKu
-      </a>
-      <ul class="nav-links">
-        <li><a href="#features">Fitur</a></li>
-        <li><a href="#testimonials">Testimoni</a></li>
-        <li><a href="#cta">Harga</a></li>
-      </ul>
-      <a href="#cta" class="nav-btn">Mulai Gratis</a>
+<nav class="navbar">
+  <div class="container">
+    <div class="nav-flex">
+      <div class="logo">AsetKu</div>
+      <div class="nav-links">
+        <a href="{{ route('login') }}" class="btn-outline-light">Masuk</a>
+        <a href="" class="btn-primary">Coba Gratis</a>
+      </div>
     </div>
-  </nav>
+  </div>
+</nav>
 
-  <!-- HERO -->
-  <section id="hero">
-    <div class="hero-tag">
-      <span class="hero-tag-dot"></span>
-      Platform Aset No. 1 di Indonesia
-    </div>
-    <h1>Kelola Aset Instansi,<br><em>Lebih Cerdas & Efisien</em></h1>
-    <p class="hero-sub">
-      Pantau, catat, dan kelola seluruh inventaris aset dalam satu dasbor yang intuitif dan terintegrasi penuh.
-    </p>
-    <div class="hero-actions">
-      <a href="#cta" class="btn-primary">Coba Gratis 14 Hari →</a>
-      <a href="#features" class="btn-secondary">Lihat Fitur</a>
-    </div>
-
-    <div class="hero-stats">
-      <div class="stat">
-        <div class="stat-n">2.800+</div>
-        <div class="stat-l">Pengguna Aktif</div>
-      </div>
-      <div class="stat">
-        <div class="stat-n">98%</div>
-        <div class="stat-l">Kepuasan Pengguna</div>
-      </div>
-      <div class="stat">
-        <div class="stat-n">500K+</div>
-        <div class="stat-l">Aset Terpantau</div>
-      </div>
-    </div>
-
-    <div class="dashboard-preview">
-      <div class="preview-header">
-        <span class="wdot wr"></span>
-        <span class="wdot wy"></span>
-        <span class="wdot wg"></span>
-        <span class="preview-url">asetku.id/dashboard</span>
-      </div>
-      <div class="preview-body">
-        <div class="pcard">
-          <div class="pcard-label">Total Aset</div>
-          <div class="pcard-val blue">1.248</div>
-          <div class="pcard-sub up">↑ 3.2% bulan ini</div>
-        </div>
-        <div class="pcard">
-          <div class="pcard-label">Kondisi Baik</div>
-          <div class="pcard-val green">1.101</div>
-          <div class="pcard-sub up">↑ 88.2% dari total</div>
-        </div>
-        <div class="pcard">
-          <div class="pcard-label">Perlu Servis</div>
-          <div class="pcard-val amber">147</div>
-          <div class="pcard-sub dn">↓ perlu tindakan</div>
-        </div>
-        <div class="plist">
-          <div class="plist-head">
-            <span>Nama Aset</span>
-            <span>Lokasi</span>
-            <span>Status</span>
+<main>
+  <!-- Hero dengan layout 2 kolom lebih lebar & tidak terpusat -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-left">
+          <div class="badge reveal">
+            ⚡ Platform Aset Terintegrasi
           </div>
-          <div class="plist-row">
-            <div>
-              <div class="pname">MacBook Pro M3</div>
-              <div class="ploc">Departemen IT</div>
-            </div>
-            <div class="pdept">Lantai 3</div>
-            <span class="badge badge-ok">Aktif</span>
+          <h1 class="reveal">Kelola Aset Instansi <br><span>Lebih Cepat & Akurat</span></h1>
+          <p class="hero-desc reveal">
+            Pantau seluruh inventaris, lacak lokasi aset, dan buat laporan instan — semuanya dalam satu dasbor modern tanpa batasan.
+          </p>
+          <div class="hero-actions reveal">
+            <a href="#cta" class="btn-primary" style="padding: 12px 32px;">Coba 14 Hari Gratis →</a>
+            <a href="#features" class="btn-secondary">Lihat Demo</a>
           </div>
-          <div class="plist-row">
-            <div>
-              <div class="pname">Printer Canon MX498</div>
-              <div class="ploc">Administrasi</div>
+          <div class="stats-row reveal">
+            <div class="stat-item">
+              <h3>2.800+</h3>
+              <p>Instansi Aktif</p>
             </div>
-            <div class="pdept">Lantai 1</div>
-            <span class="badge badge-warn">Servis</span>
+            <div class="stat-item">
+              <h3>99%</h3>
+              <p>Kepuasan Klien</p>
+            </div>
+            <div class="stat-item">
+              <h3>500K+</h3>
+              <p>Aset Terkelola</p>
+            </div>
           </div>
-          <div class="plist-row">
-            <div>
-              <div class="pname">Proyektor Epson EB</div>
-              <div class="ploc">Aula Utama</div>
+        </div>
+        <div class="hero-right reveal">
+          <div class="preview-card">
+            <div class="preview-header">
+              <div class="mock-dots">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+              </div>
+              <div class="mock-url">dasbor.asetku.id/overview</div>
             </div>
-            <div class="pdept">Gedung B</div>
-            <span class="badge badge-ok">Aktif</span>
+            <div class="dashboard-grid">
+              <div class="stat-box">
+                <div class="stat-label-sm">Total Aset</div>
+                <div class="stat-value blue">1.248</div>
+                <div style="font-size: 0.7rem; color:#3b7c0c;">↑ +3.2% bulan ini</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label-sm">Kondisi Baik</div>
+                <div class="stat-value green">1.101</div>
+                <div style="font-size: 0.7rem; color:#475569;">88% dari total</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label-sm">Perlu Perawatan</div>
+                <div class="stat-value amber">147</div>
+                <div style="font-size: 0.7rem; color:#d97706;">Segera tindaklanjuti</div>
+              </div>
+              <div class="asset-list">
+                <div class="list-row">
+                  <div>
+                    <div class="asset-name">MacBook Pro M3</div>
+                    <div class="asset-loc">IT Dept · Lantai 3</div>
+                  </div>
+                  <div>Kantor Pusat</div>
+                  <div><span class="status-badge">Operasional</span></div>
+                </div>
+                <div class="list-row">
+                  <div>
+                    <div class="asset-name">Printer Canon MX498</div>
+                    <div class="asset-loc">Administrasi · Lt 1</div>
+                  </div>
+                  <div>Gedung A</div>
+                  <div><span class="status-badge warning">Perlu Servis</span></div>
+                </div>
+                <div class="list-row">
+                  <div>
+                    <div class="asset-name">Proyektor Epson EB</div>
+                    <div class="asset-loc">Aula Utama</div>
+                  </div>
+                  <div>Gedung B</div>
+                  <div><span class="status-badge">Aktif</span></div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- FEATURES -->
-  <section id="features">
-    <p class="section-label reveal">Kenapa AsetKu?</p>
-    <h2 class="section-title reveal">Semua yang Anda Butuhkan</h2>
-    <p class="section-sub reveal">Dari pencatatan hingga pelaporan — kami sederhanakan pengelolaan aset agar tim bisa fokus pada hal yang lebih penting.</p>
-    <div class="features-grid">
-      <div class="feat-card reveal">
-        <div class="feat-icon" style="background:#eff4ff">📊</div>
-        <div class="feat-title">Dasbor Real-Time</div>
-        <p class="feat-desc">Pantau kondisi seluruh aset secara langsung dengan visualisasi data yang selalu diperbarui.</p>
+  <!-- Features -->
+  <section id="features" class="section">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="section-label">KEUNGGULAN PLATFORM</div>
+        <h2 class="section-title">Semua fitur yang Anda butuhkan, tanpa kerumitan</h2>
+        <p class="section-sub">Didesain untuk efisiensi, dari pencatatan hingga pelaporan strategis.</p>
       </div>
-      <div class="feat-card reveal">
-        <div class="feat-icon" style="background:#f0fdf4">🔍</div>
-        <div class="feat-title">Lacak & Verifikasi</div>
-        <p class="feat-desc">Temukan aset manapun dalam hitungan detik berdasarkan lokasi, kategori, dan status kondisi.</p>
-      </div>
-      <div class="feat-card reveal">
-        <div class="feat-icon" style="background:#fffbeb">🔔</div>
-        <div class="feat-title">Notifikasi Otomatis</div>
-        <p class="feat-desc">Terima peringatan saat jadwal perawatan tiba atau ada aset yang membutuhkan perhatian segera.</p>
-      </div>
-      <div class="feat-card reveal">
-        <div class="feat-icon" style="background:#fff1f2">📄</div>
-        <div class="feat-title">Laporan & Ekspor</div>
-        <p class="feat-desc">Buat laporan inventaris dalam PDF atau Excel hanya dengan satu klik, siap untuk audit kapan saja.</p>
-      </div>
-      <div class="feat-card reveal">
-        <div class="feat-icon" style="background:#f0f6ff">👥</div>
-        <div class="feat-title">Manajemen Tim</div>
-        <p class="feat-desc">Tetapkan hak akses dari admin pusat hingga petugas lapangan — semua terkendali dengan rapi.</p>
-      </div>
-      <div class="feat-card reveal">
-        <div class="feat-icon" style="background:#f0fdf4">🔒</div>
-        <div class="feat-title">Keamanan Berlapis</div>
-        <p class="feat-desc">Enkripsi end-to-end, pencadangan otomatis harian, dan autentikasi dua faktor untuk keamanan penuh.</p>
+      <div class="features-grid">
+        <div class="feature-item reveal">
+          <div class="feature-icon">📊</div>
+          <div class="feature-title">Dasbor real-time</div>
+          <div class="feature-desc">Pantau status, nilai aset, dan tren penggunaan secara langsung dari tampilan yang intuitif.</div>
+        </div>
+        <div class="feature-item reveal">
+          <div class="feature-icon">📍</div>
+          <div class="feature-title">Lacak lokasi aset</div>
+          <div class="feature-desc">Filter berdasarkan divisi, ruangan, atau gedung. Temukan aset dalam hitungan detik.</div>
+        </div>
+        <div class="feature-item reveal">
+          <div class="feature-icon">🔔</div>
+          <div class="feature-title">Pengingat otomatis</div>
+          <div class="feature-desc">Jadwal servis, kalibrasi, dan peringatan garansi otomatis — tidak ada yang terlewat.</div>
+        </div>
+        <div class="feature-item reveal">
+          <div class="feature-icon">📄</div>
+          <div class="feature-title">Laporan instan</div>
+          <div class="feature-desc">Export PDF / Excel satu klik, cocok untuk audit internal maupun eksternal.</div>
+        </div>
+        <div class="feature-item reveal">
+          <div class="feature-icon">👥</div>
+          <div class="feature-title">Multi-level akses</div>
+          <div class="feature-desc">Kelola hak akses untuk tim, dari admin pusat hingga operator lapangan.</div>
+        </div>
+        <div class="feature-item reveal">
+          <div class="feature-icon">🔒</div>
+          <div class="feature-title">Keamanan enterprise</div>
+          <div class="feature-desc">Enkripsi data, backup harian, dan autentikasi dua faktor untuk keamanan maksimal.</div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- TESTIMONIALS -->
-  <section id="testimonials">
-    <div class="testi-inner">
-      <p class="section-label reveal">Testimoni</p>
-      <h2 class="section-title reveal">Dipercaya Ribuan Instansi</h2>
-      <p class="section-sub reveal">Dengarkan langsung dari mereka yang sudah merasakan manfaatnya.</p>
-      <div class="testi-grid">
-        <div class="testi-card reveal">
-          <div class="testi-stars">★★★★★</div>
-          <p class="testi-text">"Proses audit tahunan yang biasanya seminggu penuh, sekarang selesai dalam 2 hari. AsetKu benar-benar mengubah cara kami bekerja."</p>
-          <div class="testi-author">
-            <div class="testi-av">BW</div>
-            <div>
-              <div class="testi-name">Budi Wicaksono</div>
-              <div class="testi-role">Kepala Bagian Umum, Dinas Pendidikan</div>
-            </div>
-          </div>
-        </div>
-        <div class="testi-card reveal">
-          <div class="testi-stars">★★★★★</div>
-          <p class="testi-text">"Fitur notifikasi perawatan menyelamatkan anggaran kami. Tidak ada lagi kerusakan mendadak yang mahal karena perawatan selalu tepat waktu."</p>
-          <div class="testi-author">
-            <div class="testi-av">SR</div>
-            <div>
-              <div class="testi-name">Siti Rahayu</div>
-              <div class="testi-role">Manajer Fasilitas, RS Medika Utama</div>
-            </div>
-          </div>
-        </div>
-        <div class="testi-card reveal">
-          <div class="testi-stars">★★★★★</div>
-          <p class="testi-text">"Dalam satu minggu, lebih dari 300 aset kami sudah tercatat semua. Onboarding cepat dan tim support sangat responsif membantu."</p>
-          <div class="testi-author">
-            <div class="testi-av">DP</div>
-            <div>
-              <div class="testi-name">Dian Pratama</div>
-              <div class="testi-role">CTO, Startup Teknologi Nusantara</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
+
 
   <!-- CTA -->
-  <section id="cta">
-    <div class="cta-box">
-      <h2 class="cta-title">Mulai Kelola Aset Lebih Cerdas</h2>
-      <p class="cta-sub">Bergabunglah dengan ribuan instansi yang sudah mempercayakan manajemen aset mereka kepada AsetKu. Gratis 14 hari, tanpa kartu kredit.</p>
-      <div class="cta-acts">
-        <a href="#" class="btn-white">Daftar Gratis Sekarang</a>
-        <a href="#" class="btn-ghost">Jadwalkan Demo</a>
+  <section id="cta" class="section">
+    <div class="container">
+      <div class="cta-block reveal">
+        <h2 class="cta-title">Siap mengelola aset dengan lebih cerdas?</h2>
+        <p class="cta-desc">Nikmati gratis 14 hari penuh. Tanpa kartu kredit, setup cepat, dan tim support siap membantu.</p>
+        <div class="cta-buttons">
+          <a href="#" class="btn-white">Daftar Sekarang →</a>
+          <a href="#" class="btn-outline-white">Hubungi Tim Sales</a>
+        </div>
       </div>
     </div>
   </section>
+</main>
 
-  <!-- FOOTER -->
-  <footer>
-    <div class="footer-inner">
-      <div class="footer-top">
-        <div>
-          <div class="footer-logo">
-            <span class="logo-dot"></span>AsetKu
-          </div>
-          <p class="footer-tagline">Platform manajemen aset terpadu untuk instansi pemerintah dan swasta di seluruh Indonesia.</p>
-        </div>
-        <div class="footer-col">
-          <h5>Produk</h5>
-          <ul>
-            <li><a href="#">Fitur</a></li>
-            <li><a href="#">Harga</a></li>
-            <li><a href="#">Keamanan</a></li>
-            <li><a href="#">Roadmap</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h5>Perusahaan</h5>
-          <ul>
-            <li><a href="#">Tentang Kami</a></li>
-            <li><a href="#">Blog</a></li>
-            <li><a href="#">Karir</a></li>
-            <li><a href="#">Partner</a></li>
-          </ul>
-        </div>
-        <div class="footer-col">
-          <h5>Dukungan</h5>
-          <ul>
-            <li><a href="#">Dokumentasi</a></li>
-            <li><a href="#">Pusat Bantuan</a></li>
-            <li><a href="#">Kontak</a></li>
-            <li><a href="#">Status Sistem</a></li>
-          </ul>
-        </div>
+<footer>
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-logo">AsetKu</div>
+        <div class="footer-desc">Solusi manajemen aset modern untuk instansi pemerintah dan perusahaan di Indonesia.</div>
       </div>
-      <div class="footer-bottom">
-        <span class="footer-copy">© 2025 AsetKu. Hak cipta dilindungi.</span>
-        <div class="footer-bl">
-          <a href="#">Privasi</a>
-          <a href="#">Syarat & Ketentuan</a>
-        </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <ul>
+          <li><a href="#">Fitur Unggulan</a></li>
+          <li><a href="#">Harga & Paket</a></li>
+          <li><a href="#">Keamanan Data</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Perusahaan</h4>
+        <ul>
+          <li><a href="#">Tentang Kami</a></li>
+          <li><a href="#">Karir</a></li>
+          <li><a href="#">Blog & Artikel</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Dukungan</h4>
+        <ul>
+          <li><a href="#">Pusat Bantuan</a></li>
+          <li><a href="#">Hubungi Kontak</a></li>
+          <li><a href="#">Dokumentasi API</a></li>
+        </ul>
       </div>
     </div>
-  </footer>
+    <div class="footer-bottom">
+      <span>© 2025 AsetKu. Seluruh hak cipta dilindungi.</span>
+      <div class="footer-links">
+        <a href="#">Kebijakan Privasi</a>
+        <a href="#">Syarat & Ketentuan</a>
+      </div>
+    </div>
+  </div>
+</footer>
 
-  <script>
-    const io = new IntersectionObserver(entries => {
-      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('on'); });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
-  </script>
+<script>
+  const revealElements = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1, rootMargin: "0px 0px -20px 0px" });
+  revealElements.forEach(el => observer.observe(el));
+</script>
 </body>
 </html>

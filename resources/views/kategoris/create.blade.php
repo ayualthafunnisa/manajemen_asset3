@@ -3,20 +3,6 @@
 
 @section('title', 'Tambah Kategori - Jobie')
 
-@section('breadcrumbs')
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm border border-gray-200 px-4 py-3 rounded-lg">
-        <li class="breadcrumb-item">
-            <a href="" class="text-gray-600 hover:text-purple-600 transition duration-150">Dashboard</a>
-        </li>
-        <li class="breadcrumb-item">
-            <a href="{{ route('kategori.index') }}" class="text-gray-600 hover:text-purple-600 transition duration-150">Kategori</a>
-        </li>
-        <li class="breadcrumb-item active text-gray-800" aria-current="page">Tambah Baru</li>
-    </ol>
-</nav>
-@endsection
-
 @section('header')
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
     <div>
@@ -145,7 +131,8 @@
                            class="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-150">
                             Batal
                         </a>
-                        <button type="submit" 
+                        <button type="button" 
+                                onclick="confirmSubmit()"
                                 class="px-6 py-3 bg-purple-600 border border-transparent rounded-lg font-medium text-white hover:bg-purple-700 transition duration-150">
                             <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
@@ -169,12 +156,103 @@ document.addEventListener('DOMContentLoaded', function () {
     function updateCounter() {
         const len = deskripsi.value.length;
         charCount.textContent = `${len}/500`;
-        charCount.classList.toggle('text-red-500', len > 500);
-        charCount.classList.toggle('text-gray-500', len <= 500);
+        
+        // Update warna counter
+        if (len > 500) {
+            charCount.classList.add('text-red-500');
+            charCount.classList.remove('text-gray-500');
+        } else if (len > 450) {
+            charCount.classList.add('text-yellow-500');
+            charCount.classList.remove('text-gray-500', 'text-red-500');
+        } else {
+            charCount.classList.remove('text-red-500', 'text-yellow-500');
+            charCount.classList.add('text-gray-500');
+        }
+        
+        // Batasi input jika melebihi 500 karakter
+        if (len > 500) {
+            deskripsi.value = deskripsi.value.substring(0, 500);
+            charCount.textContent = `500/500`;
+        }
     }
 
     updateCounter();
     deskripsi.addEventListener('input', updateCounter);
+});
+
+// Fungsi konfirmasi sebelum menyimpan
+function confirmSubmit() {
+    // Validasi form terlebih dahulu
+    const form = document.getElementById('categoryForm');
+    
+    // Cek required fields
+    const requiredFields = form.querySelectorAll('[required]');
+    let isValid = true;
+    let firstInvalid = null;
+    let errorMessages = [];
+    
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            isValid = false;
+            field.classList.add('border-red-500');
+            
+            // Dapatkan label untuk field yang tidak valid
+            const label = document.querySelector(`label[for="${field.id}"]`);
+            const fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
+            errorMessages.push(`${fieldName} wajib diisi`);
+            
+            if (!firstInvalid) {
+                firstInvalid = field;
+            }
+        } else {
+            field.classList.remove('border-red-500');
+        }
+    });
+    
+    // Validasi khusus untuk deskripsi (maksimal 500 karakter)
+    const deskripsi = document.getElementById('Deskripsi');
+    if (deskripsi && deskripsi.value.length > 500) {
+        isValid = false;
+        deskripsi.classList.add('border-red-500');
+        errorMessages.push('Deskripsi maksimal 500 karakter');
+        
+        if (!firstInvalid) {
+            firstInvalid = deskripsi;
+        }
+    }
+    
+    if (!isValid) {
+        // Tampilkan pesan error gabungan
+        let errorMessage = 'Mohon lengkapi data berikut:\n\n';
+        errorMessages.forEach(msg => {
+            errorMessage += `• ${msg}\n`;
+        });
+        alert(errorMessage);
+        
+        // Scroll ke field yang tidak valid pertama
+        if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalid.focus();
+        }
+        return;
+    }
+    
+    // Tampilkan konfirmasi sederhana
+    if (confirm('Apakah Anda yakin ingin menyimpan data kategori ini?')) {
+        form.submit();
+    }
+}
+
+// Optional: Tambahkan validasi real-time untuk menghapus border merah saat user mulai mengetik
+document.addEventListener('DOMContentLoaded', function() {
+    const requiredInputs = document.querySelectorAll('[required]');
+    requiredInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            if (this.value.trim()) {
+                this.classList.remove('border-red-500');
+            }
+        });
+    });
 });
 </script>
 @endpush

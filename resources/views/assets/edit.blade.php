@@ -58,21 +58,17 @@
                 </div>
                 <div class="p-6 space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {{-- Instansi --}}
+                        {{-- Instansi (Read Only) --}}
                         <div>
-                            <label for="InstansiID" class="block text-sm font-medium text-gray-700 mb-1">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
                                 Instansi <span class="text-red-500">*</span>
                             </label>
-                            <select name="InstansiID" id="InstansiID" 
-                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('InstansiID') border-red-500 @enderror"
-                                    required>
-                                <option value="">Pilih Instansi</option>
-                                @foreach($instansis as $instansi)
-                                    <option value="{{ $instansi->InstansiID }}" {{ old('InstansiID', $asset->InstansiID) == $instansi->InstansiID ? 'selected' : '' }}>
-                                        {{ $instansi->KodeInstansi }} - {{ $instansi->NamaSekolah }}
-                                    </option>
-                                @endforeach
-                            </select>
+                            <input type="text" 
+                                   value="{{ $asset->instansi->KodeInstansi ?? '' }} - {{ $asset->instansi->NamaSekolah ?? '' }}"
+                                   class="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-100 text-gray-700 cursor-not-allowed"
+                                   readonly
+                                   disabled>
+                            <input type="hidden" name="InstansiID" value="{{ $asset->InstansiID }}">
                             @error('InstansiID')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -608,7 +604,7 @@
         // Unsaved changes warning
         let hasChanges = false;
         const form = document.getElementById('editForm');
-        const inputs = form.querySelectorAll('input:not([type="file"]), select, textarea');
+        const inputs = form.querySelectorAll('input:not([type="file"]):not([name="InstansiID"]), select, textarea');
         const initialValues = new Map();
         inputs.forEach(input => initialValues.set(input, input.value));
         

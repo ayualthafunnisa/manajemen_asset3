@@ -252,7 +252,8 @@
                            class="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out">
                             Batal
                         </a>
-                        <button type="submit"
+                        <button type="button"
+                                onclick="confirmSubmit()"
                                 class="px-6 py-3 bg-purple-600 border border-transparent rounded-lg font-medium text-white hover:bg-purple-700 transition duration-150 ease-in-out">
                             <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
@@ -322,15 +323,128 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // ── Validasi tanggal ──────────────────────────────────────────────────────
-    document.getElementById('kerusakanForm').addEventListener('submit', function (e) {
-        const laporan   = new Date(document.getElementById('tanggal_laporan').value);
-        const kerusakan = new Date(document.getElementById('tanggal_kerusakan').value);
-        if (kerusakan > laporan) {
-            e.preventDefault();
-            alert('Tanggal kerusakan tidak boleh setelah tanggal laporan.');
+    // Real-time validation untuk required fields
+    const requiredInputs = document.querySelectorAll('[required]');
+    requiredInputs.forEach(input => {
+        if (input.type !== 'file') {
+            input.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('border-red-500');
+                }
+            });
+            input.addEventListener('change', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('border-red-500');
+                }
+            });
         }
     });
 });
+
+// Fungsi konfirmasi sebelum menyimpan
+function confirmSubmit() {
+    const form = document.getElementById('kerusakanForm');
+    
+    // Reset error styles
+    const requiredFields = form.querySelectorAll('[required]');
+    let isValid = true;
+    let firstInvalid = null;
+    let errorMessages = [];
+    
+    // Validasi required fields
+    requiredFields.forEach(field => {
+        let fieldValue = field.value;
+        
+        // Handle khusus untuk file input
+        if (field.type === 'file') {
+            if (!field.files || field.files.length === 0) {
+                isValid = false;
+                field.classList.add('border-red-500');
+                
+                const label = document.querySelector(`label[for="${field.id}"]`);
+                const fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
+                errorMessages.push(`${fieldName} wajib diunggah`);
+                
+                if (!firstInvalid) firstInvalid = field;
+            } else {
+                field.classList.remove('border-red-500');
+            }
+        } else if (field.type !== 'hidden') {
+            if (!field.value.trim()) {
+                isValid = false;
+                field.classList.add('border-red-500');
+                
+                const label = document.querySelector(`label[for="${field.id}"]`);
+                const fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
+                errorMessages.push(`${fieldName} wajib diisi`);
+                
+                if (!firstInvalid) firstInvalid = field;
+            } else {
+                field.classList.remove('border-red-500');
+            }
+        }
+    });
+    
+    // Validasi khusus: tanggal kerusakan tidak boleh setelah tanggal laporan
+    const tanggalLaporan = document.getElementById('tanggal_laporan').value;
+    const tanggalKerusakan = document.getElementById('tanggal_kerusakan').value;
+    
+    if (tanggalLaporan && tanggalKerusakan) {
+        const tglLaporan = new Date(tanggalLaporan);
+        const tglKerusakan = new Date(tanggalKerusakan);
+        
+        if (tglKerusakan > tglLaporan) {
+            isValid = false;
+            document.getElementById('tanggal_kerusakan').classList.add('border-red-500');
+            errorMessages.push('Tanggal kerusakan tidak boleh setelah tanggal laporan');
+            
+            if (!firstInvalid) firstInvalid = document.getElementById('tanggal_kerusakan');
+        }
+    }
+    
+    // Validasi deskripsi minimal 10 karakter
+    const deskripsi = document.getElementById('deskripsi_kerusakan');
+    if (deskripsi.value.trim().length < 10) {
+        isValid = false;
+        deskripsi.classList.add('border-red-500');
+        errorMessages.push('Deskripsi kerusakan minimal 10 karakter');
+        
+        if (!firstInvalid) firstInvalid = deskripsi;
+    }
+    
+    // Validasi file gambar (ukuran maks 2MB)
+    const fotoInput = document.getElementById('foto_kerusakan');
+    if (fotoInput.files && fotoInput.files[0]) {
+        const fileSize = fotoInput.files[0].size;
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        
+        if (fileSize > maxSize) {
+            isValid = false;
+            fotoInput.classList.add('border-red-500');
+            errorMessages.push('Ukuran foto maksimal 2MB');
+            
+            if (!firstInvalid) firstInvalid = fotoInput;
+        }
+    }
+    
+    if (!isValid) {
+        let errorMessage = 'Mohon lengkapi data berikut:\n\n';
+        errorMessages.forEach(msg => {
+            errorMessage += `• ${msg}\n`;
+        });
+        alert(errorMessage);
+        
+        if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            firstInvalid.focus();
+        }
+        return;
+    }
+    
+    // Tampilkan konfirmasi
+    if (confirm('Apakah Anda yakin ingin menyimpan laporan kerusakan ini?')) {
+        form.submit();
+    }
+}
 </script>
 @endpush

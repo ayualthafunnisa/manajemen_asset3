@@ -199,7 +199,8 @@
                            class="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out">
                             Batal
                         </a>
-                        <button type="submit" 
+                        <button type="button" 
+                                onclick="confirmSubmit()"
                                 class="px-6 py-3 bg-purple-600 border border-transparent rounded-lg font-medium text-white hover:bg-purple-700 transition duration-150 ease-in-out">
                             <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"></path>
@@ -216,32 +217,195 @@
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    // Hanya izinkan angka pada nomor telepon
-    document.getElementById('phone').addEventListener('input', function () {
-        this.value = this.value.replace(/[^0-9]/g, '');
-    });
-
-    // Validasi password cocok sebelum submit
-    document.getElementById('userForm').addEventListener('submit', function (e) {
-        const pw  = document.getElementById('password').value;
-        const pwc = document.getElementById('password_confirmation').value;
-        if (pw !== pwc) {
-            e.preventDefault();
-            document.getElementById('password_confirmation').classList.add('border-red-500');
-            // Tampilkan pesan error sederhana
-            let errEl = document.getElementById('pw-error');
-            if (!errEl) {
-                errEl = document.createElement('p');
-                errEl.id = 'pw-error';
-                errEl.className = 'text-sm text-red-600 mt-1';
-                document.getElementById('password_confirmation').parentNode.appendChild(errEl);
+// Fungsi konfirmasi sebelum menyimpan
+function confirmSubmit() {
+    // Validasi form terlebih dahulu
+    const form = document.getElementById('userForm');
+    
+    // Reset error messages
+    const existingError = document.getElementById('pw-error');
+    if (existingError) existingError.remove();
+    
+    // Cek required fields
+    const requiredFields = form.querySelectorAll('[required]');
+    let isValid = true;
+    let firstInvalid = null;
+    let errorMessages = [];
+    
+    requiredFields.forEach(field => {
+        // Skip hidden input role untuk validasi visual
+        if (field.type === 'hidden') return;
+        
+        if (!field.value.trim()) {
+            isValid = false;
+            field.classList.add('border-red-500');
+            
+            // Dapatkan label untuk field yang tidak valid
+            const label = document.querySelector(`label[for="${field.id}"]`);
+            let fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
+            
+            // Handle khusus untuk password confirmation
+            if (field.id === 'password_confirmation') {
+                fieldName = 'Konfirmasi Password';
             }
-            errEl.textContent = 'Password tidak cocok.';
-            document.getElementById('password_confirmation').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            
+            errorMessages.push(`${fieldName} wajib diisi`);
+            
+            if (!firstInvalid) {
+                firstInvalid = field;
+            }
+        } else {
+            field.classList.remove('border-red-500');
         }
     });
+    
+    // Validasi khusus untuk role (hidden input)
+    const roleInput = document.getElementById('role_input');
+    if (!roleInput.value.trim()) {
+        isValid = false;
+        errorMessages.push('Role Pengguna wajib dipilih');
+        
+        // Tandai card yang belum dipilih
+        const cards = document.querySelectorAll('.role-card');
+        cards.forEach(card => {
+            card.classList.add('border-red-500');
+            card.classList.remove('border-gray-200', 'border-purple-600', 'border-green-600');
+        });
+        
+        if (!firstInvalid) {
+            firstInvalid = document.getElementById('rolePetugasCard');
+        }
+    } else {
+        // Reset border cards jika sudah dipilih
+        const cards = document.querySelectorAll('.role-card');
+        cards.forEach(card => {
+            card.classList.remove('border-red-500');
+        });
+    }
+    
+    // Validasi password cocok
+    const password = document.getElementById('password').value;
+    const passwordConfirmation = document.getElementById('password_confirmation').value;
+    
+    if (password !== passwordConfirmation) {
+        isValid = false;
+        document.getElementById('password_confirmation').classList.add('border-red-500');
+        errorMessages.push('Password tidak cocok');
+        
+        if (!firstInvalid) {
+            firstInvalid = document.getElementById('password_confirmation');
+        }
+    } else {
+        document.getElementById('password_confirmation').classList.remove('border-red-500');
+    }
+    
+    // Validasi minimal panjang password
+    if (password.length > 0 && password.length < 6) {
+        isValid = false;
+        document.getElementById('password').classList.add('border-red-500');
+        errorMessages.push('Password minimal 6 karakter');
+        
+        if (!firstInvalid) {
+            firstInvalid = document.getElementById('password');
+        }
+    }
+    
+    // Validasi email format
+    const email = document.getElementById('email').value;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (email && !emailRegex.test(email)) {
+        isValid = false;
+        document.getElementById('email').classList.add('border-red-500');
+        errorMessages.push('Format email tidak valid');
+        
+        if (!firstInvalid) {
+            firstInvalid = document.getElementById('email');
+        }
+    }
+    
+    if (!isValid) {
+        // Tampilkan pesan error gabungan
+        let errorMessage = 'Mohon lengkapi data berikut:\n\n';
+        errorMessages.forEach(msg => {
+            errorMessage += `• ${msg}\n`;
+        });
+        alert(errorMessage);
+        
+        // Scroll ke field yang tidak valid pertama
+        if (firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (firstInvalid.tagName === 'DIV') {
+                // Untuk card role
+                firstInvalid.focus();
+            } else {
+                firstInvalid.focus();
+            }
+        }
+        return;
+    }
+    
+    // Tampilkan konfirmasi
+    if (confirm('Apakah Anda yakin ingin menyimpan data user ini?')) {
+        form.submit();
+    }
+}
+
+// Validasi real-time untuk menghapus border merah
+document.addEventListener('DOMContentLoaded', function () {
+    // Hanya izinkan angka pada nomor telepon
+    const phoneInput = document.getElementById('phone');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function () {
+            this.value = this.value.replace(/[^0-9]/g, '');
+        });
+    }
+    
+    // Real-time validation untuk required fields
+    const requiredInputs = document.querySelectorAll('[required]');
+    requiredInputs.forEach(input => {
+        if (input.type !== 'hidden') {
+            input.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('border-red-500');
+                }
+            });
+            input.addEventListener('change', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('border-red-500');
+                }
+            });
+        }
+    });
+    
+    // Validasi real-time untuk password match
+    const password = document.getElementById('password');
+    const passwordConfirmation = document.getElementById('password_confirmation');
+    
+    if (password && passwordConfirmation) {
+        passwordConfirmation.addEventListener('input', function() {
+            if (password.value === this.value && this.value.length > 0) {
+                this.classList.remove('border-red-500');
+                const errEl = document.getElementById('pw-error');
+                if (errEl) errEl.remove();
+            }
+        });
+        
+        password.addEventListener('input', function() {
+            if (passwordConfirmation.value === this.value && this.value.length > 0) {
+                passwordConfirmation.classList.remove('border-red-500');
+                const errEl = document.getElementById('pw-error');
+                if (errEl) errEl.remove();
+            }
+        });
+    }
+    
+    // Jalankan fungsi selectRole jika ada nilai 'old' (saat validasi error)
+    const oldRole = "{{ old('role') }}";
+    if (oldRole) {
+        selectRole(oldRole);
+    }
 });
+
 function selectRole(role) {
     // 1. Set value ke hidden input
     document.getElementById('role_input').value = role;
@@ -249,7 +413,7 @@ function selectRole(role) {
     // 2. Reset semua style card ke default
     const cards = document.querySelectorAll('.role-card');
     cards.forEach(card => {
-        card.classList.remove('border-purple-600', 'bg-purple-50', 'ring-2', 'ring-purple-500', 'border-green-600', 'bg-green-50', 'ring-green-500');
+        card.classList.remove('border-purple-600', 'bg-purple-50', 'ring-2', 'ring-purple-500', 'border-green-600', 'bg-green-50', 'ring-green-500', 'border-red-500');
         card.classList.add('border-gray-200', 'bg-white');
     });
 
@@ -264,18 +428,5 @@ function selectRole(role) {
         selectedCard.classList.add('border-green-600', 'bg-green-50', 'ring-2', 'ring-green-500');
     }
 }
-
-document.addEventListener('DOMContentLoaded', function () {
-    // Jalankan fungsi selectRole jika ada nilai 'old' (saat validasi error)
-    const oldRole = "{{ old('role') }}";
-    if (oldRole) {
-        selectRole(oldRole);
-    }
-
-    // Script validasi nomor telepon yang sudah Anda miliki tetap di sini...
-    document.getElementById('phone').addEventListener('input', function () {
-        this.value = this.value.replace(/[^0-9]/g, '');
-    });
-});
 </script>
 @endpush
