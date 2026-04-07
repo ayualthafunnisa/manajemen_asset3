@@ -9,21 +9,23 @@ class License extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
+   protected $fillable = [
         'user_id',
         'license_key',
+        'kode_lisensi',
         'start_date',
         'expired_date',
         'is_active',
-        'notes',
+        'payment_status',
+        'snap_token',
+        'amount',
     ];
 
     protected $casts = [
-        'start_date'   => 'date',
+        'start_date' => 'date',
         'expired_date' => 'date',
-        'is_active'    => 'boolean',
+        'is_active' => 'boolean',
     ];
-
     // ─── Relasi ────────────────────────────────────────────────
     public function user()
     {

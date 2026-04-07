@@ -1,1070 +1,466 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="id">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    
-    <title>@yield('title', 'Register - Asset Management')</title>
-    
-    <!-- Fonts -->
+    <title>Daftar — Asset Management</title>
+
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700&display=swap" rel="stylesheet" />
-    
-    <!-- Tailwind CSS -->
+    <link href="https://fonts.bunny.net/css?family=plus-jakarta-sans:400,500,600,700,800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
-    
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
+
+    {{-- Midtrans Snap JS --}}
+    @if(config('services.midtrans.is_production'))
+    <script src="https://app.midtrans.com/snap/snap.js"
+            data-client-key="{{ config('services.midtrans.client_key') }}"></script>
+    @else
+    <script src="https://app.sandbox.midtrans.com/snap/snap.js"
+            data-client-key="{{ config('services.midtrans.client_key') }}"></script>
+    @endif
+
     <style>
-        * {
-            font-family: 'Inter', sans-serif;
-        }
-        
-        .animate-fade-in {
-            animation: fadeIn 0.5s ease-in-out;
-        }
-        
-        .animate-fade-in-up {
-            animation: fadeInUp 0.6s ease-out;
-        }
-        
-        .animate-slide {
-            animation: slideIn 0.4s ease-out;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateX(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
+        * { font-family: 'Plus Jakarta Sans', sans-serif; box-sizing: border-box; }
+
+        body {
+            background: #f0f4ff;
+            background-image:
+                radial-gradient(ellipse 80% 60% at 20% -10%, rgba(99,102,241,.12) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 80% 110%, rgba(59,130,246,.10) 0%, transparent 60%);
+            min-height: 100vh;
         }
 
-        .form-input-error {
-            border-color: #ef4444;
-        }
-        
-        .error-message {
-            color: #ef4444;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
+        .card {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,.04), 0 20px 40px -8px rgba(99,102,241,.10);
         }
 
-        .role-card {
-            transition: all 0.3s ease;
+        .inp {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #111827;
+            transition: border-color .15s, box-shadow .15s;
+            outline: none;
+            background: #fff;
         }
-        
-        .role-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.5);
+        .inp:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.10); }
+        .inp.err   { border-color: #ef4444; }
+
+        .lbl   { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+        .hint  { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+        .err-msg { font-size: 12px; color: #ef4444; margin-top: 4px; }
+
+        .pass-wrap { position: relative; }
+        .pass-wrap .inp { padding-right: 42px; }
+        .pass-eye {
+            position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+            background: none; border: none; cursor: pointer; padding: 0; color: #9ca3af;
         }
-        
-        .role-card.selected {
-            border: 2px solid #3b82f6;
-            background: linear-gradient(to bottom right, #eff6ff, #ffffff);
+        .pass-eye:hover { color: #6366f1; }
+
+        .strength-wrap { height: 4px; border-radius: 4px; background: #f1f5f9; margin-top: 8px; overflow: hidden; }
+        .strength-fill { height: 100%; width: 0; border-radius: 4px; transition: width .3s, background .3s; }
+
+        .btn-primary {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 13px;
+            background: #6366f1; color: #fff;
+            border: none; border-radius: 10px;
+            font-size: 14px; font-weight: 700; cursor: pointer;
+            transition: background .15s, transform .1s, box-shadow .15s;
         }
+        .btn-primary:hover    { background: #4f46e5; box-shadow: 0 4px 14px rgba(99,102,241,.30); }
+        .btn-primary:active   { transform: scale(.98); }
+        .btn-primary:disabled { background: #c7d2fe; cursor: not-allowed; transform: none; box-shadow: none; }
+
+        .alert-err {
+            background: #fef2f2; border-left: 3px solid #ef4444;
+            border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #b91c1c;
+        }
+        .alert-ok {
+            background: #f0fdf4; border-left: 3px solid #22c55e;
+            border-radius: 10px; padding: 12px 16px; font-size: 13px; color: #15803d;
+        }
+
+        .section-head {
+            font-size: 11px; font-weight: 700; letter-spacing: .08em;
+            text-transform: uppercase; color: #9ca3af;
+            padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; margin-bottom: 16px;
+        }
+
+        .pay-info {
+            background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 14px 16px;
+        }
+
+        .fade-up { animation: fadeUp .3s ease; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin .8s linear infinite; display:inline-block; }
         
-        .step-indicator {
-            transition: all 0.3s ease;
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        .loading-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
         }
     </style>
 </head>
-<body class="antialiased">
-    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 to-indigo-50">
-        <div class="max-w-3xl w-full">
-            <!-- Logo -->
-            <div class="text-center mb-8">
-                <div class="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 shadow-lg mb-4 animate-fade-in">
-                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                              d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                    </svg>
-                </div>
-                <h2 class="text-3xl font-bold text-gray-900">
-                    Daftar<span class="text-blue-600">.</span>
-                </h2>
-                <p class="mt-2 text-sm text-gray-600" id="headerDescription">Pilih role untuk memulai pendaftaran</p>
+<body class="flex items-center justify-center min-h-screen py-10 px-4">
+<div class="w-full max-w-md fade-up">
+
+    {{-- Logo --}}
+    <div class="text-center mb-8">
+        <div class="inline-flex items-center gap-2 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-500 flex items-center justify-center">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
             </div>
-
-            <!-- Card -->
-            <div class="bg-white rounded-2xl shadow-xl overflow-hidden animate-fade-in-up">
-                <div class="p-8">
-                    <!-- Progress Steps - Dynamic based on role -->
-                    <div class="mb-8" id="progressSteps" style="display: none;">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center w-full">
-                                <!-- Step 1 (always visible) -->
-                                <div class="flex items-center relative">
-                                    <div class="rounded-full transition duration-500 ease-in-out h-12 w-12 py-3 border-2" id="step1Circle">
-                                        <div class="flex items-center justify-center font-bold" id="step1Text">1</div>
-                                    </div>
-                                    <div class="absolute top-0 -ml-10 text-center mt-16 w-32 text-xs font-medium uppercase" id="step1Label">Pilih Role</div>
-                                </div>
-                                
-                                <!-- Line 1-2 -->
-                                <div class="flex-auto border-t-2 transition duration-500 ease-in-out" id="step1Line"></div>
-                                
-                                <!-- Step 2 (changes based on role) -->
-                                <div class="flex items-center relative">
-                                    <div class="rounded-full transition duration-500 ease-in-out h-12 w-12 py-3 border-2" id="step2Circle">
-                                        <div class="flex items-center justify-center font-bold" id="step2Text">2</div>
-                                    </div>
-                                    <div class="absolute top-0 -ml-10 text-center mt-16 w-32 text-xs font-medium uppercase" id="step2Label">Data Sekolah</div>
-                                </div>
-                                
-                                <!-- Line 2-3 (only for admin) -->
-                                <div class="flex-auto border-t-2 transition duration-500 ease-in-out" id="step2Line" style="display: none;"></div>
-                                
-                                <!-- Step 3 (only for admin) -->
-                                <div class="flex items-center relative" id="step3Container" style="display: none;">
-                                    <div class="rounded-full transition duration-500 ease-in-out h-12 w-12 py-3 border-2" id="step3Circle">
-                                        <div class="flex items-center justify-center font-bold" id="step3Text">3</div>
-                                    </div>
-                                    <div class="absolute top-0 -ml-10 text-center mt-16 w-32 text-xs font-medium uppercase" id="step3Label">Data Admin</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Error Messages -->
-                    @if($errors->any())
-                        <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <h3 class="text-sm font-medium text-red-800">Registrasi gagal:</h3>
-                                    <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
-                                        @foreach($errors->all() as $error)
-                                            <li>{{ $error }}</li>
-                                        @endforeach
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-                    <!-- Success Message -->
-                    @if(session('success'))
-                        <div class="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-lg">
-                            <div class="flex">
-                                <div class="flex-shrink-0">
-                                    <svg class="h-5 w-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                </div>
-                                <div class="ml-3">
-                                    <p class="text-sm text-green-700">{{ session('success') }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-                    <!-- Register Form -->
-                    <form method="POST" action="{{ route('register') }}" enctype="multipart/form-data" id="registerForm">
-                        @csrf
-
-                        <!-- Step 1: Role Selection -->
-                        <div id="step1" class="step-content animate-slide">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-6">Pilih Role Anda</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                                <!-- Admin Sekolah Card -->
-                                <div id="roleAdminCard" 
-                                     onclick="selectRole('admin_sekolah')" 
-                                     class="role-card cursor-pointer p-6 border-2 rounded-xl text-center transition-all duration-300 border-gray-200 hover:border-blue-300">
-                                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
-                                        </svg>
-                                    </div>
-                                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Admin Sekolah</h4>
-                                    <p class="text-sm text-gray-600">Daftarkan sekolah Anda dan kelola aset sekolah</p>
-                                </div>
-
-                                <!-- Teknisi Card -->
-                                <div id="roleTeknisiCard" 
-                                     onclick="selectRole('teknisi')" 
-                                     class="role-card cursor-pointer p-6 border-2 rounded-xl text-center transition-all duration-300 border-gray-200 hover:border-blue-300">
-                                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r from-green-600 to-teal-600 flex items-center justify-center">
-                                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-                                        </svg>
-                                    </div>
-                                    <h4 class="text-lg font-semibold text-gray-900 mb-2">Teknisi</h4>
-                                    <p class="text-sm text-gray-600">Daftar sebagai teknisi untuk penanganan aset</p>
-                                </div>
-                            </div>
-                            <input type="hidden" name="role" id="role" value="">
-                            
-                            <div class="flex justify-end">
-                                <button type="button" 
-                                        onclick="nextStep()" 
-                                        id="nextToStep2"
-                                        class="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                                        disabled>
-                                    Selanjutnya
-                                    <svg class="w-5 h-5 inline-block ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Step 2: School Data (only for admin_sekolah) -->
-                        <div id="step2" class="step-content animate-slide" style="display: none;">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">Data Sekolah</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <!-- Nama Sekolah -->
-                                <div class="md:col-span-2">
-                                    <label for="nama_instansi" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Nama Sekolah <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           name="nama_instansi" 
-                                           id="nama_instansi" 
-                                           value="{{ old('nama_instansi') }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('nama_instansi') border-red-500 @enderror"
-                                           placeholder="Masukkan nama sekolah">
-                                    @error('nama_instansi')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- NPSN -->
-                                <div>
-                                    <label for="npsn" class="block text-sm font-medium text-gray-700 mb-2">
-                                        NPSN <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           name="npsn" 
-                                           id="npsn" 
-                                           value="{{ old('npsn') }}"
-                                           maxlength="8"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('npsn') border-red-500 @enderror"
-                                           placeholder="Masukkan NPSN (8 digit)">
-                                    @error('npsn')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Jenjang Sekolah -->
-                                <div>
-                                    <label for="jenjang_sekolah" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Jenjang Sekolah <span class="text-red-500">*</span>
-                                    </label>
-                                    <select name="jenjang_sekolah" 
-                                            id="jenjang_sekolah" 
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('jenjang_sekolah') border-red-500 @enderror">
-                                        <option value="">Pilih Jenjang</option>
-                                        <option value="SD" {{ old('jenjang_sekolah') == 'SD' ? 'selected' : '' }}>SD</option>
-                                        <option value="SMP" {{ old('jenjang_sekolah') == 'SMP' ? 'selected' : '' }}>SMP</option>
-                                        <option value="SMA" {{ old('jenjang_sekolah') == 'SMA' ? 'selected' : '' }}>SMA</option>
-                                        <option value="SMK" {{ old('jenjang_sekolah') == 'SMK' ? 'selected' : '' }}>SMK</option>
-                                    </select>
-                                    @error('jenjang_sekolah')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Email Sekolah -->
-                                <div>
-                                    <label for="email_instansi" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Email Sekolah <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="email" 
-                                           name="email_instansi" 
-                                           id="email_instansi" 
-                                           value="{{ old('email_instansi') }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('email_instansi') border-red-500 @enderror"
-                                           placeholder="sekolah@email.com">
-                                    @error('email_instansi')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Provinsi -->
-                                <div>
-                                    <label for="provinsi" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Provinsi <span class="text-red-500">*</span>
-                                    </label>
-                                    <select name="provinsi_code" 
-                                            id="provinsi" 
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('provinsi_code') border-red-500 @enderror">
-                                        <option value="">Pilih Provinsi</option>
-                                        @foreach($provinsis as $prov)
-                                            <option value="{{ $prov['code'] }}" {{ old('provinsi_code') == $prov['code'] ? 'selected' : '' }}>
-                                                {{ $prov['name'] }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    @error('provinsi_code')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Kota/Kabupaten -->
-                                <div>
-                                    <label for="kota" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Kota/Kabupaten <span class="text-red-500">*</span>
-                                    </label>
-                                    <select name="kota_code" 
-                                            id="kota" 
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('kota_code') border-red-500 @enderror">
-                                        <option value="">Pilih Kota</option>
-                                    </select>
-                                    @error('kota_code')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Kecamatan -->
-                                <div>
-                                    <label for="kecamatan" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Kecamatan <span class="text-red-500">*</span>
-                                    </label>
-                                    <select name="kecamatan_code" 
-                                            id="kecamatan" 
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('kecamatan_code') border-red-500 @enderror">
-                                        <option value="">Pilih Kecamatan</option>
-                                    </select>
-                                    @error('kecamatan_code')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Kelurahan -->
-                                <div>
-                                    <label for="kelurahan" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Kelurahan <span class="text-red-500">*</span>
-                                    </label>
-                                    <select name="kelurahan_code" 
-                                            id="kelurahan" 
-                                            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 @error('kelurahan_code') border-red-500 @enderror">
-                                        <option value="">Pilih Kelurahan</option>
-                                    </select>
-                                    @error('kelurahan_code')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Kode Pos -->
-                                <div>
-                                    <label for="kode_pos" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Kode Pos <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           name="kode_pos" 
-                                           id="kode_pos" 
-                                           value="{{ old('kode_pos') }}"
-                                           maxlength="5"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('kode_pos') border-red-500 @enderror"
-                                           placeholder="Masukkan kode pos">
-                                    @error('kode_pos')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Alamat Lengkap -->
-                                <div class="md:col-span-2">
-                                    <label for="alamat" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Alamat Lengkap <span class="text-red-500">*</span>
-                                    </label>
-                                    <textarea name="alamat" 
-                                              id="alamat" 
-                                              rows="3"
-                                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('alamat') border-red-500 @enderror"
-                                              placeholder="Masukkan alamat lengkap jalan, nomor, RT/RW">{{ old('alamat') }}</textarea>
-                                    @error('alamat')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Nama Kepala Sekolah -->
-                                <div>
-                                    <label for="nama_kepsek" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Nama Kepala Sekolah <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           name="nama_kepsek" 
-                                           id="nama_kepsek" 
-                                           value="{{ old('nama_kepsek') }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('nama_kepsek') border-red-500 @enderror"
-                                           placeholder="Masukkan nama kepala sekolah">
-                                    @error('nama_kepsek')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- NIP Kepala Sekolah -->
-                                <div>
-                                    <label for="nip_kepsek" class="block text-sm font-medium text-gray-700 mb-2">
-                                        NIP Kepala Sekolah <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           name="nip_kepsek" 
-                                           id="nip_kepsek" 
-                                           value="{{ old('nip_kepsek') }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('nip_kepsek') border-red-500 @enderror"
-                                           placeholder="Masukkan NIP kepala sekolah">
-                                    @error('nip_kepsek')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Tanggal Berdiri -->
-                                <div>
-                                    <label for="tanggal_berdiri" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Tanggal Berdiri <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="date" 
-                                           name="tanggal_berdiri" 
-                                           id="tanggal_berdiri" 
-                                           value="{{ old('tanggal_berdiri') }}"
-                                           max="{{ date('Y-m-d') }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('tanggal_berdiri') border-red-500 @enderror">
-                                    @error('tanggal_berdiri')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Logo Sekolah -->
-                                <div>
-                                    <label for="logo" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Logo Sekolah <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="flex items-center space-x-4">
-                                        <div class="relative">
-                                            <input type="file" 
-                                                   name="logo" 
-                                                   id="logo" 
-                                                   accept="image/jpeg,image/png,image/jpg"
-                                                   class="hidden"
-                                                   onchange="previewLogo(event)">
-                                            <label for="logo" 
-                                                   class="cursor-pointer flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition duration-150">
-                                                <svg class="w-8 h-8 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                                </svg>
-                                                <span class="text-sm text-gray-500">Upload Logo</span>
-                                            </label>
-                                        </div>
-                                        <div id="logoPreview" class="hidden">
-                                            <img id="previewImage" class="w-32 h-32 rounded-lg object-cover border border-gray-200">
-                                        </div>
-                                    </div>
-                                    <p class="text-sm text-gray-500 mt-1">Format: JPG, PNG (maks. 2MB)</p>
-                                    @error('logo')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-                            </div>
-
-                            <div class="flex justify-between mt-6">
-                                <button type="button" 
-                                        onclick="prevStep()" 
-                                        class="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all">
-                                    <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                                    </svg>
-                                    Kembali
-                                </button>
-                                <button type="button" 
-                                        onclick="nextStep()" 
-                                        class="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all">
-                                    Selanjutnya
-                                    <svg class="w-5 h-5 inline-block ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- Step 3: Teknisi Data / Admin Data (based on role) -->
-                        <div id="step3" class="step-content animate-slide" style="display: none;">
-                            <!-- Title will be dynamically updated -->
-                            <h3 id="userDataTitle" class="text-lg font-semibold text-gray-900 mb-4 pb-2 border-b border-gray-200">Data Teknisi</h3>
-                            
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <!-- Nama Lengkap -->
-                                <div class="md:col-span-2">
-                                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Nama Lengkap <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="text" 
-                                           name="name" 
-                                           id="name" 
-                                           value="{{ old('name') }}"
-                                           required 
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('name') border-red-500 @enderror"
-                                           placeholder="Masukkan nama lengkap">
-                                    @error('name')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Email -->
-                                <div>
-                                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Email <span class="text-red-500">*</span>
-                                    </label>
-                                    <input type="email" 
-                                           name="email" 
-                                           id="email" 
-                                           value="{{ old('email') }}"
-                                           required 
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('email') border-red-500 @enderror"
-                                           placeholder="email@example.com">
-                                    @error('email')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- No. Telepon -->
-                                <div>
-                                    <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
-                                        No. Telepon
-                                    </label>
-                                    <input type="text" 
-                                           name="phone" 
-                                           id="phone" 
-                                           value="{{ old('phone') }}"
-                                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('phone') border-red-500 @enderror"
-                                           placeholder="08123456789">
-                                    @error('phone')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Password -->
-                                <div>
-                                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Password <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="relative">
-                                        <input type="password" 
-                                               name="password" 
-                                               id="password" 
-                                               required 
-                                               minlength="8"
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors @error('password') border-red-500 @enderror"
-                                               placeholder="Minimal 8 karakter">
-                                        <button type="button" 
-                                                onclick="togglePassword('password')" 
-                                                class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                            <svg class="h-5 w-5 text-gray-400 hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                    <!-- Password strength indicator -->
-                                    <div id="password-strength" class="mt-2 h-1 rounded-full bg-gray-200 overflow-hidden hidden">
-                                        <div class="h-full transition-all duration-300"></div>
-                                    </div>
-                                    <p class="mt-1 text-xs text-gray-500">Gunakan minimal 8 karakter dengan kombinasi huruf besar, huruf kecil, dan angka</p>
-                                    @error('password')
-                                        <p class="error-message">{{ $message }}</p>
-                                    @enderror
-                                </div>
-
-                                <!-- Confirm Password -->
-                                <div>
-                                    <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
-                                        Konfirmasi Password <span class="text-red-500">*</span>
-                                    </label>
-                                    <div class="relative">
-                                        <input type="password" 
-                                               name="password_confirmation" 
-                                               id="password_confirmation" 
-                                               required 
-                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                                               placeholder="Ulangi password">
-                                        <button type="button" 
-                                                onclick="togglePassword('password_confirmation')" 
-                                                class="absolute inset-y-0 right-0 pr-3 flex items-center">
-                                            <svg class="h-5 w-5 text-gray-400 hover:text-blue-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Terms and Conditions -->
-                            <div class="flex items-start mt-6 pt-4 border-t border-gray-200">
-                                <div class="flex items-center h-5">
-                                    <input type="checkbox" 
-                                           name="terms" 
-                                           id="terms" 
-                                           required
-                                           class="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                                </div>
-                                <div class="ml-3 text-sm">
-                                    <label for="terms" class="text-gray-700">
-                                        Saya menyetujui 
-                                        <a href="#" class="text-blue-600 hover:text-blue-500">Syarat dan Ketentuan</a> 
-                                        serta 
-                                        <a href="#" class="text-blue-600 hover:text-blue-500">Kebijakan Privasi</a>
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="flex justify-between mt-6">
-                                <button type="button" 
-                                        onclick="prevStep()" 
-                                        class="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all">
-                                    <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                                    </svg>
-                                    Kembali
-                                </button>
-                                <button type="submit" 
-                                        id="submitBtn"
-                                        class="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                    <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                    </svg>
-                                    <span id="submitText">Daftar</span>
-                                </button>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
-
-            <!-- Login Link -->
-            <div class="text-center mt-6">
-                <p class="text-sm text-gray-600">
-                    Sudah punya akun? 
-                    <a href="{{ route('login') }}" class="font-medium text-blue-600 hover:text-blue-500 transition-colors">
-                        Masuk sekarang
-                    </a>
-                </p>
-            </div>
-
-            <!-- Footer -->
-            <p class="text-center text-xs text-gray-500 mt-8">
-                &copy; {{ date('Y') }} Asset Management. All rights reserved.
-            </p>
+            <span class="text-xl text-gray-900" style="font-weight:800">Asset<span class="text-indigo-500">.</span></span>
         </div>
+        <p class="text-sm text-gray-500">Daftar sebagai Admin Sekolah</p>
     </div>
 
-    <script>
-    let currentStep = 1;
-    let selectedRole = '';
-    let totalSteps = 2; // Default untuk teknisi
+    <div class="card p-8">
 
-    // Preview logo function
-    function previewLogo(event) {
-        const input = event.target;
-        const preview = document.getElementById('logoPreview');
-        const previewImage = document.getElementById('previewImage');
-        
-        if (input.files && input.files[0]) {
-            const file = input.files[0];
-            
-            // Validasi ukuran file
-            if (file.size > 2 * 1024 * 1024) {
-                alert('Ukuran file maksimal 2MB');
-                input.value = '';
-                return;
-            }
-            
-            // Validasi tipe file
-            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-            if (!allowedTypes.includes(file.type)) {
-                alert('Format file harus JPG atau PNG');
-                input.value = '';
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                preview.classList.remove('hidden');
-                previewImage.src = e.target.result;
-            }
-            reader.readAsDataURL(file);
-        }
+        {{-- Alerts --}}
+        @if($errors->any())
+        <div class="alert-err mb-6">
+            <p style="font-weight:700">Registrasi gagal:</p>
+            <ul class="list-disc list-inside mt-1 space-y-0.5">
+                @foreach($errors->all() as $err)<li>{{ $err }}</li>@endforeach
+            </ul>
+        </div>
+        @endif
+
+        @if(session('success'))
+        <div class="alert-ok mb-6">{{ session('success') }}</div>
+        @endif
+
+        @if(session('info'))
+        <div class="alert-ok mb-6">{{ session('info') }}</div>
+        @endif
+
+        {{-- ── Data Akun ──────────────────────────────── --}}
+        <p class="section-head">Informasi Akun</p>
+
+        <div class="space-y-4 mb-6">
+
+            <div>
+                <label class="lbl">Nama Lengkap <span class="text-red-500">*</span></label>
+                <input type="text" id="f_name"
+                       class="inp @error('name') err @enderror"
+                       placeholder="Nama lengkap Anda"
+                       value="{{ old('name') }}">
+                @error('name')<p class="err-msg">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
+                <label class="lbl">Email <span class="text-red-500">*</span></label>
+                <input type="email" id="f_email"
+                       class="inp @error('email') err @enderror"
+                       placeholder="nama@email.com"
+                       value="{{ old('email') }}">
+                @error('email')<p class="err-msg">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
+                <label class="lbl">
+                    No. HP
+                    <span class="text-gray-400 font-normal text-xs ml-1">(opsional)</span>
+                </label>
+                <input type="text" id="f_phone"
+                       class="inp @error('phone') err @enderror"
+                       placeholder="08xxxxxxxxxx"
+                       value="{{ old('phone') }}">
+                @error('phone')<p class="err-msg">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
+                <label class="lbl">Password <span class="text-red-500">*</span></label>
+                <div class="pass-wrap">
+                    <input type="password" id="f_password"
+                           class="inp @error('password') err @enderror"
+                           placeholder="Minimal 8 karakter">
+                    <button type="button" class="pass-eye" onclick="togglePw('f_password','eyePw1')">
+                        <svg id="eyePw1" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="strength-wrap"><div class="strength-fill" id="strFill"></div></div>
+                <p class="hint">Gabungkan huruf besar, kecil, angka, dan simbol</p>
+                @error('password')<p class="err-msg">{{ $message }}</p>@enderror
+            </div>
+
+            <div>
+                <label class="lbl">Konfirmasi Password <span class="text-red-500">*</span></label>
+                <div class="pass-wrap">
+                    <input type="password" id="f_pwconf"
+                           class="inp"
+                           placeholder="Ulangi password">
+                    <button type="button" class="pass-eye" onclick="togglePw('f_pwconf','eyePw2')">
+                        <svg id="eyePw2" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div id="pwMatchMsg"></div>
+            </div>
+        </div>
+
+        {{-- ── Syarat ──────────────────────────────────── --}}
+        <label class="flex items-start gap-3 cursor-pointer mb-6">
+            <input type="checkbox" id="f_terms"
+                   class="mt-0.5 w-4 h-4 rounded text-indigo-500 border-gray-300 focus:ring-indigo-500">
+            <span class="text-sm text-gray-600">
+                Saya menyetujui
+                <a href="#" class="text-indigo-500 hover:underline" style="font-weight:600">Syarat &amp; Ketentuan</a>
+                serta
+                <a href="#" class="text-indigo-500 hover:underline" style="font-weight:600">Kebijakan Privasi</a>
+            </span>
+        </label>
+
+        {{-- ── Info pembayaran ─────────────────────────── --}}
+        <div class="pay-info mb-6">
+            <div class="flex items-center gap-2 mb-1.5"
+                 style="font-size:13px;font-weight:700;color:#1d4ed8">
+                <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                </svg>
+                Lisensi Rp&nbsp;500.000&nbsp;/&nbsp;tahun
+            </div>
+            <p style="font-size:12px;color:#1e40af;line-height:1.6">
+                Popup pembayaran akan muncul setelah klik tombol di bawah.
+                Lisensi aktif otomatis setelah pembayaran berhasil.
+                Data sekolah bisa dilengkapi di halaman profil.
+            </p>
+        </div>
+
+        {{-- Submit --}}
+        <button type="button" onclick="handleSubmit()" id="btnSubmit" class="btn-primary">
+            <svg id="btnIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+            </svg>
+            <span id="btnLabel">Daftar &amp; Bayar</span>
+        </button>
+
+        {{-- Hidden form untuk final submit setelah Midtrans sukses --}}
+        <form method="POST" action="{{ route('register.final') }}" id="finalForm" style="display:none">
+            @csrf
+            <input type="hidden" name="role" value="admin_sekolah">
+            <input type="hidden" name="name" id="hName">
+            <input type="hidden" name="email" id="hEmail">
+            <input type="hidden" name="phone" id="hPhone">
+            <input type="hidden" name="password" id="hPw">
+            <input type="hidden" name="password_confirmation" id="hPwC">
+            <input type="hidden" name="order_id" id="hOrderId">
+            <input type="hidden" name="transaction_status" id="hTxStatus">
+        </form>
+
+    </div>
+
+    <p class="text-center text-sm text-gray-500 mt-6">
+        Sudah punya akun?
+        <a href="{{ route('login') }}" class="text-indigo-500 hover:underline" style="font-weight:600">Masuk sekarang</a>
+    </p>
+    <p class="text-center text-xs text-gray-400 mt-4">&copy; {{ date('Y') }} Asset Management</p>
+</div>
+
+<script>
+const EYE_OPEN  = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>';
+const EYE_SLASH = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>';
+
+function togglePw(inputId, iconId) {
+    const el   = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    const show = el.type === 'password';
+    el.type         = show ? 'text' : 'password';
+    icon.innerHTML  = show ? EYE_SLASH : EYE_OPEN;
+}
+
+/* Strength bar */
+document.getElementById('f_password').addEventListener('input', function () {
+    const v = this.value;
+    let s = 0;
+    if (v.length >= 8)           s++;
+    if (/[a-z]/.test(v))         s++;
+    if (/[A-Z]/.test(v))         s++;
+    if (/[0-9]/.test(v))         s++;
+    if (/[^a-zA-Z0-9]/.test(v))  s++;
+    const f = document.getElementById('strFill');
+    f.style.width      = [0,20,40,60,80,100][s] + '%';
+    f.style.background = ['','#ef4444','#f59e0b','#eab308','#3b82f6','#22c55e'][s];
+});
+
+/* Match indicator */
+document.getElementById('f_pwconf').addEventListener('input', function () {
+    const pw = document.getElementById('f_password').value;
+    const matchMsg = document.getElementById('pwMatchMsg');
+    if (!this.value) {
+        matchMsg.innerHTML = '';
+    } else if (this.value === pw) {
+        matchMsg.innerHTML = '<p style="font-size:12px;color:#16a34a;margin-top:4px">✓ Password cocok</p>';
+    } else {
+        matchMsg.innerHTML = '<p style="font-size:12px;color:#ef4444;margin-top:4px">✗ Password tidak cocok</p>';
+    }
+});
+
+/* ── Submit ──────────────────────────────────────────── */
+function handleSubmit() {
+    const name  = document.getElementById('f_name').value.trim();
+    const email = document.getElementById('f_email').value.trim();
+    const phone = document.getElementById('f_phone').value.trim();
+    const pw    = document.getElementById('f_password').value;
+    const pwc   = document.getElementById('f_pwconf').value;
+
+    // Validasi
+    if (!name) {
+        alert('Nama lengkap wajib diisi.');
+        document.getElementById('f_name').focus();
+        return;
+    }
+    if (!email) {
+        alert('Email wajib diisi.');
+        document.getElementById('f_email').focus();
+        return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        alert('Format email tidak valid.');
+        document.getElementById('f_email').focus();
+        return;
+    }
+    if (pw.length < 8) {
+        alert('Password minimal 8 karakter.');
+        document.getElementById('f_password').focus();
+        return;
+    }
+    if (pw !== pwc) {
+        alert('Konfirmasi password tidak cocok.');
+        document.getElementById('f_pwconf').focus();
+        return;
+    }
+    if (!document.getElementById('f_terms').checked) {
+        alert('Harap setujui syarat dan ketentuan.');
+        return;
     }
 
-    function togglePassword(fieldId) {
-        const field = document.getElementById(fieldId);
-        const type = field.getAttribute('type') === 'password' ? 'text' : 'password';
-        field.setAttribute('type', type);
-    }
+    setLoading(true);
 
-    // Password strength indicator
-    document.getElementById('password')?.addEventListener('input', function(e) {
-        const password = e.target.value;
-        const strength = checkPasswordStrength(password);
-        updatePasswordStrength(strength);
-    });
-
-    function checkPasswordStrength(password) {
-        let strength = 0;
-        if (password.length >= 8) strength++;
-        if (password.match(/[a-z]+/)) strength++;
-        if (password.match(/[A-Z]+/)) strength++;
-        if (password.match(/[0-9]+/)) strength++;
-        if (password.match(/[$@#&!]+/)) strength++;
-        return strength;
-    }
-
-    function updatePasswordStrength(strength) {
-        const strengthContainer = document.getElementById('password-strength');
-        const strengthBar = strengthContainer.querySelector('div');
-        
-        if (strength > 0) {
-            strengthContainer.classList.remove('hidden');
-            const colors = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-blue-500', 'bg-green-500'];
-            const widths = ['20%', '40%', '60%', '80%', '100%'];
-            
-            strengthBar.style.width = widths[strength - 1];
-            strengthBar.className = `h-full ${colors[strength - 1]} transition-all duration-300`;
-        } else {
-            strengthContainer.classList.add('hidden');
-            strengthBar.style.width = '0%';
-        }
-    }
-
-    // Select role function
-    function selectRole(role) {
-        selectedRole = role;
-        document.getElementById('role').value = role;
-        
-        // Update card styles
-        const adminCard = document.getElementById('roleAdminCard');
-        const teknisiCard = document.getElementById('roleTeknisiCard');
-        
-        if (role === 'admin_sekolah') {
-            adminCard.classList.add('selected', 'border-blue-500', 'bg-blue-50');
-            adminCard.classList.remove('border-gray-200');
-            teknisiCard.classList.remove('selected', 'border-blue-500', 'bg-blue-50');
-            teknisiCard.classList.add('border-gray-200');
-            totalSteps = 3; // Admin sekolah punya 3 steps
-        } else {
-            teknisiCard.classList.add('selected', 'border-blue-500', 'bg-blue-50');
-            teknisiCard.classList.remove('border-gray-200');
-            adminCard.classList.remove('selected', 'border-blue-500', 'bg-blue-50');
-            adminCard.classList.add('border-gray-200');
-            totalSteps = 2; // Teknisi punya 2 steps
-        }
-        
-        // Enable next button
-        document.getElementById('nextToStep2').disabled = false;
-    }
-
-    // Navigation functions
-    function nextStep() {
-        if (currentStep === 1) {
-            if (!selectedRole) {
-                alert('Silakan pilih role terlebih dahulu');
-                return;
-            }
-            
-            // Show progress steps
-            document.getElementById('progressSteps').style.display = 'block';
-            
-            if (selectedRole === 'admin_sekolah') {
-                // Admin sekolah: step 1 -> step 2 (school data)
-                showStep(2);
-                updateProgressSteps(2);
-                document.getElementById('headerDescription').textContent = 'Lengkapi data sekolah Anda';
-                document.getElementById('step2Label').textContent = 'Data Sekolah';
-                document.getElementById('step3Label').textContent = 'Data Admin';
-                
-                // Tampilkan step 3 container untuk admin
-                document.getElementById('step2Line').style.display = 'block';
-                document.getElementById('step3Container').style.display = 'flex';
-                
-                // Set title for step 3 (will be used later)
-                document.getElementById('userDataTitle').textContent = 'Data Admin Sekolah';
-                document.getElementById('submitText').textContent = 'Daftarkan Sekolah';
-            } else {
-                // Teknisi: step 1 -> step 3 (user data) - langsung ke step akhir
-                showStep(3);
-                updateProgressSteps(2); // Progress step ke 2 dari 2
-                document.getElementById('headerDescription').textContent = 'Lengkapi data diri teknisi';
-                document.getElementById('userDataTitle').textContent = 'Data Teknisi';
-                document.getElementById('submitText').textContent = 'Daftar sebagai Teknisi';
-                
-                // Sembunyikan step 3 container untuk teknisi
-                document.getElementById('step2Line').style.display = 'none';
-                document.getElementById('step3Container').style.display = 'none';
-            }
-        } 
-        else if (currentStep === 2) {
-            // Validate school data before proceeding
-            if (validateSchoolData()) {
-                showStep(3);
-                updateProgressSteps(3);
-                document.getElementById('headerDescription').textContent = 'Lengkapi data admin sekolah';
-            }
-        }
-    }
-
-    function prevStep() {
-        if (currentStep === 2) {
-            showStep(1);
-            document.getElementById('progressSteps').style.display = 'none';
-            document.getElementById('headerDescription').textContent = 'Pilih role untuk memulai pendaftaran';
-        } else if (currentStep === 3) {
-            if (selectedRole === 'admin_sekolah') {
-                showStep(2);
-                updateProgressSteps(2);
-                document.getElementById('headerDescription').textContent = 'Lengkapi data sekolah Anda';
-            } else {
-                showStep(1);
-                document.getElementById('progressSteps').style.display = 'none';
-                document.getElementById('headerDescription').textContent = 'Pilih role untuk memulai pendaftaran';
-            }
-        }
-    }
-
-    function showStep(step) {
-        // Hide all steps
-        document.querySelectorAll('.step-content').forEach(el => {
-            el.style.display = 'none';
-        });
-        
-        // Show current step
-        document.getElementById(`step${step}`).style.display = 'block';
-        currentStep = step;
-    }
-
-    function updateProgressSteps(step) {
-        // Reset all steps
-        const steps = selectedRole === 'admin_sekolah' ? [1, 2, 3] : [1, 2];
-        
-        // Reset step 1 & 2
-        document.getElementById('step1Circle').className = 'rounded-full transition duration-500 ease-in-out h-12 w-12 py-3 border-2 border-gray-300 bg-white';
-        document.getElementById('step1Text').className = 'flex items-center justify-center text-gray-500 font-bold';
-        document.getElementById('step1Label').className = 'absolute top-0 -ml-10 text-center mt-16 w-32 text-xs font-medium uppercase text-gray-500';
-        document.getElementById('step1Line').className = 'flex-auto border-t-2 transition duration-500 ease-in-out border-gray-300';
-        
-        document.getElementById('step2Circle').className = 'rounded-full transition duration-500 ease-in-out h-12 w-12 py-3 border-2 border-gray-300 bg-white';
-        document.getElementById('step2Text').className = 'flex items-center justify-center text-gray-500 font-bold';
-        document.getElementById('step2Label').className = 'absolute top-0 -ml-10 text-center mt-16 w-32 text-xs font-medium uppercase text-gray-500';
-        
-        if (selectedRole === 'admin_sekolah') {
-            document.getElementById('step2Line').className = 'flex-auto border-t-2 transition duration-500 ease-in-out border-gray-300';
-            document.getElementById('step3Circle').className = 'rounded-full transition duration-500 ease-in-out h-12 w-12 py-3 border-2 border-gray-300 bg-white';
-            document.getElementById('step3Text').className = 'flex items-center justify-center text-gray-500 font-bold';
-            document.getElementById('step3Label').className = 'absolute top-0 -ml-10 text-center mt-16 w-32 text-xs font-medium uppercase text-gray-500';
-        }
-
-        // Update based on current step
-        for (let i = 1; i <= step; i++) {
-            if (i < step) {
-                // Completed steps
-                document.getElementById(`step${i}Circle`).className = 'rounded-full transition duration-500 ease-in-out h-12 w-12 py-3 border-2 bg-blue-600 border-blue-600';
-                document.getElementById(`step${i}Text`).className = 'flex items-center justify-center text-white font-bold';
-                document.getElementById(`step${i}Label`).className = 'absolute top-0 -ml-10 text-center mt-16 w-32 text-xs font-medium uppercase text-blue-600';
-                if (i < 3 && (selectedRole === 'admin_sekolah' || i < 2)) {
-                    document.getElementById(`step${i}Line`).className = 'flex-auto border-t-2 transition duration-500 ease-in-out border-blue-600';
-                }
-            } else if (i === step) {
-                // Current step
-                document.getElementById(`step${i}Circle`).className = 'rounded-full transition duration-500 ease-in-out h-12 w-12 py-3 border-2 border-blue-600 bg-white';
-                document.getElementById(`step${i}Text`).className = 'flex items-center justify-center text-blue-600 font-bold';
-                document.getElementById(`step${i}Label`).className = 'absolute top-0 -ml-10 text-center mt-16 w-32 text-xs font-medium uppercase text-blue-600';
-            }
-        }
-    }
-
-    function validateSchoolData() {
-        // Add your validation logic here
-        const requiredFields = ['nama_instansi', 'npsn', 'jenjang_sekolah', 'email_instansi', 
-                               'provinsi', 'kota', 'kecamatan', 'kelurahan', 'kode_pos', 
-                               'alamat', 'nama_kepsek', 'nip_kepsek', 'tanggal_berdiri', 'logo'];
-        
-        for (let field of requiredFields) {
-            const element = document.getElementById(field);
-            if (element && !element.value) {
-                alert('Harap lengkapi semua data sekolah');
-                element.focus();
-                return false;
-            }
-        }
-        
-        return true;
-    }
-
-    // Form submission validation
-    document.getElementById('registerForm').addEventListener('submit', function(e) {
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('password_confirmation').value;
-        
-        if (password !== confirmPassword) {
-            e.preventDefault();
-            alert('Password tidak cocok');
+    fetch('{{ route("register.payment.token") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ 
+            name: name, 
+            email: email, 
+            phone: phone, 
+            password: pw, 
+            password_confirmation: pwc 
+        }),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (!data.snap_token) {
+            setLoading(false);
+            alert(data.message || 'Gagal memproses pembayaran. Silakan coba lagi.');
             return;
         }
         
-        // Disable submit button
-        document.getElementById('submitBtn').disabled = true;
-        document.getElementById('submitBtn').innerHTML = `
-            <svg class="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg> Mendaftarkan...
-        `;
+        // Open Midtrans popup
+        window.snap.pay(data.snap_token, {
+            onSuccess: function(result) {
+                console.log('Payment Success:', result);
+                // Kirim data ke server untuk registrasi final
+                submitRegistration(name, email, phone, pw, pwc, result.order_id, result.transaction_status);
+            },
+            onPending: function(result) {
+                console.log('Payment Pending:', result);
+                submitRegistration(name, email, phone, pw, pwc, result.order_id, 'pending');
+            },
+            onError: function(result) {
+                console.error('Payment Error:', result);
+                setLoading(false);
+                alert('Pembayaran gagal: ' + (result.status_message || 'Silakan coba lagi.'));
+            },
+            onClose: function() {
+                console.log('Payment popup closed');
+                setLoading(false);
+            },
+        });
+    })
+    .catch(error => {
+        console.error('Fetch Error:', error);
+        setLoading(false);
+        alert('Koneksi gagal. Periksa koneksi internet Anda.');
     });
+}
 
-    // Auto-hide notifications after 5 seconds
-    document.addEventListener('DOMContentLoaded', function() {
-        const alerts = document.querySelectorAll('.bg-red-50, .bg-green-50');
-        alerts.forEach(alert => {
-            setTimeout(() => {
-                alert.style.transition = 'opacity 0.5s';
-                alert.style.opacity = '0';
-                setTimeout(() => alert.remove(), 500);
-            }, 5000);
-        });
+function submitRegistration(name, email, phone, pw, pwc, orderId, txStatus) {
+    // Isi hidden form
+    document.getElementById('hName').value = name;
+    document.getElementById('hEmail').value = email;
+    document.getElementById('hPhone').value = phone;
+    document.getElementById('hPw').value = pw;
+    document.getElementById('hPwC').value = pwc;
+    document.getElementById('hOrderId').value = orderId;
+    document.getElementById('hTxStatus').value = txStatus;
+    
+    // Submit form
+    document.getElementById('finalForm').submit();
+}
 
-        // Format NPSN dan Kode Pos hanya angka
-        const npsnInput = document.getElementById('npsn');
-        const kodePosInput = document.getElementById('kode_pos');
-        
-        npsnInput?.addEventListener('input', function(e) {
-            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8);
-        });
-        
-        kodePosInput?.addEventListener('input', function(e) {
-            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 5);
-        });
+function setLoading(on) {
+    const btn = document.getElementById('btnSubmit');
+    const lbl = document.getElementById('btnLabel');
+    const ico = document.getElementById('btnIcon');
+    
+    btn.disabled = on;
+    
+    if (on) {
+        lbl.innerHTML = 'Memproses...';
+        ico.innerHTML = '<svg class="w-4 h-4 spin" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>';
+    } else {
+        lbl.innerHTML = 'Daftar & Bayar';
+        ico.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>';
+    }
+}
 
-        // Set max date untuk tanggal berdiri
-        const tanggalInput = document.getElementById('tanggal_berdiri');
-        if (tanggalInput) {
-            tanggalInput.max = new Date().toISOString().split('T')[0];
-        }
+/* Auto-hide alerts */
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.alert-err, .alert-ok').forEach(el => {
+        setTimeout(() => { 
+            el.style.transition = 'opacity .5s'; 
+            el.style.opacity = '0';
+            setTimeout(() => el.remove(), 500); 
+        }, 6000);
     });
-
-    // Wilayah dropdown dengan jQuery
-    $(document).ready(function() {
-        const provinsi = $('#provinsi');
-        const kota = $('#kota');
-        const kecamatan = $('#kecamatan');
-        const kelurahan = $('#kelurahan');
-
-        // Jika ada old value provinsi, load kota
-        @if(old('provinsi_code'))
-            loadKota('{{ old('provinsi_code') }}', '{{ old('kota_code') }}');
-        @endif
-
-        // Provinsi change handler
-        provinsi.on('change', function() {
-            const provCode = this.value;
-            if (provCode) {
-                loadKota(provCode);
-            } else {
-                kota.html('<option value="">Pilih Kota</option>');
-                kecamatan.html('<option value="">Pilih Kecamatan</option>');
-                kelurahan.html('<option value="">Pilih Kelurahan</option>');
-            }
-        });
-
-        // Kota change handler
-        kota.on('change', function() {
-            const kotaCode = this.value;
-            if (kotaCode) {
-                loadKecamatan(kotaCode);
-            } else {
-                kecamatan.html('<option value="">Pilih Kecamatan</option>');
-                kelurahan.html('<option value="">Pilih Kelurahan</option>');
-            }
-        });
-
-        // Kecamatan change handler
-        kecamatan.on('change', function() {
-            const kecCode = this.value;
-            if (kecCode) {
-                loadKelurahan(kecCode);
-            } else {
-                kelurahan.html('<option value="">Pilih Kelurahan</option>');
-            }
-        });
-
-        function loadKota(provCode, selectedKota = '') {
-            $.ajax({
-                url: `/api/indonesia/cities/${provCode}`,
-                type: 'GET',
-                success: function(data) {
-                    let options = '<option value="">Pilih Kota</option>';
-                    data.forEach(item => {
-                        const selected = (item.code == selectedKota) ? 'selected' : '';
-                        options += `<option value="${item.code}" ${selected}>${item.name}</option>`;
-                    });
-                    kota.html(options);
-                    
-                    // Jika ada selectedKota, load kecamatan
-                    if (selectedKota) {
-                        loadKecamatan(selectedKota, '{{ old('kecamatan_code') }}');
-                    }
-                }
-            });
-        }
-
-        function loadKecamatan(kotaCode, selectedKec = '') {
-            $.ajax({
-                url: `/api/indonesia/districts/${kotaCode}`,
-                type: 'GET',
-                success: function(data) {
-                    let options = '<option value="">Pilih Kecamatan</option>';
-                    data.forEach(item => {
-                        const selected = (item.code == selectedKec) ? 'selected' : '';
-                        options += `<option value="${item.code}" ${selected}>${item.name}</option>`;
-                    });
-                    kecamatan.html(options);
-                    
-                    // Jika ada selectedKec, load kelurahan
-                    if (selectedKec) {
-                        loadKelurahan(selectedKec, '{{ old('kelurahan_code') }}');
-                    }
-                }
-            });
-        }
-
-        function loadKelurahan(kecCode, selectedKel = '') {
-            $.ajax({
-                url: `/api/indonesia/villages/${kecCode}`,
-                type: 'GET',
-                success: function(data) {
-                    let options = '<option value="">Pilih Kelurahan</option>';
-                    data.forEach(item => {
-                        const selected = (item.code == selectedKel) ? 'selected' : '';
-                        options += `<option value="${item.code}" ${selected}>${item.name}</option>`;
-                    });
-                    kelurahan.html(options);
-                }
-            });
-        }
-    });
-    </script>
+});
+</script>
 </body>
 </html>

@@ -6,9 +6,6 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
@@ -20,7 +17,9 @@ return new class extends Migration
             $table->string('password');
             $table->enum('role', ['super_admin', 'admin_sekolah', 'petugas', 'teknisi']); 
             $table->string('phone', 20)->nullable(); 
-            $table->enum('status', ['active', 'inactive', 'suspended'])->default('active'); 
+            $table->string('status')->default('pending'); // pending, active, suspended, rejected
+            $table->string('activation_token')->nullable()->unique();
+            $table->timestamp('activation_token_expires_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
 
@@ -43,9 +42,6 @@ return new class extends Migration
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('users');

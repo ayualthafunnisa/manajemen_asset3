@@ -13,190 +13,278 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use Midtrans\Config;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+use Midtrans\Config as MidtransConfig;
 use Midtrans\Snap;
+use Midtrans\Notification;
 
 class RegisterController extends Controller
 {
     public function showRegistrationForm()
     {
-        $provinsis = Province::all();
-        return view('auth.register', compact('provinsis'));
+        return view('auth.register');
     }
-
-    public function register(Request $request)
+ 
+    /* ════════════════════════════════════════════════════════════
+     * REGISTER — GET SNAP TOKEN (AJAX)
+     * Dipanggil JS sebelum popup Midtrans dibuka.
+     * ════════════════════════════════════════════════════════════ */
+ 
+    public function getPaymentToken(Request $request)
     {
-        $role = $request->input('role');
-
-        // ─── TEKNISI ────────────────────────────────────────────────
-        if ($role === 'teknisi') {
-            $request->validate([
-                'name'     => 'required|string|max:255',
-                'email'    => 'required|email|unique:users',
-                'phone'    => 'nullable|string|max:15',
-                'password' => 'required|string|min:8|confirmed',
-                'terms'    => 'required',
-                'role'     => 'required|in:teknisi',
-            ]);
-
-            User::create([
-                'InstansiID' => null,
-                'name'       => $request->name,
-                'email'      => $request->email,
-                'phone'      => $request->phone,
-                'password'   => Hash::make($request->password),
-                'role'       => 'teknisi',
-                'status'     => 'active',
-            ]);
-
-            return redirect()->route('login')
-                ->with('success', 'Akun teknisi berhasil dibuat! Silakan login.');
-        }
-
-        // ─── ADMIN SEKOLAH ──────────────────────────────────────────
-        $request->validate([
-            'nama_instansi'   => 'required|string|max:255',
-            'npsn'            => 'required|string|unique:instansis,NPSN',
-            'jenjang_sekolah' => 'required|in:SD,SMP,SMA,SMK',
-            'email_instansi'  => 'required|email|unique:instansis,EmailSekolah',
-            'provinsi_code'   => 'required|string|max:10',
-            'kota_code'       => 'required|string|max:10',
-            'kecamatan_code'  => 'required|string|max:10',
-            'kelurahan_code'  => 'required|string|max:10',
-            'kode_pos'        => 'required|string|max:10',
-            'alamat'          => 'required|string',
-            'nama_kepsek'     => 'required|string|max:255',
-            'nip_kepsek'      => 'required|string|max:50',
-            'tanggal_berdiri' => 'required|date',
-            'logo'            => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'name'            => 'required|string|max:255',
-            'email'           => 'required|email|unique:users',
-            'phone'           => 'nullable|string|max:15',
-            'password'        => 'required|string|min:8|confirmed',
-            'terms'           => 'required',
+        $validator = Validator::make($request->all(), [
+            'name'     => ['required', 'string', 'max:255'],
+            'email'    => ['required', 'email', 'unique:users,email'],
+            'phone'    => ['nullable', 'string', 'max:20'],
+            'password' => ['required', 'min:8', 'confirmed'],
+            'amount'   => ['nullable', 'integer'], // Bisa dari frontend
+            'plan_type'=> ['nullable', 'string', 'in:monthly,yearly'],
         ]);
 
-        DB::beginTransaction();
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => $validator->errors()->first(),
+                'errors'  => $validator->errors(),
+            ], 422);
+        }
+
+        $data = $validator->validated();
+        
+        // Tentukan amount berdasarkan pilihan user
+        $amount = $request->amount ?? 500000; // Default yearly
+        $planType = $request->plan_type ?? 'yearly';
+        
+        // Jika monthly, amount = 49000
+        if ($planType === 'monthly') {
+            $amount = 49000;
+        }
+
+        // Cek apakah Midtrans sudah terkonfigurasi
+        if (!config('services.midtrans.server_key')) {
+            return response()->json([
+                'message' => 'Konfigurasi pembayaran belum lengkap. Hubungi administrator.'
+            ], 500);
+        }
 
         try {
-            // Upload logo
-            $logoPath = null;
-            if ($request->hasFile('logo')) {
-                $logoFile = $request->file('logo');
-                $logoName = 'logo_' . time() . '_' . Str::slug($request->nama_instansi) . '.' . $logoFile->getClientOriginalExtension();
-                $logoPath = $logoFile->storeAs('logos', $logoName, 'public');
-            }
+            // Simpan data registrasi sementara di session
+            session(['temp_registration' => [
+                'name'      => $data['name'],
+                'email'     => $data['email'],
+                'phone'     => $data['phone'] ?? null,
+                'password'  => $data['password'], // Simpan password asli sementara
+                'plan_type' => $planType,
+                'amount'    => $amount,
+            ]]);
+            
+            $orderId = 'LIC-' . strtoupper(Str::random(8)) . '-' . time();
+            
+            // Simpan order_id di session
+            session(['temp_order_id' => $orderId]);
 
-            // 1️⃣ Buat Instansi
-            $instansi = Instansi::create([
-                'KodeInstansi'       => $this->generateKodeInstansi($request->jenjang_sekolah),
-                'NPSN'               => $request->npsn,
-                'NamaSekolah'        => $request->nama_instansi,
-                'JenjangSekolah'     => $request->jenjang_sekolah,
-                'provinsi_code'      => $request->provinsi_code,
-                'kota_code'          => $request->kota_code,
-                'kecamatan_code'     => $request->kecamatan_code,
-                'kelurahan_code'     => $request->kelurahan_code,
-                'KodePos'            => $request->kode_pos,
-                'Alamat'             => $request->alamat,
-                'EmailSekolah'       => $request->email_instansi,
-                'Logo'               => $logoPath,
-                'NamaKepalaSekolah'  => $request->nama_kepsek,
-                'NIPKepalaSekolah'   => $request->nip_kepsek,
-                'TanggalBerdiri'     => $request->tanggal_berdiri,
-                'Status'             => 'Aktif',
-            ]);
+            // 4. Konfigurasi Midtrans
+            MidtransConfig::$serverKey    = config('services.midtrans.server_key');
+            MidtransConfig::$isProduction = config('services.midtrans.is_production', false);
+            MidtransConfig::$isSanitized  = true;
+            MidtransConfig::$is3ds        = true;
 
-            // 2️⃣ Buat User Admin Sekolah
-            $user = User::create([
-                'InstansiID' => $instansi->InstansiID,
-                'name'       => $request->name,
-                'email'      => $request->email,
-                'phone'      => $request->phone,
-                'password'   => Hash::make($request->password),
-                'role'       => 'admin_sekolah',
-                'status'     => 'active',
-            ]);
+            // Nama item berdasarkan pilihan
+            $itemName = $planType === 'monthly' 
+                ? 'Lisensi Asset Management 1 Bulan' 
+                : 'Lisensi Asset Management 1 Tahun';
 
-            // 3️⃣ Generate License (BELUM AKTIF)
-            // Pastikan di migration kamu sudah ada kolom 'amount', 'snap_token', dan 'payment_status'
-            $license = License::create([
-                'user_id'      => $user->id,
-                'license_key'  => $this->generateLicenseKey(),
-                'start_date'   => now(),
-                'expired_date' => now()->addYear(),
-                'is_active'    => false, // Set false karena belum bayar
-                'amount'       => 500000, // Contoh harga lisensi
-                'payment_status' => 'pending',
-            ]);
-
-            // 4️⃣ Konfigurasi Midtrans
-            Config::$serverKey = config('services.midtrans.server_key');
-            Config::$isProduction = config('services.midtrans.is_production');
-            Config::$isSanitized = true;
-            Config::$is3ds = true;
-
+            // 5. Susun Params
             $params = [
                 'transaction_details' => [
-                    'order_id' => 'LIC-' . $license->id . '-' . time(),
-                    'gross_amount' => (int) $license->amount,
+                    'order_id'     => $orderId,
+                    'gross_amount' => (int) $amount,
                 ],
                 'customer_details' => [
-                    'first_name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
+                    'first_name' => $data['name'],
+                    'email'      => $data['email'],
+                    'phone'      => $data['phone'] ?? '08123456789',
                 ],
-                // Opsional: Batasi metode pembayaran
-                'enabled_payments' => ['credit_card', 'cimb_clicks', 'bank_transfer', 'gopay', 'shopeepay', 'other_va', 'qris'],
+                'item_details' => [
+                    [
+                        'id'       => $planType === 'monthly' ? 'LISENSI-1BULAN' : 'LISENSI-1TAHUN',
+                        'price'    => (int) $amount,
+                        'quantity' => 1,
+                        'name'     => $itemName,
+                    ]
+                ],
             ];
 
-            // Dapatkan Snap Token
             $snapToken = Snap::getSnapToken($params);
 
-            // Simpan token ke database
-            $license->update(['snap_token' => $snapToken]);
-
-            DB::commit();
-
-            // Redirect ke halaman pembayaran yang kita buat di langkah sebelumnya
-            return redirect()->route('payment.show', $license->id)
-                ->with('info', 'Silakan selesaikan pembayaran untuk mengaktifkan akun Anda.');
+            return response()->json([
+                'snap_token' => $snapToken,
+                'order_id'   => $orderId,
+            ]);
 
         } catch (\Exception $e) {
-            DB::rollback();
-
-            if (isset($logoPath) && Storage::disk('public')->exists($logoPath)) {
-                Storage::disk('public')->delete($logoPath);
-            }
-
-            Log::error('Registration error: ' . $e->getMessage());
-
-            return back()
-                ->withInput()
-                ->with('error', 'Terjadi kesalahan saat registrasi: ' . $e->getMessage());
+            Log::error('Midtrans Error: ' . $e->getMessage());
+            
+            // Hapus session jika gagal
+            session()->forget(['temp_registration', 'temp_order_id']);
+            
+            return response()->json([
+                'message' => 'Gagal memproses pembayaran: ' . $e->getMessage()
+            ], 500);
         }
     }
-
-    private function generateKodeInstansi(string $jenjang): string
+ 
+    /* ════════════════════════════════════════════════════════════
+     * REGISTER — FINAL SUBMIT (setelah Midtrans callback)
+     * Membuat user dan license setelah payment berhasil
+     * ════════════════════════════════════════════════════════════ */
+ 
+    public function register(Request $request)
     {
-        $prefix = match ($jenjang) {
-            'SD'  => 'SD',
-            'SMP' => 'SMP',
-            'SMA' => 'SMA',
-            'SMK' => 'SMK',
-            default => 'SEK',
-        };
+        // Log untuk debug
+        Log::info('Final Registration Data:', $request->all());
 
-        return $prefix . date('Y') . strtoupper(Str::random(5));
+        $request->validate([
+            'order_id'           => ['required', 'string'],
+            'transaction_status' => ['required', 'string'],
+            'name'               => ['required', 'string', 'max:255'],
+            'email'              => ['required', 'email'],
+            'phone'              => ['nullable', 'string', 'max:20'],
+            'password'           => ['required', 'min:8'],
+            'amount'             => ['nullable', 'integer'],
+            'plan_type'          => ['nullable', 'string'],
+        ]);
+
+        // Cek apakah email sudah terdaftar (double check)
+        $existingUser = User::where('email', $request->email)->first();
+        if ($existingUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email sudah terdaftar. Silakan login.'
+            ], 422);
+        }
+
+        // Cek apakah pembayaran berhasil
+        $isPaid = in_array($request->transaction_status, ['settlement', 'capture', 'success']);
+        
+        if (!$isPaid) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Pembayaran belum selesai. Silakan selesaikan pembayaran terlebih dahulu.'
+            ], 422);
+        }
+
+        try {
+            DB::beginTransaction();
+            
+            // Buat user
+            $user = User::create([
+                'name'     => $request->name,
+                'email'    => $request->email,
+                'phone'    => $request->phone,
+                'password' => Hash::make($request->password),
+                'role'     => 'admin_sekolah',
+                'status'   => 'active',
+            ]);
+            
+            // Tentukan masa aktif license
+            $planType = $request->plan_type ?? 'yearly';
+            $amount = $request->amount ?? ($planType === 'monthly' ? 49000 : 500000);
+            
+            $expiredDate = $planType === 'monthly' 
+                ? now()->addMonth()->toDateString() 
+                : now()->addYear()->toDateString();
+            
+            // Buat license
+            $license = License::create([
+                'user_id'        => $user->id,
+                'license_key'    => 'KEY-' . strtoupper(Str::random(16)),
+                'kode_lisensi'   => $request->order_id,
+                'start_date'     => now()->toDateString(),
+                'expired_date'   => $expiredDate,
+                'is_active'      => true,
+                'payment_status' => 'settlement',
+                'amount'         => $amount,
+            ]);
+            
+            DB::commit();
+            
+            // Login user
+            Auth::login($user);
+            $request->session()->regenerate();
+            
+            // Hapus data temporary session
+            session()->forget(['temp_registration', 'temp_order_id']);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Selamat! Registrasi berhasil.',
+                'redirect' => route('dashboard.admin')
+            ]);
+            
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Registration Error: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menyimpan data: ' . $e->getMessage()
+            ], 500);
+        }
     }
-
-    private function generateLicenseKey(): string
+ 
+    /* ════════════════════════════════════════════════════════════
+     * MIDTRANS WEBHOOK
+     * ════════════════════════════════════════════════════════════ */
+ 
+    public function midtransWebhook(Request $request)
     {
-        return strtoupper(
-            Str::random(4) . '-' .
-            Str::random(4) . '-' .
-            Str::random(4) . '-' .
-            Str::random(4)
-        );
+        MidtransConfig::$serverKey    = config('services.midtrans.server_key');
+        MidtransConfig::$isProduction = config('services.midtrans.is_production', false);
+ 
+        try {
+            $notif = new Notification();
+            $orderId = $notif->order_id;
+            $status = $notif->transaction_status;
+            $fraud = $notif->fraud_status ?? null;
+            
+            Log::info('Midtrans Webhook:', [
+                'order_id' => $orderId,
+                'status' => $status,
+                'fraud' => $fraud
+            ]);
+            
+            // Cari license berdasarkan kode_lisensi
+            $license = License::where('kode_lisensi', $orderId)->first();
+            
+            if (!$license) {
+                Log::warning('License not found for order_id: ' . $orderId);
+                return response()->json(['message' => 'not found'], 404);
+            }
+ 
+            $payStatus = match(true) {
+                $status === 'capture' && $fraud !== 'challenge' => 'settlement',
+                $status === 'settlement' => 'settlement',
+                in_array($status, ['cancel','deny','expire']) => $status,
+                default => 'pending',
+            };
+ 
+            $isActive = $payStatus === 'settlement';
+ 
+            $license->update([
+                'payment_status' => $payStatus, 
+                'is_active' => $isActive
+            ]);
+            
+            if ($isActive && $license->user) {
+                $license->user->update(['status' => 'active']);
+            }
+ 
+            return response()->json(['message' => 'ok']);
+            
+        } catch (\Exception $e) {
+            Log::error('Webhook Error: ' . $e->getMessage());
+            return response()->json(['message' => 'error'], 500);
+        }
     }
 }

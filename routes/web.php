@@ -15,6 +15,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\Teknisi\PerbaikanController;
+use App\Http\Controllers\Admin\ApprovalController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,17 +35,32 @@ Route::prefix('api')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| PUBLIC ROUTES
+| PUBLIC ROUTES (tanpa login)
 |--------------------------------------------------------------------------
 */
 
+// Route registrasi
+Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 
-Route::get('/register',  [RegisterController::class, 'showRegistrationForm'])->name('register');
-Route::post('/register', [RegisterController::class, 'register']);
+// Route untuk registrasi dengan Midtrans - HANYA SEKALI DEFINISI
+Route::post('/register/payment-token', [RegisterController::class, 'getPaymentToken'])->name('register.payment.token');
+Route::post('/register/final', [RegisterController::class, 'register'])->name('register.final');
+Route::get('/activate-account/{token}', [RegisterController::class, 'activateAccount'])->name('activate.account');
 
-Route::get('/login',     [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login',    [LoginController::class, 'login'])->name('proseslogin');
-Route::post('/logout',   [LoginController::class, 'logout'])->name('logout');
+// Route untuk Super Admin Approval
+Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(function () {
+    Route::get('/approvals', [ApprovalController::class, 'index'])->name('super_admin.approvals');
+    Route::post('/approvals/{licenseId}/approve', [ApprovalController::class, 'approve'])->name('super_admin.approve');
+    Route::post('/approvals/{licenseId}/reject', [ApprovalController::class, 'reject'])->name('super_admin.reject');
+});
+
+// Midtrans Webhook (tanpa auth)
+Route::post('/midtrans/webhook', [RegisterController::class, 'midtransWebhook'])->name('midtrans.webhook');
+
+// Route login
+Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+Route::post('/login', [LoginController::class, 'login'])->name('proseslogin');
+Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 /*
 |--------------------------------------------------------------------------
@@ -52,8 +68,27 @@ Route::post('/logout',   [LoginController::class, 'logout'])->name('logout');
 |--------------------------------------------------------------------------
 */
 
-    Route::middleware('auth')->group(function () {
+Route::middleware('auth')->group(function () {
 
+    // Profile routes
+    Route::get('/profile/settings', [ProfileController::class, 'settings'])->name('profile.settings');
+    Route::get('/account/settings', [ProfileController::class, 'accountSettings'])->name('account.settings');
+    Route::put('/profile/update', [ProfileController::class, 'updateProfile'])->name('profile.update');
+    Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
+    Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
+    Route::put('/instansi/{id}', [ProfileController::class, 'updateInstansi'])->name('instansi.update');
+    
+    // Admin management routes
+    Route::prefix('admin')->name('admin.')->group(function () {
+        Route::get('/', [AdminController::class, 'index'])->name('index');
+        Route::post('/store', [AdminController::class, 'store'])->name('store');
+        Route::get('/{id}/edit', [AdminController::class, 'edit'])->name('edit');
+        Route::put('/{id}', [AdminController::class, 'update'])->name('update');
+        Route::delete('/{id}', [AdminController::class, 'destroy'])->name('delete');
+        Route::post('/{id}/resend-activation', [AdminController::class, 'resendActivation'])->name('resend-activation');
+        Route::get('/school/{instansiId}', [AdminController::class, 'getSchoolAdmins'])->name('school-admins');
+    });
+    
     // Laporan Routes
     Route::prefix('laporan')->name('laporan.')->group(function () {
         Route::get('/', [LaporanController::class, 'index'])->name('index');

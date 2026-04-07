@@ -3,844 +3,474 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>AsetKu — Manajemen Aset Modern & Lebar</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>AsetKu — Manajemen Aset Modern</title>
+  <!-- Inter & Plus Jakarta Sans -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Midtrans Snap (sandbox by default, production bisa disesuaikan) -->
+  <script src="https://app.sandbox.midtrans.com/snap/snap.js" data-client-key="SB-Mid-client-YourKeyHere"></script>
   <style>
     * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
+      font-family: 'Inter', 'Plus Jakarta Sans', system-ui, sans-serif;
     }
-
     body {
-      font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      background: #ffffff
-      color: #171717;
-      line-height: 1.5;
-      scroll-behavior: smooth;
+      background: #ffffff;
     }
-
-    /* LEBAR — max-width lebih besar, padding lebih lega */
-    .container {
-      max-width: 1400px;
-      margin: 0 auto;
-      padding: 0 32px;
-    }
-
-    /* navbar lebih luas */
-    .navbar {
-      position: sticky;
-      top: 0;
-      background: rgba(255, 255, 255, 0.96);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid #eef2f6;
-      z-index: 50;
-      padding: 16px 0;
-    }
-
-    .nav-flex {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 20px;
-    }
-
-    .logo {
-      font-weight: 800;
-      font-size: 1.5rem;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-      background-clip: text;
-      -webkit-background-clip: text;
-      color: transparent;
-    }
-
-    .nav-links {
-      display: flex;
-      gap: 40px;
-      align-items: center;
-    }
-
-    .nav-links a {
-      text-decoration: none;
-      font-size: 0.95rem;
-      font-weight: 500;
-      color: #334155;
-      transition: color 0.2s;
-    }
-
-    .nav-links a:hover {
-      color: #2563eb;
-    }
-
-    .btn-outline-light {
-      background: transparent;
-      border: 1px solid #e2e8f0;
-      padding: 8px 20px;
-      border-radius: 40px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      color: #1e293b;
+    /* custom checkbox & card style */
+    .license-card {
+      transition: all 0.2s ease;
       cursor: pointer;
-      transition: all 0.2s;
-      text-decoration: none;
     }
-
-    .btn-outline-light:hover {
+    .license-card.selected {
       border-color: #2563eb;
-      background: #f8fafc;
+      background: #eff6ff;
+      box-shadow: 0 8px 20px -8px rgba(37,99,235,0.2);
+      transform: scale(1.01);
     }
-
+    .plan-badge {
+      background: #eef2ff;
+      color: #1e40af;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 40px;
+      display: inline-block;
+    }
     .btn-primary {
       background: #2563eb;
-      color: white;
-      border: none;
-      padding: 8px 22px;
-      border-radius: 40px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      cursor: pointer;
-      transition: background 0.2s;
-      text-decoration: none;
+      transition: all 0.2s;
     }
-
     .btn-primary:hover {
       background: #1d4ed8;
+      transform: translateY(-1px);
     }
-
-    /* HERO — layout lebih lebar, tidak terlalu dipusatkan secara kaku */
-    .hero {
-      padding: 72px 0 64px;
-    }
-
-    .hero-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 48px;
-      align-items: center;
-    }
-
-    .hero-left {
-      max-width: 100%;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #eff6ff;
-      padding: 6px 18px;
-      border-radius: 40px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: #2563eb;
-      margin-bottom: 24px;
-    }
-
-    .hero-left h1 {
-      font-size: clamp(2.2rem, 4vw, 3.5rem);
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      line-height: 1.2;
-      margin-bottom: 20px;
-      color: #0f172a;
-    }
-
-    .hero-left h1 span {
-      color: #2563eb;
-    }
-
-    .hero-desc {
-      font-size: 1rem;
-      color: #475569;
-      max-width: 480px;
-      margin-bottom: 32px;
-    }
-
-    .hero-actions {
-      display: flex;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 40px;
-    }
-
-    .btn-secondary {
-      background: #f1f5f9;
-      color: #1e293b;
-      padding: 12px 28px;
-      border-radius: 40px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: background 0.2s;
-    }
-
-    .btn-secondary:hover {
-      background: #e2e8f0;
-    }
-
-    /* stats row lebih lebar & natural */
-    .stats-row {
-      display: flex;
-      gap: 48px;
-      flex-wrap: wrap;
-      border-top: 1px solid #eef2f6;
-      padding-top: 32px;
-    }
-
-    .stat-item h3 {
-      font-size: 1.8rem;
-      font-weight: 800;
-      color: #0f172a;
-      line-height: 1.2;
-    }
-
-    .stat-item p {
-      font-size: 0.8rem;
-      color: #5b6e8c;
-      font-weight: 500;
-    }
-
-    /* preview card - full lebar tapi rapi */
-    .preview-card {
-      background: #ffffff;
-      border-radius: 28px;
-      box-shadow: 0 20px 35px -12px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(0, 0, 0, 0.02);
-      overflow: hidden;
-      border: 1px solid #edf2f7;
-    }
-
-    .preview-header {
-      background: #fefefe;
-      padding: 14px 24px;
-      border-bottom: 1px solid #eef2f6;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .mock-dots {
-      display: flex;
-      gap: 6px;
-    }
-
-    .dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      background: #cbd5e1;
-    }
-
-    .dot.red { background: #ef4444; }
-    .dot.yellow { background: #f59e0b; }
-    .dot.green { background: #10b981; }
-
-    .mock-url {
-      font-size: 0.7rem;
-      font-family: monospace;
-      color: #64748b;
-      background: #f1f5f9;
-      padding: 4px 14px;
-      border-radius: 30px;
-    }
-
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 1px;
-      background: #f1f5f9;
-    }
-
-    .stat-box {
-      background: white;
-      padding: 24px 20px;
-    }
-
-    .stat-label-sm {
-      font-size: 0.7rem;
-      font-weight: 600;
-      text-transform: uppercase;
-      color: #5b6e8c;
-      letter-spacing: 0.04em;
-      margin-bottom: 8px;
-    }
-
-    .stat-value {
-      font-size: 2.2rem;
-      font-weight: 800;
-      color: #0f172a;
-    }
-
-    .stat-value.blue { color: #2563eb; }
-    .stat-value.green { color: #16a34a; }
-    .stat-value.amber { color: #d97706; }
-
-    .asset-list {
-      grid-column: span 3;
-      background: white;
-      padding: 8px 0;
-    }
-
-    .list-row {
-      display: grid;
-      grid-template-columns: 2fr 1fr auto;
-      padding: 14px 24px;
-      border-bottom: 1px solid #f0f2f5;
-      align-items: center;
-    }
-
-    .list-row:last-child {
-      border-bottom: none;
-    }
-
-    .asset-name {
-      font-weight: 700;
-      font-size: 0.9rem;
-    }
-
-    .asset-loc {
-      font-size: 0.75rem;
-      color: #5b6e8c;
-      margin-top: 2px;
-    }
-
-    .status-badge {
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 4px 14px;
-      border-radius: 30px;
-      background: #e6f7ec;
-      color: #15803d;
-    }
-
-    .status-badge.warning {
-      background: #fffbeb;
-      color: #b45309;
-    }
-
-    /* features grid lebih lebar */
-    .section {
-      padding: 96px 0;
-    }
-
-    .section-header {
-      max-width: 700px;
-      margin-bottom: 64px;
-    }
-
-    .section-label {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: #2563eb;
-      margin-bottom: 12px;
-    }
-
-    .section-title {
-      font-size: clamp(1.8rem, 3.5vw, 2.5rem);
-      font-weight: 800;
-      color: #0f172a;
-      margin-bottom: 16px;
-    }
-
-    .section-sub {
-      color: #475569;
-      font-size: 1rem;
-      max-width: 560px;
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
-      gap: 32px;
-    }
-
-    .feature-item {
-      background: #ffffff;
-      border: 1px solid #edf2f7;
-      border-radius: 28px;
-      padding: 32px;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .feature-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 24px 36px -12px rgba(0, 0, 0, 0.08);
-      border-color: #e2e8f0;
-    }
-
-    .feature-icon {
-      font-size: 2rem;
-      margin-bottom: 24px;
-    }
-
-    .feature-title {
-      font-size: 1.2rem;
-      font-weight: 700;
-      margin-bottom: 10px;
-    }
-
-    .feature-desc {
-      font-size: 0.85rem;
-      color: #475569;
-      line-height: 1.5;
-    }
-
-    /* testimoni grid lebar */
-    .testi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 32px;
-    }
-
-    .testi-card {
-      background: #f9fafb;
-      border-radius: 28px;
-      padding: 32px;
-      border: 1px solid #f0f2f5;
-    }
-
-    .stars {
-      color: #f59e0b;
-      font-size: 0.9rem;
-      letter-spacing: 2px;
-      margin-bottom: 20px;
-    }
-
-    .testi-text {
-      font-size: 0.95rem;
-      color: #1e293b;
-      margin-bottom: 24px;
-      line-height: 1.6;
-    }
-
-    .testi-author {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .avatar {
-      width: 44px;
-      height: 44px;
-      background: #e2e8f0;
-      border-radius: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      color: #0f172a;
-    }
-
-    .author-name {
-      font-weight: 700;
-      font-size: 0.9rem;
-    }
-
-    .author-role {
-      font-size: 0.7rem;
-      color: #5b6e8c;
-    }
-
-    /* CTA lebar tapi proporsional */
-    .cta-block {
-      background: #0f172a;
-      border-radius: 32px;
-      padding: 64px 48px;
-      text-align: center;
-      color: white;
-    }
-
-    .cta-title {
-      font-size: clamp(1.8rem, 3vw, 2.3rem);
-      font-weight: 700;
-      margin-bottom: 18px;
-    }
-
-    .cta-desc {
-      max-width: 560px;
-      margin: 0 auto 32px;
-      color: #cbd5e1;
-    }
-
-    .cta-buttons {
-      display: flex;
-      gap: 20px;
-      justify-content: center;
-      flex-wrap: wrap;
-    }
-
-    .btn-white {
-      background: white;
-      color: #0f172a;
-      padding: 14px 34px;
-      border-radius: 50px;
-      font-weight: 700;
-      text-decoration: none;
-    }
-
-    .btn-outline-white {
-      border: 1px solid rgba(255, 255, 255, 0.3);
-      background: transparent;
-      color: white;
-      padding: 14px 34px;
-      border-radius: 50px;
-      font-weight: 600;
-      text-decoration: none;
-    }
-
-    /* footer lebar */
-    footer {
-      background: #ffffff;
-      border-top: 1px solid #edf2f7;
-      padding: 64px 0 40px;
-    }
-
-    .footer-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr 1fr 1.5fr;
-      gap: 48px;
-      margin-bottom: 56px;
-    }
-
-    .footer-logo {
-      font-weight: 800;
-      font-size: 1.3rem;
-      color: #0f172a;
-      margin-bottom: 14px;
-    }
-
-    .footer-desc {
-      font-size: 0.85rem;
-      color: #475569;
-      max-width: 260px;
-    }
-
-    .footer-col h4 {
-      font-size: 0.9rem;
-      font-weight: 700;
-      margin-bottom: 20px;
-      color: #0f172a;
-    }
-
-    .footer-col ul {
-      list-style: none;
-    }
-
-    .footer-col li {
-      margin-bottom: 12px;
-    }
-
-    .footer-col a {
-      text-decoration: none;
-      font-size: 0.85rem;
-      color: #5b6e8c;
-      transition: color 0.2s;
-    }
-
-    .footer-col a:hover {
-      color: #2563eb;
-    }
-
-    .footer-bottom {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 20px;
-      padding-top: 28px;
-      border-top: 1px solid #edf2f7;
-      font-size: 0.8rem;
-      color: #64748b;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 32px;
-    }
-
-    /* responsive lebar lebih nyaman */
-    @media (max-width: 1100px) {
-      .hero-grid {
-        grid-template-columns: 1fr;
-        gap: 48px;
-      }
-      .hero-left {
-        max-width: 100%;
-        text-align: left;
-      }
-      .stats-row {
-        justify-content: flex-start;
-      }
-    }
-
-    @media (max-width: 800px) {
-      .container {
-        padding: 0 24px;
-      }
-      .footer-grid {
-        grid-template-columns: 1fr 1fr;
-        gap: 40px;
-      }
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
-      .asset-list {
-        grid-column: span 1;
-      }
-      .hero-actions {
-        justify-content: flex-start;
-      }
-    }
-
-    @media (max-width: 640px) {
-      .nav-links {
-        display: none;
-      }
-      .footer-grid {
-        grid-template-columns: 1fr;
-      }
-      .stats-row {
-        flex-direction: column;
-        gap: 24px;
-      }
-      .cta-block {
-        padding: 48px 24px;
-      }
-    }
-
     .reveal {
       opacity: 0;
       transform: translateY(24px);
       transition: opacity 0.6s ease, transform 0.6s ease;
     }
-
     .reveal.visible {
       opacity: 1;
       transform: translateY(0);
     }
+    .modal-mask {
+      background: rgba(0,0,0,0.5);
+      backdrop-filter: blur(4px);
+    }
+    .loading-spinner {
+      border: 2px solid #e2e8f0;
+      border-top: 2px solid #2563eb;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      animation: spin 0.8s linear infinite;
+      display: inline-block;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
   </style>
 </head>
-<body>
+<body class="antialiased">
 
-<nav class="navbar">
-  <div class="container">
-    <div class="nav-flex">
-      <div class="logo">AsetKu</div>
-      <div class="nav-links">
-        <a href="{{ route('login') }}" class="btn-outline-light">Masuk</a>
-        <a href="" class="btn-primary">Coba Gratis</a>
+<!-- ======================= LANDING PAGE (NAV, HERO, LISENSI, CTA) ======================= -->
+<nav class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 py-4">
+  <div class="max-w-7xl mx-auto px-6 lg:px-8 flex justify-between items-center">
+    <div class="flex items-center gap-2">
+      <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center">
+        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+        </svg>
       </div>
+      <span class="text-xl font-extrabold tracking-tight text-slate-800">Aset<span class="text-indigo-600">Ku</span></span>
+    </div>
+    <div class="flex gap-4 items-center">
+      <a href="#" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Login</a>
+      <a href="#pricing" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-semibold shadow-sm hover:bg-indigo-700 transition">Coba Gratis</a>
     </div>
   </div>
 </nav>
 
 <main>
-  <!-- Hero dengan layout 2 kolom lebih lebar & tidak terpusat -->
-  <section class="hero">
-    <div class="container">
-      <div class="hero-grid">
-        <div class="hero-left">
-          <div class="badge reveal">
+  <!-- Hero Section -->
+  <section class="py-16 lg:py-24 overflow-hidden">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="grid lg:grid-cols-2 gap-12 items-center">
+        <div class="reveal">
+          <div class="inline-flex items-center gap-2 bg-blue-50 rounded-full px-4 py-1.5 text-blue-700 text-xs font-semibold mb-6">
             ⚡ Platform Aset Terintegrasi
           </div>
-          <h1 class="reveal">Kelola Aset Instansi <br><span>Lebih Cepat & Akurat</span></h1>
-          <p class="hero-desc reveal">
-            Pantau seluruh inventaris, lacak lokasi aset, dan buat laporan instan — semuanya dalam satu dasbor modern tanpa batasan.
-          </p>
-          <div class="hero-actions reveal">
-            <a href="#cta" class="btn-primary" style="padding: 12px 32px;">Coba 14 Hari Gratis →</a>
-            <a href="#features" class="btn-secondary">Lihat Demo</a>
+          <h1 class="text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">Kelola Aset Instansi <br><span class="text-indigo-600">Lebih Cerdas & Real-time</span></h1>
+          <p class="text-slate-500 mt-6 text-lg max-w-md">Pantau inventaris, lacak lokasi, laporan instan — dalam satu dasbor modern tanpa batasan.</p>
+          <div class="flex gap-4 mt-8">
+            <a href="#pricing" class="bg-indigo-600 text-white px-6 py-3 rounded-full font-semibold shadow-md hover:bg-indigo-700 transition">Mulai 14 Hari Gratis →</a>
+            <a href="#fitur" class="border border-slate-200 text-slate-700 px-6 py-3 rounded-full font-medium hover:bg-slate-50 transition">Lihat Demo</a>
           </div>
-          <div class="stats-row reveal">
-            <div class="stat-item">
-              <h3>2.800+</h3>
-              <p>Instansi Aktif</p>
-            </div>
-            <div class="stat-item">
-              <h3>99%</h3>
-              <p>Kepuasan Klien</p>
-            </div>
-            <div class="stat-item">
-              <h3>500K+</h3>
-              <p>Aset Terkelola</p>
-            </div>
+          <div class="flex gap-8 mt-10 pt-6 border-t border-slate-100">
+            <div><span class="font-black text-2xl text-slate-800">2.800+</span><p class="text-xs text-slate-500">Instansi Aktif</p></div>
+            <div><span class="font-black text-2xl text-slate-800">99%</span><p class="text-xs text-slate-500">Kepuasan Klien</p></div>
+            <div><span class="font-black text-2xl text-slate-800">500K+</span><p class="text-xs text-slate-500">Aset Terkelola</p></div>
           </div>
         </div>
-        <div class="hero-right reveal">
-          <div class="preview-card">
-            <div class="preview-header">
-              <div class="mock-dots">
-                <div class="dot red"></div>
-                <div class="dot yellow"></div>
-                <div class="dot green"></div>
-              </div>
-              <div class="mock-url">dasbor.asetku.id/overview</div>
-            </div>
-            <div class="dashboard-grid">
-              <div class="stat-box">
-                <div class="stat-label-sm">Total Aset</div>
-                <div class="stat-value blue">1.248</div>
-                <div style="font-size: 0.7rem; color:#3b7c0c;">↑ +3.2% bulan ini</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label-sm">Kondisi Baik</div>
-                <div class="stat-value green">1.101</div>
-                <div style="font-size: 0.7rem; color:#475569;">88% dari total</div>
-              </div>
-              <div class="stat-box">
-                <div class="stat-label-sm">Perlu Perawatan</div>
-                <div class="stat-value amber">147</div>
-                <div style="font-size: 0.7rem; color:#d97706;">Segera tindaklanjuti</div>
-              </div>
-              <div class="asset-list">
-                <div class="list-row">
-                  <div>
-                    <div class="asset-name">MacBook Pro M3</div>
-                    <div class="asset-loc">IT Dept · Lantai 3</div>
-                  </div>
-                  <div>Kantor Pusat</div>
-                  <div><span class="status-badge">Operasional</span></div>
-                </div>
-                <div class="list-row">
-                  <div>
-                    <div class="asset-name">Printer Canon MX498</div>
-                    <div class="asset-loc">Administrasi · Lt 1</div>
-                  </div>
-                  <div>Gedung A</div>
-                  <div><span class="status-badge warning">Perlu Servis</span></div>
-                </div>
-                <div class="list-row">
-                  <div>
-                    <div class="asset-name">Proyektor Epson EB</div>
-                    <div class="asset-loc">Aula Utama</div>
-                  </div>
-                  <div>Gedung B</div>
-                  <div><span class="status-badge">Aktif</span></div>
-                </div>
-              </div>
-            </div>
+        <div class="reveal bg-slate-50 rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          <div class="bg-white px-4 py-2 border-b border-slate-100 flex items-center gap-2">
+            <div class="flex gap-1.5"><span class="w-3 h-3 rounded-full bg-red-400"></span><span class="w-3 h-3 rounded-full bg-yellow-400"></span><span class="w-3 h-3 rounded-full bg-green-400"></span></div>
+            <div class="text-xs font-mono text-slate-400 bg-slate-100 px-3 py-0.5 rounded-full">dasbor.asetku.id/overview</div>
+          </div>
+          <div class="p-5 grid grid-cols-3 gap-0 text-sm">
+            <div class="p-3"><div class="text-xs font-bold text-slate-400">TOTAL ASET</div><div class="text-2xl font-black text-blue-600">1.248</div><div class="text-[11px] text-green-600">↑ +3.2%</div></div>
+            <div class="p-3"><div class="text-xs font-bold text-slate-400">KONDISI BAIK</div><div class="text-2xl font-black text-emerald-600">1.101</div></div>
+            <div class="p-3"><div class="text-xs font-bold text-slate-400">PERLU RAWAT</div><div class="text-2xl font-black text-amber-600">147</div></div>
+          </div>
+          <div class="border-t border-slate-100 divide-y divide-slate-100">
+            <div class="flex justify-between px-5 py-3"><span class="font-semibold">MacBook Pro M3</span><span class="text-slate-500 text-xs">IT Dept</span><span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Operasional</span></div>
+            <div class="flex justify-between px-5 py-3"><span class="font-semibold">Printer Canon MX498</span><span class="text-slate-500 text-xs">Admin Lt1</span><span class="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">Perlu Servis</span></div>
+            <div class="flex justify-between px-5 py-3"><span class="font-semibold">Proyektor Epson EB</span><span class="text-slate-500 text-xs">Aula Utama</span><span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">Aktif</span></div>
           </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Features -->
-  <section id="features" class="section">
-    <div class="container">
-      <div class="section-header reveal">
-        <div class="section-label">KEUNGGULAN PLATFORM</div>
-        <h2 class="section-title">Semua fitur yang Anda butuhkan, tanpa kerumitan</h2>
-        <p class="section-sub">Didesain untuk efisiensi, dari pencatatan hingga pelaporan strategis.</p>
+  <!-- LISENSI / PAKET (Per Bulan & Per Tahun) seperti gambar card modern -->
+  <section id="pricing" class="py-20 bg-gradient-to-b from-white to-slate-50">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="text-center max-w-2xl mx-auto mb-12 reveal">
+        <span class="text-indigo-600 font-bold text-sm tracking-wider">PAKET LISENSI</span>
+        <h2 class="text-3xl lg:text-4xl font-extrabold text-slate-800 mt-2">Pilih sesuai kebutuhan instansi Anda</h2>
+        <p class="text-slate-500 mt-4">Tagihan per bulan atau hemat 20% dengan bayar per tahun. Semua paket sudah termasuk fitur lengkap.</p>
       </div>
-      <div class="features-grid">
-        <div class="feature-item reveal">
-          <div class="feature-icon">📊</div>
-          <div class="feature-title">Dasbor real-time</div>
-          <div class="feature-desc">Pantau status, nilai aset, dan tren penggunaan secara langsung dari tampilan yang intuitif.</div>
+
+      <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <!-- Card Bulanan -->
+        <div id="planMonthlyCard" class="license-card rounded-2xl border-2 border-slate-200 bg-white p-6 shadow-sm hover:shadow-md transition-all cursor-pointer">
+          <div class="flex justify-between items-start">
+            <div><span class="plan-badge">FLEKSIBEL</span></div>
+            <div class="text-indigo-600 font-bold text-sm">✨ POPULER</div>
+          </div>
+          <div class="mt-4"><span class="text-4xl font-black text-slate-800">Rp49.000</span><span class="text-slate-500"> / bulan</span></div>
+          <p class="text-slate-500 text-sm mt-1">Tagihan bulanan, bebas putus kapan saja</p>
+          <ul class="mt-6 space-y-3 text-sm">
+            <li class="flex gap-2"><span>✅</span> Akses penuh manajemen aset</li>
+            <li class="flex gap-2"><span>✅</span> Unlimited proyek & lokasi</li>
+            <li class="flex gap-2"><span>✅</span> Laporan real-time & ekspor</li>
+            <li class="flex gap-2"><span>✅</span> Dukungan prioritas email</li>
+          </ul>
+          <div class="mt-8"><div class="text-xs text-slate-400">*Pajak tidak termasuk</div></div>
         </div>
-        <div class="feature-item reveal">
-          <div class="feature-icon">📍</div>
-          <div class="feature-title">Lacak lokasi aset</div>
-          <div class="feature-desc">Filter berdasarkan divisi, ruangan, atau gedung. Temukan aset dalam hitungan detik.</div>
+
+        <!-- Card Tahunan (lebih hemat) -->
+        <div id="planYearlyCard" class="license-card rounded-2xl border-2 border-indigo-200 bg-white p-6 shadow-md hover:shadow-lg transition-all cursor-pointer relative">
+          <div class="absolute -top-3 left-6 bg-indigo-600 text-white text-[11px] font-bold px-3 py-1 rounded-full">HEMAT 20%</div>
+          <div class="flex justify-between items-start">
+            <div><span class="plan-badge" style="background:#e0e7ff;">BEST VALUE</span></div>
+          </div>
+          <div class="mt-4"><span class="text-4xl font-black text-slate-800">Rp470.000</span><span class="text-slate-500"> / tahun</span></div>
+          <p class="text-slate-500 text-sm mt-1">Setara Rp39.200/bulan — hemat Rp118.000/tahun</p>
+          <ul class="mt-6 space-y-3 text-sm">
+            <li class="flex gap-2"><span>✅</span> Semua fitur bulanan +</li>
+            <li class="flex gap-2"><span>✅</span> 2 akun admin tambahan gratis</li>
+            <li class="flex gap-2"><span>✅</span> Audit trail 12 bulan</li>
+            <li class="flex gap-2"><span>✅</span> Dukungan WhatsApp prioritas</li>
+          </ul>
+          <div class="mt-8"><div class="text-xs text-slate-400">*Pajak tidak termasuk</div></div>
         </div>
-        <div class="feature-item reveal">
-          <div class="feature-icon">🔔</div>
-          <div class="feature-title">Pengingat otomatis</div>
-          <div class="feature-desc">Jadwal servis, kalibrasi, dan peringatan garansi otomatis — tidak ada yang terlewat.</div>
-        </div>
-        <div class="feature-item reveal">
-          <div class="feature-icon">📄</div>
-          <div class="feature-title">Laporan instan</div>
-          <div class="feature-desc">Export PDF / Excel satu klik, cocok untuk audit internal maupun eksternal.</div>
-        </div>
-        <div class="feature-item reveal">
-          <div class="feature-icon">👥</div>
-          <div class="feature-title">Multi-level akses</div>
-          <div class="feature-desc">Kelola hak akses untuk tim, dari admin pusat hingga operator lapangan.</div>
-        </div>
-        <div class="feature-item reveal">
-          <div class="feature-icon">🔒</div>
-          <div class="feature-title">Keamanan enterprise</div>
-          <div class="feature-desc">Enkripsi data, backup harian, dan autentikasi dua faktor untuk keamanan maksimal.</div>
-        </div>
+      </div>
+
+      <div class="text-center mt-10 reveal">
+        <button id="selectPlanBtn" class="bg-indigo-600 text-white px-8 py-3 rounded-full font-bold shadow-lg hover:bg-indigo-700 transition text-lg">Daftar & Pilih Paket →</button>
+        <p class="text-xs text-slate-400 mt-3">Garansi 14 hari uang kembali, tanpa ribet</p>
       </div>
     </div>
   </section>
 
-
+  <!-- Fitur tambahan ringkas -->
+  <section id="fitur" class="py-16 bg-white">
+    <div class="max-w-7xl mx-auto px-6 lg:px-8">
+      <div class="grid md:grid-cols-3 gap-8 text-center reveal">
+        <div><div class="text-4xl mb-3">📍</div><h3 class="font-bold">Lacak Lokasi Real-time</h3><p class="text-slate-500 text-sm">Filter gedung, ruangan, divisi</p></div>
+        <div><div class="text-4xl mb-3">📊</div><h3 class="font-bold">Dashboard Analitik</h3><p class="text-slate-500 text-sm">Grafik depresiasi & status aset</p></div>
+        <div><div class="text-4xl mb-3">🔔</div><h3 class="font-bold">Pengingat Servis</h3><p class="text-slate-500 text-sm">Otomatis jadwal kalibrasi</p></div>
+      </div>
+    </div>
+  </section>
 
   <!-- CTA -->
-  <section id="cta" class="section">
-    <div class="container">
-      <div class="cta-block reveal">
-        <h2 class="cta-title">Siap mengelola aset dengan lebih cerdas?</h2>
-        <p class="cta-desc">Nikmati gratis 14 hari penuh. Tanpa kartu kredit, setup cepat, dan tim support siap membantu.</p>
-        <div class="cta-buttons">
-          <a href="#" class="btn-white">Daftar Sekarang →</a>
-          <a href="#" class="btn-outline-white">Hubungi Tim Sales</a>
-        </div>
-      </div>
+  <section class="py-16 bg-slate-900 text-white rounded-t-3xl">
+    <div class="max-w-4xl mx-auto text-center px-6 reveal">
+      <h2 class="text-3xl font-bold">Siap digitalisasi pengelolaan aset?</h2>
+      <p class="text-slate-300 mt-3">Pilih paket langganan dan dapatkan akses penuh dalam 2 menit</p>
+      <button id="ctaBottomBtn" class="mt-6 bg-white text-slate-900 px-8 py-3 rounded-full font-bold hover:bg-slate-100 transition">Mulai Sekarang</button>
     </div>
   </section>
 </main>
 
-<footer>
-  <div class="container">
-    <div class="footer-grid">
-      <div>
-        <div class="footer-logo">AsetKu</div>
-        <div class="footer-desc">Solusi manajemen aset modern untuk instansi pemerintah dan perusahaan di Indonesia.</div>
-      </div>
-      <div class="footer-col">
-        <h4>Platform</h4>
-        <ul>
-          <li><a href="#">Fitur Unggulan</a></li>
-          <li><a href="#">Harga & Paket</a></li>
-          <li><a href="#">Keamanan Data</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Perusahaan</h4>
-        <ul>
-          <li><a href="#">Tentang Kami</a></li>
-          <li><a href="#">Karir</a></li>
-          <li><a href="#">Blog & Artikel</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h4>Dukungan</h4>
-        <ul>
-          <li><a href="#">Pusat Bantuan</a></li>
-          <li><a href="#">Hubungi Kontak</a></li>
-          <li><a href="#">Dokumentasi API</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <span>© 2025 AsetKu. Seluruh hak cipta dilindungi.</span>
-      <div class="footer-links">
-        <a href="#">Kebijakan Privasi</a>
-        <a href="#">Syarat & Ketentuan</a>
-      </div>
-    </div>
-  </div>
+<footer class="bg-white border-t border-slate-100 py-10 text-center text-slate-400 text-sm">
+  <div class="max-w-7xl mx-auto">© 2025 AsetKu. Seluruh hak cipta. Manajemen Aset Modern.</div>
 </footer>
 
+<!-- ======================= MODAL REGISTRASI + PEMBAYARAN (otomatis sesuai pilihan perbulan / pertahun) ======================= -->
+<div id="registerModal" class="fixed inset-0 z-[100] hidden items-center justify-center p-4 modal-mask transition-all">
+  <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden transform transition-all">
+    <div class="bg-indigo-50 px-6 py-4 border-b border-indigo-100 flex justify-between items-center">
+      <h3 class="font-bold text-slate-800 text-lg">Daftar Akun Admin Sekolah</h3>
+      <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 text-2xl leading-5">&times;</button>
+    </div>
+    <div class="p-6">
+      <div id="modalAlert" class="hidden mb-4 p-3 rounded-lg text-sm"></div>
+      <!-- pilihan paket yang dipilih (dinamis) -->
+      <div class="bg-slate-50 p-3 rounded-xl mb-5 flex justify-between items-center">
+        <span class="font-semibold text-slate-700">Paket dipilih:</span>
+        <span id="selectedPlanLabel" class="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full text-sm font-bold">Bulanan (Rp49.000/bulan)</span>
+      </div>
+      <form id="registerForm">
+        @csrf
+        <div class="space-y-4">
+          <div><label class="block text-xs font-bold text-slate-600">Nama Lengkap</label><input type="text" id="regName" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:ring-indigo-500 focus:border-indigo-500" placeholder="Nama Kepala Sekolah / Admin"></div>
+          <div><label class="block text-xs font-bold text-slate-600">Email</label><input type="email" id="regEmail" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm" placeholder="admin@sekolah.sch.id"></div>
+          <div><label class="block text-xs font-bold text-slate-600">No. HP (opsional)</label><input type="text" id="regPhone" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm" placeholder="0812xxxx"></div>
+          <div><label class="block text-xs font-bold text-slate-600">Password</label><input type="password" id="regPassword" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm" placeholder="Min. 8 karakter"></div>
+          <div><label class="block text-xs font-bold text-slate-600">Konfirmasi Password</label><input type="password" id="regPasswordConf" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm"></div>
+          <div class="flex items-center gap-2"><input type="checkbox" id="termsCheckbox" class="rounded border-slate-300"><span class="text-xs text-slate-500">Saya setuju dengan <a href="#" class="text-indigo-600">Syarat & Ketentuan</a></span></div>
+        </div>
+        <div class="mt-6">
+          <button type="button" id="processPaymentBtn" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 transition flex justify-center items-center gap-2">Bayar Langganan <span id="paymentAmountSpan">Rp49.000</span></button>
+        </div>
+        <p class="text-center text-[11px] text-slate-400 mt-4">Pembayaran aman via Midtrans (kartu, transfer, e-wallet)</p>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
-  const revealElements = document.querySelectorAll('.reveal');
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
+  // STATE: pilihan paket (monthly / yearly)
+  let selectedPlan = 'monthly';   // monthly: 49.000 , yearly: 470.000
+  const monthlyAmount = 49000;
+  const yearlyAmount = 470000;
+
+  // UI Cards Highlight
+  const monthlyCard = document.getElementById('planMonthlyCard');
+  const yearlyCard = document.getElementById('planYearlyCard');
+  const selectPlanBtn = document.getElementById('selectPlanBtn');
+  const ctaBottomBtn = document.getElementById('ctaBottomBtn');
+  const modal = document.getElementById('registerModal');
+  const closeModal = document.getElementById('closeModalBtn');
+  const selectedPlanLabel = document.getElementById('selectedPlanLabel');
+  const paymentAmountSpan = document.getElementById('paymentAmountSpan');
+
+  function updateSelectedPlanUI() {
+    if (selectedPlan === 'monthly') {
+      monthlyCard.classList.add('selected', 'border-indigo-400', 'bg-indigo-50/40');
+      yearlyCard.classList.remove('selected', 'border-indigo-400', 'bg-indigo-50/40');
+      yearlyCard.classList.add('border-slate-200');
+      selectedPlanLabel.innerText = 'Bulanan (Rp49.000/bulan)';
+      paymentAmountSpan.innerText = 'Rp49.000';
+    } else {
+      yearlyCard.classList.add('selected', 'border-indigo-400', 'bg-indigo-50/40');
+      monthlyCard.classList.remove('selected', 'border-indigo-400', 'bg-indigo-50/40');
+      monthlyCard.classList.add('border-slate-200');
+      selectedPlanLabel.innerText = 'Tahunan (Rp470.000/tahun) Hemat 20%';
+      paymentAmountSpan.innerText = 'Rp470.000';
+    }
+  }
+
+  monthlyCard.addEventListener('click', () => { selectedPlan = 'monthly'; updateSelectedPlanUI(); });
+  yearlyCard.addEventListener('click', () => { selectedPlan = 'yearly'; updateSelectedPlanUI(); });
+  
+  function openModal() { modal.classList.remove('hidden'); modal.classList.add('flex'); document.body.style.overflow = 'hidden'; }
+  function closeModalFunc() { modal.classList.add('hidden'); modal.classList.remove('flex'); document.body.style.overflow = ''; }
+  selectPlanBtn.addEventListener('click', openModal);
+  ctaBottomBtn.addEventListener('click', openModal);
+  closeModal.addEventListener('click', closeModalFunc);
+  modal.addEventListener('click', (e) => { if(e.target === modal) closeModalFunc(); });
+
+  // Validasi dan proses pembayaran via Midtrans
+  const processBtn = document.getElementById('processPaymentBtn');
+  const alertDiv = document.getElementById('modalAlert');
+
+  function showAlert(msg, isError = true) {
+    alertDiv.classList.remove('hidden');
+    alertDiv.innerHTML = msg;
+    alertDiv.className = `mb-4 p-3 rounded-lg text-sm ${isError ? 'bg-red-50 text-red-700 border-l-4 border-red-500' : 'bg-green-50 text-green-700 border-l-4 border-green-500'}`;
+    setTimeout(() => { alertDiv.classList.add('hidden'); }, 4000);
+  }
+
+  // Fungsi untuk mendapatkan CSRF token dengan benar
+  function getCsrfToken() {
+    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+    if (!token) {
+      console.warn('CSRF token not found, trying to get from cookie');
+      // Fallback: ambil dari cookie Laravel
+      const name = 'XSRF-TOKEN';
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return decodeURIComponent(parts.pop().split(';').shift());
+    }
+    return token;
+  }
+
+  processBtn.addEventListener('click', async () => {
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const phone = document.getElementById('regPhone').value.trim();
+    const password = document.getElementById('regPassword').value;
+    const passwordConf = document.getElementById('regPasswordConf').value;
+    const terms = document.getElementById('termsCheckbox').checked;
+
+    if (!name || !email || !password || !passwordConf) {
+      showAlert('Harap isi nama, email, dan password.');
+      return;
+    }
+    if (!/^[^\s@]+@([^\s@]+\.)+[^\s@]+$/.test(email)) {
+      showAlert('Email tidak valid.');
+      return;
+    }
+    if (password.length < 8) {
+      showAlert('Password minimal 8 karakter.');
+      return;
+    }
+    if (password !== passwordConf) {
+      showAlert('Password dan konfirmasi tidak cocok.');
+      return;
+    }
+    if (!terms) {
+      showAlert('Anda harus menyetujui syarat & ketentuan.');
+      return;
+    }
+
+    // set loading
+    const originalText = processBtn.innerHTML;
+    processBtn.disabled = true;
+    processBtn.innerHTML = '<span class="loading-spinner"></span> Memproses...';
+
+    const amount = selectedPlan === 'monthly' ? monthlyAmount : yearlyAmount;
+    const planType = selectedPlan === 'monthly' ? 'monthly' : 'yearly';
+    
+    try {
+      const csrfToken = getCsrfToken();
+      
+      if (!csrfToken) {
+        throw new Error('Token CSRF tidak ditemukan. Silakan refresh halaman.');
       }
-    });
-  }, { threshold: 0.1, rootMargin: "0px 0px -20px 0px" });
-  revealElements.forEach(el => observer.observe(el));
+
+      const response = await fetch('{{ route("register.payment.token") }}', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'X-CSRF-TOKEN': csrfToken, 
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        },
+        credentials: 'same-origin', // Penting untuk mengirim cookie
+        body: JSON.stringify({ 
+          name, 
+          email, 
+          phone, 
+          password, 
+          password_confirmation: passwordConf,
+          amount, 
+          plan_type: planType 
+        })
+      });
+      
+      // Handle response tidak OK
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error(`Server error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.snap_token) {
+        throw new Error(data.message || 'Gagal membuat token pembayaran.');
+      }
+      
+      // Open snap popup
+      if (typeof snap === 'undefined') {
+        throw new Error('Midtrans Snap tidak tersedia. Silakan refresh halaman.');
+      }
+      
+      window.snap.pay(data.snap_token, {
+        onSuccess: async (result) => {
+          await finalizeRegistration(name, email, phone, password, passwordConf, result.order_id, 'success', planType, amount);
+        },
+        onPending: async (result) => {
+          await finalizeRegistration(name, email, phone, password, passwordConf, result.order_id, 'pending', planType, amount);
+        },
+        onError: (result) => {
+          showAlert('Pembayaran gagal: ' + (result.status_message || 'Silakan coba lagi'));
+          processBtn.disabled = false;
+          processBtn.innerHTML = originalText;
+        },
+        onClose: () => {
+          processBtn.disabled = false;
+          processBtn.innerHTML = originalText;
+        }
+      });
+    } catch (err) {
+      console.error('Payment error:', err);
+      showAlert(err.message || 'Koneksi gagal. Pastikan backend payment token tersedia.');
+      processBtn.disabled = false;
+      processBtn.innerHTML = originalText;
+    }
+  });
+
+  async function finalizeRegistration(name, email, phone, password, passwordConf, orderId, txStatus, planType, amount) {
+      const csrfToken = getCsrfToken();
+      
+      try {
+          const finalRes = await fetch('{{ route("register.final") }}', {
+              method: 'POST',
+              headers: { 
+                  'Content-Type': 'application/json', 
+                  'X-CSRF-TOKEN': csrfToken,
+                  'X-Requested-With': 'XMLHttpRequest',
+                  'Accept': 'application/json'
+              },
+              credentials: 'same-origin',
+              body: JSON.stringify({
+                  name, 
+                  email, 
+                  phone, 
+                  password, 
+                  password_confirmation: passwordConf,
+                  order_id: orderId, 
+                  transaction_status: txStatus, 
+                  plan_type: planType, 
+                  amount: amount, 
+                  role: 'admin_sekolah'
+              })
+          });
+          
+          const finalData = await finalRes.json();
+          
+          if (finalData.success) {
+              showAlert('Pendaftaran sukses! Lisensi aktif. Silakan login.', false);
+              setTimeout(() => { 
+                  window.location.href = finalData.redirect || '{{ route("login") }}'; 
+              }, 2000);
+          } else {
+              showAlert(finalData.message || 'Gagal menyimpan data, hubungi support.');
+              document.getElementById('processPaymentBtn').disabled = false;
+              document.getElementById('processPaymentBtn').innerHTML = `Bayar Langganan <span>${selectedPlan === 'monthly' ? 'Rp49.000' : 'Rp470.000'}</span>`;
+          }
+      } catch (err) {
+          console.error('Final registration error:', err);
+          showAlert('Error saat registrasi final: ' + err.message);
+          document.getElementById('processPaymentBtn').disabled = false;
+          document.getElementById('processPaymentBtn').innerHTML = `Bayar Langganan <span>${selectedPlan === 'monthly' ? 'Rp49.000' : 'Rp470.000'}</span>`;
+      }
+  }
+
+  // Reveal on scroll
+  const reveals = document.querySelectorAll('.reveal');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  reveals.forEach(r => obs.observe(r));
+
+  // default selected monthly UI
+  updateSelectedPlanUI();
 </script>
 </body>
 </html>
