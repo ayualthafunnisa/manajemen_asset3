@@ -94,7 +94,7 @@ class UserController extends Controller
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email,' . $user->id,
             'password' => 'nullable|min:6|confirmed',
-            'role'     => 'required|in:admin_sekolah,staf_asset',
+            'role'     => 'required|in:admin_sekolah,petugas,teknisi',
             'status'   => 'required|in:active,inactive,suspended',
             'phone'    => 'nullable|string|max:20',
         ]);

@@ -12,26 +12,50 @@ use App\Models\LokasiAsset;
 use App\Models\Penghapusan;
 use App\Models\Kerusakan;
 use App\Models\Perbaikan;
+use App\Models\License;
+use App\Models\Notification;
+
 
 
 class DashboardController extends Controller
 {
     public function superAdminDashboard()
     {
-        $totalInstansi   = Instansi::count();
-        $instansiBaru    = Instansi::whereMonth('created_at', now()->month)->count();
-        $totalUser       = User::count();
-        $userAktif       = User::where('status', 'active')->count();
-        $totalAsset      = Asset::count();
-        $pendingApproval = Penghapusan::where('status_penghapusan', 'diajukan')->count();
-        $instansis       = Instansi::withCount(['user', 'assets'])->latest()->take(6)->get();
-        $aktivitas       = collect();
-
+        $totalInstansi = Instansi::count();
+        $instansiBaru = Instansi::whereMonth('created_at', now()->month)->count();
+        $totalUser = User::count();
+        $userAktif = User::where('status', 'active')->count();
+        $totalAsset = Asset::count();
+        
+        // Pending approvals (licenses and penghapusan)
+        $pendingApproval = Penghapusan::where('status_penghapusan', 'pending')->count();
+        $pendingLicenses = License::where('approval_status', 'pending')->count();
+        
+        // Notifikasi untuk Super Admin
+        $recentNotifications = Notification::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->limit(10)
+            ->get();
+        
+        $unreadNotifications = Notification::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->count();
+        
+        // Tambahkan link untuk redirect notifikasi
+        foreach ($recentNotifications as $notif) {
+            if ($notif->type == 'registration_pending') {
+                $data = json_decode($notif->data, true);
+                $notif->link = route('admin.approvals.show', $data['license_id'] ?? 0);
+            } else {
+                $notif->link = '#';
+            }
+            $notif->icon = $notif->type == 'registration_pending' ? '📝' : '🔔';
+        }
+        
         return view('dashboard.superadmin', compact(
-            'totalInstansi', 'instansiBaru',
-            'totalUser', 'userAktif',
-            'totalAsset', 'pendingApproval',
-            'instansis', 'aktivitas'
+            'totalInstansi', 'instansiBaru', 'totalUser', 'userAktif', 
+            'totalAsset', 'pendingApproval', 'pendingLicenses',
+            'recentNotifications', 'unreadNotifications'
         ));
     }
 

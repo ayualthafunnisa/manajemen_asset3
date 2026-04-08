@@ -3,7 +3,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Laporan {{ ucfirst($jenis) }}</title>
+    <title>Laporan {{ ucfirst($jenisLaporan) }}</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -70,22 +70,21 @@
 </head>
 <body>
     <div class="header">
-        <h1>LAPORAN {{ strtoupper($jenis) }}</h1>
+        <h1>LAPORAN {{ strtoupper($jenisLaporan) }}</h1>
         <p>SMK Informatika Utama</p>
         <p>Dicetak: {{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}</p>
     </div>
     
-    @if($request->tanggal_mulai && $request->tanggal_akhir)
+    @if($startDate && $endDate)
     <div class="info">
-        <strong>Periode:</strong> {{ \Carbon\Carbon::parse($request->tanggal_mulai)->format('d/m/Y') }} - 
-        {{ \Carbon\Carbon::parse($request->tanggal_akhir)->format('d/m/Y') }}
+        <strong>Periode:</strong> {{ $startDate->format('d/m/Y') }} - {{ $endDate->format('d/m/Y') }}
     </div>
     @endif
     
     <table>
         <thead>
             <tr>
-                @if($jenis == 'asset')
+                @if($jenisLaporan == 'asset')
                 <th>No</th>
                 <th>Kode Asset</th>
                 <th>Nama Asset</th>
@@ -96,7 +95,7 @@
                 <th>Kondisi</th>
                 <th>Status</th>
                 <th>Tgl Dibuat</th>
-                @elseif($jenis == 'kerusakan')
+                @elseif($jenisLaporan == 'kerusakan')
                 <th>No</th>
                 <th>Asset</th>
                 <th>Kode Asset</th>
@@ -105,7 +104,7 @@
                 <th>Status</th>
                 <th>Lokasi</th>
                 <th>Pelapor</th>
-                @elseif($jenis == 'penghapusan')
+                @elseif($jenisLaporan == 'penghapusan')
                 <th>No</th>
                 <th>Asset</th>
                 <th>Kode Asset</th>
@@ -113,7 +112,7 @@
                 <th>Alasan</th>
                 <th>Status</th>
                 <th>Disetujui</th>
-                @elseif($jenis == 'penyusutan')
+                @elseif($jenisLaporan == 'penyusutan')
                 <th>No</th>
                 <th>Asset</th>
                 <th>Kode Asset</th>
@@ -129,7 +128,7 @@
         <tbody>
             @forelse($data['items'] as $index => $item)
             <tr>
-                @if($jenis == 'asset')
+                @if($jenisLaporan == 'asset')
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>{{ $item->kode_asset }}</td>
                 <td>{{ $item->nama_asset }}</td>
@@ -140,7 +139,7 @@
                 <td>{{ ucfirst(str_replace('_', ' ', $item->kondisi)) }}</td>
                 <td>{{ ucfirst(str_replace('_', ' ', $item->status_asset)) }}</td>
                 <td>{{ $item->created_at->format('d/m/Y') }}</td>
-                @elseif($jenis == 'kerusakan')
+                @elseif($jenisLaporan == 'kerusakan')
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>{{ $item->asset->nama_asset ?? '-' }}</td>
                 <td>{{ $item->asset->kode_asset ?? '-' }}</td>
@@ -149,7 +148,7 @@
                 <td>{{ ucfirst($item->status_perbaikan) }}</td>
                 <td>{{ $item->lokasi_kerusakan ?? '-' }}</td>
                 <td>{{ $item->user->name ?? '-' }}</td>
-                @elseif($jenis == 'penghapusan')
+                @elseif($jenisLaporan == 'penghapusan')
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>{{ $item->asset->nama_asset ?? '-' }}</td>
                 <td>{{ $item->asset->kode_asset ?? '-' }}</td>
@@ -157,7 +156,7 @@
                 <td>{{ Str::limit($item->alasan_penghapusan, 50) }}</td>
                 <td>{{ ucfirst($item->status_penghapusan) }}</td>
                 <td>{{ $item->approved_by ?? '-' }}</td>
-                @elseif($jenis == 'penyusutan')
+                @elseif($jenisLaporan == 'penyusutan')
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>{{ $item->asset->nama_asset ?? '-' }}</td>
                 <td>{{ $item->asset->kode_asset ?? '-' }}</td>

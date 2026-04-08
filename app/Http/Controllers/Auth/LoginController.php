@@ -49,7 +49,16 @@ class LoginController extends Controller
             }
         }
  
-        return redirect()->intended(route('dashboard'));
+            return match ($user->role) {
+            'super_admin'    => redirect()->route('dashboard.superadmin'),
+            'admin_sekolah'  => redirect()->route('dashboard.admin'),
+            'petugas'        => redirect()->route('dashboard.staf'),
+            'teknisi'        => redirect()->route('dashboard.teknisi'),
+            default          => redirect('/'),
+        };
+
+   
+        return redirect('/');
     }
  
     public function logout(Request $request)

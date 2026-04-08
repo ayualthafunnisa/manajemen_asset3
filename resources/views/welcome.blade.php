@@ -84,8 +84,8 @@
       <span class="text-xl font-extrabold tracking-tight text-slate-800">Aset<span class="text-indigo-600">Ku</span></span>
     </div>
     <div class="flex gap-4 items-center">
-      <a href="#" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Login</a>
-      <a href="#pricing" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-semibold shadow-sm hover:bg-indigo-700 transition">Coba Gratis</a>
+      <a href="{{ route('login')}}" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition">Login</a>
+      <button id="navCtaBtn" class="bg-indigo-600 text-white px-5 py-2 rounded-full text-sm font-semibold shadow-sm hover:bg-indigo-700 transition">Buat Akun</button>
     </div>
   </div>
 </nav>
@@ -102,8 +102,7 @@
           <h1 class="text-4xl lg:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">Kelola Aset Instansi <br><span class="text-indigo-600">Lebih Cerdas & Real-time</span></h1>
           <p class="text-slate-500 mt-6 text-lg max-w-md">Pantau inventaris, lacak lokasi, laporan instan — dalam satu dasbor modern tanpa batasan.</p>
           <div class="flex gap-4 mt-8">
-            <a href="#pricing" class="bg-indigo-600 text-white px-6 py-3 rounded-full font-semibold shadow-md hover:bg-indigo-700 transition">Mulai 14 Hari Gratis →</a>
-            <a href="#fitur" class="border border-slate-200 text-slate-700 px-6 py-3 rounded-full font-medium hover:bg-slate-50 transition">Lihat Demo</a>
+            <button id="heroCtaBtn" class="bg-indigo-600 text-white px-6 py-3 rounded-full font-semibold shadow-md hover:bg-indigo-700 transition">Pilih Paket →</button>
           </div>
           <div class="flex gap-8 mt-10 pt-6 border-t border-slate-100">
             <div><span class="font-black text-2xl text-slate-800">2.800+</span><p class="text-xs text-slate-500">Instansi Aktif</p></div>
@@ -183,17 +182,6 @@
     </div>
   </section>
 
-  <!-- Fitur tambahan ringkas -->
-  <section id="fitur" class="py-16 bg-white">
-    <div class="max-w-7xl mx-auto px-6 lg:px-8">
-      <div class="grid md:grid-cols-3 gap-8 text-center reveal">
-        <div><div class="text-4xl mb-3">📍</div><h3 class="font-bold">Lacak Lokasi Real-time</h3><p class="text-slate-500 text-sm">Filter gedung, ruangan, divisi</p></div>
-        <div><div class="text-4xl mb-3">📊</div><h3 class="font-bold">Dashboard Analitik</h3><p class="text-slate-500 text-sm">Grafik depresiasi & status aset</p></div>
-        <div><div class="text-4xl mb-3">🔔</div><h3 class="font-bold">Pengingat Servis</h3><p class="text-slate-500 text-sm">Otomatis jadwal kalibrasi</p></div>
-      </div>
-    </div>
-  </section>
-
   <!-- CTA -->
   <section class="py-16 bg-slate-900 text-white rounded-t-3xl">
     <div class="max-w-4xl mx-auto text-center px-6 reveal">
@@ -252,6 +240,8 @@
   const yearlyCard = document.getElementById('planYearlyCard');
   const selectPlanBtn = document.getElementById('selectPlanBtn');
   const ctaBottomBtn = document.getElementById('ctaBottomBtn');
+  const navCtaBtn = document.getElementById('navCtaBtn');
+  const heroCtaBtn = document.getElementById('heroCtaBtn');
   const modal = document.getElementById('registerModal');
   const closeModal = document.getElementById('closeModalBtn');
   const selectedPlanLabel = document.getElementById('selectedPlanLabel');
@@ -278,8 +268,13 @@
   
   function openModal() { modal.classList.remove('hidden'); modal.classList.add('flex'); document.body.style.overflow = 'hidden'; }
   function closeModalFunc() { modal.classList.add('hidden'); modal.classList.remove('flex'); document.body.style.overflow = ''; }
+  
+  // Semua tombol yang mengarah ke pembuatan akun
   selectPlanBtn.addEventListener('click', openModal);
   ctaBottomBtn.addEventListener('click', openModal);
+  navCtaBtn.addEventListener('click', openModal);
+  heroCtaBtn.addEventListener('click', openModal);
+  
   closeModal.addEventListener('click', closeModalFunc);
   modal.addEventListener('click', (e) => { if(e.target === modal) closeModalFunc(); });
 
@@ -416,51 +411,54 @@
   });
 
   async function finalizeRegistration(name, email, phone, password, passwordConf, orderId, txStatus, planType, amount) {
-      const csrfToken = getCsrfToken();
-      
-      try {
-          const finalRes = await fetch('{{ route("register.final") }}', {
-              method: 'POST',
-              headers: { 
-                  'Content-Type': 'application/json', 
-                  'X-CSRF-TOKEN': csrfToken,
-                  'X-Requested-With': 'XMLHttpRequest',
-                  'Accept': 'application/json'
-              },
-              credentials: 'same-origin',
-              body: JSON.stringify({
-                  name, 
-                  email, 
-                  phone, 
-                  password, 
-                  password_confirmation: passwordConf,
-                  order_id: orderId, 
-                  transaction_status: txStatus, 
-                  plan_type: planType, 
-                  amount: amount, 
-                  role: 'admin_sekolah'
-              })
-          });
-          
-          const finalData = await finalRes.json();
-          
-          if (finalData.success) {
-              showAlert('Pendaftaran sukses! Lisensi aktif. Silakan login.', false);
-              setTimeout(() => { 
-                  window.location.href = finalData.redirect || '{{ route("login") }}'; 
-              }, 2000);
-          } else {
-              showAlert(finalData.message || 'Gagal menyimpan data, hubungi support.');
-              document.getElementById('processPaymentBtn').disabled = false;
-              document.getElementById('processPaymentBtn').innerHTML = `Bayar Langganan <span>${selectedPlan === 'monthly' ? 'Rp49.000' : 'Rp470.000'}</span>`;
-          }
-      } catch (err) {
-          console.error('Final registration error:', err);
-          showAlert('Error saat registrasi final: ' + err.message);
-          document.getElementById('processPaymentBtn').disabled = false;
-          document.getElementById('processPaymentBtn').innerHTML = `Bayar Langganan <span>${selectedPlan === 'monthly' ? 'Rp49.000' : 'Rp470.000'}</span>`;
-      }
-  }
+    const csrfToken = getCsrfToken();
+    
+    try {
+        const finalRes = await fetch('{{ route("register.final") }}', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json', 
+                'X-CSRF-TOKEN': csrfToken,
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            credentials: 'same-origin',
+            body: JSON.stringify({
+                name, 
+                email, 
+                phone, 
+                password, 
+                password_confirmation: passwordConf,
+                order_id: orderId, 
+                transaction_status: txStatus, 
+                plan_type: planType, 
+                amount: amount, 
+                role: 'admin_sekolah'
+            })
+        });
+        
+        const finalData = await finalRes.json();
+        
+        if (finalData.success) {
+            // Tampilkan alert sukses dengan pesan yang lebih informatif
+            showAlert('✅ Pembayaran berhasil! Akun Anda menunggu approval dari Super Admin. Silakan cek email untuk aktivasi.', false);
+            
+            // Redirect ke halaman pending approval setelah 3 detik
+            setTimeout(() => { 
+                window.location.href = finalData.redirect || '{{ route("registration.pending") }}'; 
+            }, 3000);
+        } else {
+            showAlert(finalData.message || 'Gagal menyimpan data, hubungi support.');
+            document.getElementById('processPaymentBtn').disabled = false;
+            document.getElementById('processPaymentBtn').innerHTML = `Bayar Langganan <span>${selectedPlan === 'monthly' ? 'Rp49.000' : 'Rp470.000'}</span>`;
+        }
+    } catch (err) {
+        console.error('Final registration error:', err);
+        showAlert('Error saat registrasi final: ' + err.message);
+        document.getElementById('processPaymentBtn').disabled = false;
+        document.getElementById('processPaymentBtn').innerHTML = `Bayar Langganan <span>${selectedPlan === 'monthly' ? 'Rp49.000' : 'Rp470.000'}</span>`;
+    }
+}
 
   // Reveal on scroll
   const reveals = document.querySelectorAll('.reveal');

@@ -3,21 +3,6 @@
 
 @section('title', 'Detail Asset - ' . $asset->nama_asset)
 
-@section('breadcrumbs')
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm border border-gray-200 px-4 py-3 rounded-lg">
-        <li class="breadcrumb-item">
-            <a href="" class="text-gray-600 hover:text-purple-600 transition duration-150">Dashboard</a>
-        </li>
-        <li class="breadcrumb-item">
-            <a href="{{ route('asset.index') }}" class="text-gray-600 hover:text-purple-600 transition duration-150">Asset</a>
-        </li>
-        <li class="breadcrumb-item active text-gray-800" aria-current="page">
-            Detail Asset #{{ $asset->assetID }}
-        </li>
-    </ol>
-</nav>
-@endsection
 
 @section('header')
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">

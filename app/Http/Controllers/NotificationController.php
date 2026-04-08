@@ -1,0 +1,152 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Notification;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class NotificationController extends Controller
+{
+    /**
+     * Get all notifications for current user
+     */
+    public function index()
+    {
+        $notifications = Notification::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        $unreadCount = Notification::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->count();
+
+        // Tambahkan icon dan link untuk setiap notifikasi
+        foreach ($notifications as $notif) {
+            // Set icon berdasarkan type
+            switch ($notif->type) {
+                case 'registration_pending':
+                    $notif->icon = '📝';
+                    break;
+                case 'license_approved':
+                    $notif->icon = '✅';
+                    break;
+                case 'license_rejected':
+                    $notif->icon = '❌';
+                    break;
+                case 'approval_completed':
+                    $notif->icon = '✅';
+                    break;
+                default:
+                    $notif->icon = '🔔';
+            }
+            
+            // Set link untuk detail
+            if ($notif->type == 'registration_pending') {
+                $data = is_string($notif->data) ? json_decode($notif->data, true) : $notif->data;
+                $notif->detail_link = route('admin.approvals.show', $data['license_id'] ?? $data['user_id'] ?? 0);
+            } else {
+                $notif->detail_link = '#';
+            }
+        }
+
+        if (request()->ajax()) {
+            return response()->json([
+                'notifications' => $notifications,
+                'unread_count' => $unreadCount
+            ]);
+        }
+
+        return view('notifications.index', compact('notifications', 'unreadCount'));
+    }
+
+    /**
+     * Get unread notifications count (for navbar badge)
+     */
+    public function getUnreadCount()
+    {
+        $count = Notification::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->count();
+
+        $latestNotifications = Notification::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->orderBy('created_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        return response()->json([
+            'count' => $count,
+            'notifications' => $latestNotifications
+        ]);
+    }
+
+    /**
+     * Mark single notification as read
+     */
+    public function markAsRead($id)
+    {
+        $notification = Notification::where('user_id', Auth::id())
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $notification->markAsRead();
+
+        if (request()->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Notifikasi ditandai sudah dibaca.');
+    }
+
+    /**
+     * Mark all notifications as read
+     */
+    public function markAllAsRead()
+    {
+        Notification::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->update([
+                'is_read' => true,
+                'read_at' => now()
+            ]);
+
+        if (request()->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Semua notifikasi ditandai sudah dibaca.');
+    }
+
+    /**
+     * Delete notification
+     */
+    public function destroy($id)
+    {
+        $notification = Notification::where('user_id', Auth::id())
+            ->where('id', $id)
+            ->firstOrFail();
+
+        $notification->delete();
+
+        if (request()->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Notifikasi dihapus.');
+    }
+
+    /**
+     * Clear all notifications
+     */
+    public function clearAll()
+    {
+        Notification::where('user_id', Auth::id())->delete();
+
+        if (request()->ajax()) {
+            return response()->json(['success' => true]);
+        }
+
+        return back()->with('success', 'Semua notifikasi dihapus.');
+    }
+}

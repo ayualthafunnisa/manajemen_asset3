@@ -69,8 +69,8 @@
         }
 
         .qr-img {
-            width: 230px;
-            height: 230px;
+            width: 180px;
+            height: 180px;
         }
     </style>
 </head>
@@ -81,7 +81,7 @@
 
     <div class="card-name">
         <h2>{{ $asset->nama_asset }}</h2>
-        <div class="kode">({{ $asset->kode_asset }})</div>
+        <div class="kode">{{ $asset->kode_asset }}</div>
     </div>
 
     <table class="qr-table">

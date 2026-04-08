@@ -271,39 +271,28 @@ class AssetController extends Controller
             'asset_ids'   => 'required|array|min:1',
             'asset_ids.*' => 'exists:assets,assetID',
         ]);
-    
-        $assets = Asset::with(['kategori', 'lokasi', 'instansi'])
+
+        $assets = Asset::with(['kategori', 'lokasi'])
             ->whereIn('assetID', $request->asset_ids)
-            ->orderBy('nama_asset')
             ->get();
-    
-        // Generate QR di sini (controller), BUKAN di blade.
-        // Pakai format SVG (tidak butuh Imagick), lalu encode ke data URI.
-        foreach ($assets as $asset) {
-            $urlDetail = url('asset/' . $asset->assetID);
-    
-            $urlKerusakan = url('kerusakan/create')
-                . '?assetID=' . $asset->assetID
-                . '&asset_kode=' . urlencode($asset->kode_asset);
-    
-            $svgDetail    = QrCode::format('svg')->size(120)->margin(1)->errorCorrection('M')->generate($urlDetail);
-            $svgKerusakan = QrCode::format('svg')->size(120)->margin(1)->errorCorrection('M')->generate($urlKerusakan);
-    
-            // Data URI svg+xml — DomPDF support ini, tidak butuh Imagick
-            $asset->qr_detail_uri    = 'data:image/svg+xml;base64,' . base64_encode($svgDetail);
-            $asset->qr_kerusakan_uri = 'data:image/svg+xml;base64,' . base64_encode($svgKerusakan);
-        }
-    
-        $pdf = Pdf::loadView('assets.barcode-pdf', compact('assets'))
-            ->setPaper('a4', 'portrait')
-            ->setOptions([
-                'defaultFont'          => 'DejaVu Sans',
-                'isRemoteEnabled'      => false,
-                'isHtml5ParserEnabled' => true,
-                'dpi'                  => 150,
-            ]);
-    
-        return $pdf->download('barcode-asset-' . date('Ymd-His') . '.pdf');
+
+        // Generate QR code untuk setiap asset
+        $assets->each(function ($asset) {
+            $urlDetail    = route('asset.show', $asset->assetID);
+            $urlKerusakan = route('kerusakan.create', ['kode' => $asset->kode_asset]);
+
+            // Ganti png → svg, tidak butuh Imagick
+            $asset->qr_detail_uri = 'data:image/svg+xml;base64,' .
+                base64_encode(\QrCode::format('svg')->size(300)->margin(2)->generate($urlDetail));
+
+            $asset->qr_kerusakan_uri = 'data:image/svg+xml;base64,' .
+                base64_encode(\QrCode::format('svg')->size(300)->margin(2)->color(220, 38, 38)->generate($urlKerusakan));
+        });
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('assets.barcode-pdf', compact('assets'))
+            ->setPaper('a5', 'portrait');
+
+        return $pdf->stream('barcode-asset-' . now()->format('Ymd-His') . '.pdf');
     }
     
     /**

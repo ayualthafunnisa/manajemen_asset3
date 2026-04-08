@@ -2,21 +2,6 @@
 
 @section('title', 'Daftar Keluhan Aset - Teknisi')
 
-@section('breadcrumbs')
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb bg-white shadow-sm border border-gray-200 px-4 py-3 rounded-lg">
-        <li class="breadcrumb-item">
-            <a href="" class="text-gray-600 hover:text-purple-600 transition duration-150">
-                Dashboard
-            </a>
-        </li>
-        <li class="breadcrumb-item active text-gray-800" aria-current="page">
-            Daftar Keluhan
-        </li>
-    </ol>
-</nav>
-@endsection
-
 @section('header')
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
     <div>

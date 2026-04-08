@@ -52,7 +52,7 @@ class Instansi extends Model
         return $this->hasMany(Penyusutan::class, 'InstansiID', 'InstansiID');
     }
 
-    public function user()
+    public function users()
     {
         return $this->hasMany(User::class, 'InstansiID', 'InstansiID');
     }

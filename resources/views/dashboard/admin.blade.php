@@ -18,6 +18,7 @@
 
 
 @section('content')
+
     @if($license)
     <div class="mb-6 p-4 rounded-xl border 
         @if($sisaHari <= 7) border-red-300 bg-red-50

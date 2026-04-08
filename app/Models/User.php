@@ -25,6 +25,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'avatar',
         'phone',
         'status'
     ];
@@ -91,4 +92,53 @@ class User extends Authenticatable
     {
         return $this->hasOne(License::class);
     }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function approvedLicenses()
+    {
+        return $this->hasMany(License::class, 'approved_by');
+    }
+
+    // ─── Helper methods ────────────────────────────────────────
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
+    public function isAdminSekolah(): bool
+    {
+        return $this->role === 'admin_sekolah';
+    }
+
+    public function isPetugas(): bool
+    {
+        return $this->role === 'petugas';
+    }
+
+    public function isTeknisi(): bool
+    {
+        return $this->role === 'teknisi';
+    }
+
+    public function hasActiveLicense(): bool
+    {
+        $license = $this->license;
+        return $license && $license->isValid();
+    }
+
+    // ─── Scopes ────────────────────────────────────────────────
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+
 }

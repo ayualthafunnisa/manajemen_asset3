@@ -6,18 +6,19 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Instansi;
 use App\Models\License;
-use Laravolt\Indonesia\Models\Province;
+use App\Models\Payment;
+use App\Models\Notification; // Tambahkan ini
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Mail;
 use Midtrans\Config as MidtransConfig;
 use Midtrans\Snap;
-use Midtrans\Notification;
+use Midtrans\Notification as MidtransNotification;
 
 class RegisterController extends Controller
 {
@@ -25,10 +26,9 @@ class RegisterController extends Controller
     {
         return view('auth.register');
     }
- 
+
     /* ════════════════════════════════════════════════════════════
      * REGISTER — GET SNAP TOKEN (AJAX)
-     * Dipanggil JS sebelum popup Midtrans dibuka.
      * ════════════════════════════════════════════════════════════ */
  
     public function getPaymentToken(Request $request)
@@ -38,7 +38,7 @@ class RegisterController extends Controller
             'email'    => ['required', 'email', 'unique:users,email'],
             'phone'    => ['nullable', 'string', 'max:20'],
             'password' => ['required', 'min:8', 'confirmed'],
-            'amount'   => ['nullable', 'integer'], // Bisa dari frontend
+            'amount'   => ['nullable', 'integer'],
             'plan_type'=> ['nullable', 'string', 'in:monthly,yearly'],
         ]);
 
@@ -52,15 +52,13 @@ class RegisterController extends Controller
         $data = $validator->validated();
         
         // Tentukan amount berdasarkan pilihan user
-        $amount = $request->amount ?? 500000; // Default yearly
+        $amount = $request->amount ?? 500000;
         $planType = $request->plan_type ?? 'yearly';
         
-        // Jika monthly, amount = 49000
         if ($planType === 'monthly') {
             $amount = 49000;
         }
 
-        // Cek apakah Midtrans sudah terkonfigurasi
         if (!config('services.midtrans.server_key')) {
             return response()->json([
                 'message' => 'Konfigurasi pembayaran belum lengkap. Hubungi administrator.'
@@ -73,28 +71,24 @@ class RegisterController extends Controller
                 'name'      => $data['name'],
                 'email'     => $data['email'],
                 'phone'     => $data['phone'] ?? null,
-                'password'  => $data['password'], // Simpan password asli sementara
+                'password'  => $data['password'],
                 'plan_type' => $planType,
                 'amount'    => $amount,
             ]]);
             
             $orderId = 'LIC-' . strtoupper(Str::random(8)) . '-' . time();
-            
-            // Simpan order_id di session
             session(['temp_order_id' => $orderId]);
 
-            // 4. Konfigurasi Midtrans
+            // Konfigurasi Midtrans
             MidtransConfig::$serverKey    = config('services.midtrans.server_key');
             MidtransConfig::$isProduction = config('services.midtrans.is_production', false);
             MidtransConfig::$isSanitized  = true;
             MidtransConfig::$is3ds        = true;
 
-            // Nama item berdasarkan pilihan
             $itemName = $planType === 'monthly' 
                 ? 'Lisensi Asset Management 1 Bulan' 
                 : 'Lisensi Asset Management 1 Tahun';
 
-            // 5. Susun Params
             $params = [
                 'transaction_details' => [
                     'order_id'     => $orderId,
@@ -124,8 +118,6 @@ class RegisterController extends Controller
 
         } catch (\Exception $e) {
             Log::error('Midtrans Error: ' . $e->getMessage());
-            
-            // Hapus session jika gagal
             session()->forget(['temp_registration', 'temp_order_id']);
             
             return response()->json([
@@ -136,12 +128,10 @@ class RegisterController extends Controller
  
     /* ════════════════════════════════════════════════════════════
      * REGISTER — FINAL SUBMIT (setelah Midtrans callback)
-     * Membuat user dan license setelah payment berhasil
      * ════════════════════════════════════════════════════════════ */
  
     public function register(Request $request)
     {
-        // Log untuk debug
         Log::info('Final Registration Data:', $request->all());
 
         $request->validate([
@@ -152,10 +142,9 @@ class RegisterController extends Controller
             'phone'              => ['nullable', 'string', 'max:20'],
             'password'           => ['required', 'min:8'],
             'amount'             => ['nullable', 'integer'],
-            'plan_type'          => ['nullable', 'string'],
+            'plan_type'          => ['nullable', 'string', 'in:monthly,yearly'],
         ]);
 
-        // Cek apakah email sudah terdaftar (double check)
         $existingUser = User::where('email', $request->email)->first();
         if ($existingUser) {
             return response()->json([
@@ -164,7 +153,6 @@ class RegisterController extends Controller
             ], 422);
         }
 
-        // Cek apakah pembayaran berhasil
         $isPaid = in_array($request->transaction_status, ['settlement', 'capture', 'success']);
         
         if (!$isPaid) {
@@ -177,49 +165,83 @@ class RegisterController extends Controller
         try {
             DB::beginTransaction();
             
-            // Buat user
+            // Generate activation token
+            $activationToken = Str::random(60);
+            
+            // Buat user dengan status pending (menunggu approval super admin)
             $user = User::create([
                 'name'     => $request->name,
                 'email'    => $request->email,
                 'phone'    => $request->phone,
                 'password' => Hash::make($request->password),
                 'role'     => 'admin_sekolah',
-                'status'   => 'active',
+                'status'   => 'pending', // Pending approval
+                'activation_token' => $activationToken,
+                'activation_token_expires_at' => now()->addDays(7),
             ]);
             
-            // Tentukan masa aktif license
             $planType = $request->plan_type ?? 'yearly';
             $amount = $request->amount ?? ($planType === 'monthly' ? 49000 : 500000);
+            $durationMonths = $planType === 'monthly' ? 1 : 12;
             
             $expiredDate = $planType === 'monthly' 
                 ? now()->addMonth()->toDateString() 
                 : now()->addYear()->toDateString();
             
-            // Buat license
+            // Buat license dengan status pending approval
             $license = License::create([
-                'user_id'        => $user->id,
-                'license_key'    => 'KEY-' . strtoupper(Str::random(16)),
-                'kode_lisensi'   => $request->order_id,
-                'start_date'     => now()->toDateString(),
-                'expired_date'   => $expiredDate,
-                'is_active'      => true,
-                'payment_status' => 'settlement',
-                'amount'         => $amount,
+                'user_id'         => $user->id,
+                'license_key'     => 'KEY-' . strtoupper(Str::random(16)),
+                'kode_lisensi'    => $request->order_id,
+                'license_type'    => $planType === 'monthly' ? 'basic' : 'premium',
+                'duration_months' => $durationMonths,
+                'start_date'      => now()->toDateString(),
+                'expired_date'    => $expiredDate,
+                'is_active'       => false,
+                'payment_status'  => 'settlement',
+                'approval_status' => 'pending',
             ]);
+            
+            // Buat record payment
+            $payment = Payment::create([
+                'user_id'     => $user->id,
+                'license_id'  => $license->id,
+                'order_id'    => $request->order_id,
+                'amount'      => $amount,
+                'status'      => 'settlement',
+                'paid_at'     => now(),
+            ]);
+
+            // Buat notifikasi untuk Super Admin
+            $superAdmins = User::where('role', 'super_admin')->get();
+            foreach ($superAdmins as $superAdmin) {
+                Notification::create([
+                    'user_id' => $superAdmin->id,
+                    'title' => '📝 Pendaftaran Baru Menunggu Approval',
+                    'message' => "User {$user->name} ({$user->email}) telah melakukan registrasi dan pembayaran. Silakan approve akun.",
+                    'type' => 'registration_pending',
+                    'data' => json_encode([
+                        'user_id' => $user->id,
+                        'license_id' => $license->id,
+                        'user_name' => $user->name,
+                        'user_email' => $user->email
+                    ]),
+                    'is_read' => false
+                ]);
+            }
             
             DB::commit();
             
-            // Login user
-            Auth::login($user);
-            $request->session()->regenerate();
-            
-            // Hapus data temporary session
+            // JANGAN LOGIN USER - biarkan dia di halaman sukses
             session()->forget(['temp_registration', 'temp_order_id']);
+            
+            // Simpan email user untuk ditampilkan di halaman sukses
+            session(['pending_approval_email' => $user->email]);
             
             return response()->json([
                 'success' => true,
-                'message' => 'Selamat! Registrasi berhasil.',
-                'redirect' => route('dashboard.admin')
+                'message' => '✅ Pembayaran berhasil! Akun Anda akan segera diproses oleh Super Admin. Silakan cek email Anda untuk informasi aktivasi.',
+                'redirect' => route('registration.pending')
             ]);
             
         } catch (\Exception $e) {
@@ -233,6 +255,15 @@ class RegisterController extends Controller
         }
     }
  
+    /**
+     * Tampilkan halaman pending approval setelah registrasi
+     */
+    public function pendingApproval()
+    {
+        $email = session('pending_approval_email');
+        return view('auth.pending-approval', compact('email'));
+    }
+
     /* ════════════════════════════════════════════════════════════
      * MIDTRANS WEBHOOK
      * ════════════════════════════════════════════════════════════ */
@@ -243,22 +274,24 @@ class RegisterController extends Controller
         MidtransConfig::$isProduction = config('services.midtrans.is_production', false);
  
         try {
-            $notif = new Notification();
+            $notif = new MidtransNotification();
             $orderId = $notif->order_id;
             $status = $notif->transaction_status;
             $fraud = $notif->fraud_status ?? null;
+            $paymentType = $notif->payment_type ?? null;
             
             Log::info('Midtrans Webhook:', [
                 'order_id' => $orderId,
                 'status' => $status,
-                'fraud' => $fraud
+                'fraud' => $fraud,
+                'payment_type' => $paymentType
             ]);
             
-            // Cari license berdasarkan kode_lisensi
-            $license = License::where('kode_lisensi', $orderId)->first();
+            // Cari payment berdasarkan order_id
+            $payment = Payment::where('order_id', $orderId)->first();
             
-            if (!$license) {
-                Log::warning('License not found for order_id: ' . $orderId);
+            if (!$payment) {
+                Log::warning('Payment not found for order_id: ' . $orderId);
                 return response()->json(['message' => 'not found'], 404);
             }
  
@@ -269,15 +302,19 @@ class RegisterController extends Controller
                 default => 'pending',
             };
  
-            $isActive = $payStatus === 'settlement';
- 
-            $license->update([
-                'payment_status' => $payStatus, 
-                'is_active' => $isActive
+            // Update payment
+            $payment->update([
+                'status' => $payStatus,
+                'payment_type' => $paymentType,
+                'midtrans_response' => json_encode($notif),
+                'paid_at' => in_array($payStatus, ['settlement', 'capture']) ? now() : null,
             ]);
             
-            if ($isActive && $license->user) {
-                $license->user->update(['status' => 'active']);
+            // Update terkait license jika payment berhasil
+            if ($payStatus === 'settlement' && $payment->license) {
+                $payment->license->update([
+                    'payment_status' => $payStatus,
+                ]);
             }
  
             return response()->json(['message' => 'ok']);
@@ -286,5 +323,27 @@ class RegisterController extends Controller
             Log::error('Webhook Error: ' . $e->getMessage());
             return response()->json(['message' => 'error'], 500);
         }
+    }
+
+    public function activateAccount($token)
+    {
+        $user = User::where('activation_token', $token)
+                    ->where('activation_token_expires_at', '>', now())
+                    ->first();
+
+        if (!$user) {
+            return redirect()->route('login')
+                ->with('error', 'Token aktivasi tidak valid atau sudah kadaluarsa.');
+        }
+
+        $user->update([
+            'status' => 'active',
+            'activation_token' => null,
+            'activation_token_expires_at' => null,
+            'email_verified_at' => now(),
+        ]);
+
+        return redirect()->route('login')
+            ->with('success', 'Akun berhasil diaktifkan. Silakan login.');
     }
 }

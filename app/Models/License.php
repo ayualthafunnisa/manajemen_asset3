@@ -9,35 +9,53 @@ class License extends Model
 {
     use HasFactory;
 
-   protected $fillable = [
+    protected $fillable = [
         'user_id',
         'license_key',
         'kode_lisensi',
+        'license_type',      // tambahan dari migration
+        'duration_months',   // tambahan dari migration
         'start_date',
         'expired_date',
         'is_active',
         'payment_status',
-        'snap_token',
-        'amount',
+        'approval_status',   // tambahan dari migration
+        'rejection_reason',  // tambahan dari migration
+        'approved_by',       // tambahan dari migration
+        'approved_at',       // tambahan dari migration
     ];
 
     protected $casts = [
         'start_date' => 'date',
         'expired_date' => 'date',
         'is_active' => 'boolean',
+        'approved_at' => 'datetime',
     ];
+
     // ─── Relasi ────────────────────────────────────────────────
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    public function approver()
+    {
+        return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
     // ─── Helpers ───────────────────────────────────────────────
 
-    /** Lisensi valid = aktif DAN belum expired */
+    /** Lisensi valid = aktif, approved, DAN belum expired */
     public function isValid(): bool
     {
-        return $this->is_active && now()->lte($this->expired_date);
+        return $this->is_active && 
+               $this->approval_status === 'approved' && 
+               now()->lte($this->expired_date);
     }
 
     /** Sisa hari (0 jika sudah expired) */
@@ -49,9 +67,11 @@ class License extends Model
     /** Label status untuk tampilan */
     public function statusLabel(): string
     {
-        if (!$this->is_active)            return 'Nonaktif';
+        if ($this->approval_status === 'pending') return 'Menunggu Approval';
+        if ($this->approval_status === 'rejected') return 'Ditolak';
+        if (!$this->is_active) return 'Nonaktif';
         if (now()->gt($this->expired_date)) return 'Expired';
-        if ($this->daysRemaining() <= 30)  return 'Segera Expired';
+        if ($this->daysRemaining() <= 30) return 'Segera Expired';
         return 'Aktif';
     }
 
@@ -63,7 +83,6 @@ class License extends Model
         $this->update([
             'expired_date' => $base->copy()->addMonths($months),
             'is_active'    => true,
-            'notes'        => $notes,
         ]);
 
         return $this;
@@ -72,7 +91,9 @@ class License extends Model
     // ─── Scopes ────────────────────────────────────────────────
     public function scopeActive($query)
     {
-        return $query->where('is_active', true)->whereDate('expired_date', '>=', now());
+        return $query->where('is_active', true)
+                     ->where('approval_status', 'approved')
+                     ->whereDate('expired_date', '>=', now());
     }
 
     public function scopeExpired($query)
@@ -80,9 +101,20 @@ class License extends Model
         return $query->whereDate('expired_date', '<', now());
     }
 
+    public function scopePendingApproval($query)
+    {
+        return $query->where('approval_status', 'pending');
+    }
+
+    public function scopeApproved($query)
+    {
+        return $query->where('approval_status', 'approved');
+    }
+
     public function scopeExpiringSoon($query, int $days = 30)
     {
         return $query->where('is_active', true)
+            ->where('approval_status', 'approved')
             ->whereDate('expired_date', '>=', now())
             ->whereDate('expired_date', '<=', now()->addDays($days));
     }

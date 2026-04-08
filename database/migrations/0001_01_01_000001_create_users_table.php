@@ -15,9 +15,9 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['super_admin', 'admin_sekolah', 'petugas', 'teknisi']); 
-            $table->string('phone', 20)->nullable(); 
-            $table->string('status')->default('pending'); // pending, active, suspended, rejected
+            $table->enum('role', ['super_admin', 'admin_sekolah', 'petugas', 'teknisi']);
+            $table->string('phone', 20)->nullable();
+            $table->enum('status', ['pending', 'active', 'suspended', 'rejected'])->default('pending');
             $table->string('activation_token')->nullable()->unique();
             $table->timestamp('activation_token_expires_at')->nullable();
             $table->rememberToken();
@@ -44,8 +44,8 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('users');
-        Schema::dropIfExists('password_reset_tokens');
         Schema::dropIfExists('sessions');
+        Schema::dropIfExists('password_reset_tokens');
+        Schema::dropIfExists('users');
     }
 };

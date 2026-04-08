@@ -101,7 +101,8 @@ class LaporanController extends Controller
 
         // Ambil data berdasarkan jenis laporan
         $data = $this->getLaporanData($jenisLaporan, $startDate, $endDate, $status, $kondisi);
-        
+    
+        // Tambahkan tanggal ke response
         return response()->json([
             'html' => view('laporan.partials.table', compact('data', 'jenisLaporan'))->render(),
             'total' => $data['total'],
@@ -135,7 +136,7 @@ class LaporanController extends Controller
         // Ambil data berdasarkan jenis laporan
         $data = $this->getLaporanData($jenisLaporan, $startDate, $endDate, $status, $kondisi);
         
-        // Load view untuk PDF
+        // Gunakan loadHTML dengan compact
         $html = view('laporan.pdf', compact('data', 'jenisLaporan', 'startDate', 'endDate'))->render();
         
         $pdf = Pdf::loadHTML($html);
@@ -176,15 +177,16 @@ class LaporanController extends Controller
     
     private function getLaporanData($jenisLaporan, $startDate, $endDate, $status = null, $kondisi = null)
     {
-        $query = null;
+        $items = collect();
+        $total = 0;
         
         switch ($jenisLaporan) {
             case 'asset':
                 $query = Asset::with(['kategori', 'lokasi']);
                 
-                // Filter tanggal berdasarkan created_at
                 if ($startDate && $endDate) {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
+                    $query->whereDate('created_at', '>=', $startDate->toDateString())
+                        ->whereDate('created_at', '<=', $endDate->toDateString());
                 }
                 
                 if ($status) {
