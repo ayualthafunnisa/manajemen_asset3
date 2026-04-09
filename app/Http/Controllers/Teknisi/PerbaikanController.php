@@ -148,7 +148,7 @@ class PerbaikanController extends Controller
             default                  => 'Laporan perbaikan disimpan. Status keluhan diubah ke "Diproses".',
         };
 
-        return redirect()->route('teknisi.riwayat.index')->with('success', $pesan);
+        return redirect()->route('riwayat.index')->with('success', $pesan);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -182,12 +182,16 @@ class PerbaikanController extends Controller
         $perbaikan->update($data);
 
         // Sinkron status kerusakan
-        if (in_array($request->status, ['selesai', 'tidak_bisa_diperbaiki'])) {
-            $perbaikan->kerusakan->update(['status_perbaikan' => 'selesai']);
+       if (in_array($request->status, ['selesai', 'tidak_bisa_diperbaiki'])) {
+            return redirect()
+                ->route('riwayat.index')
+                ->with('success', 'Perbaikan selesai dan masuk ke riwayat.');
         }
 
-        return back()->with('success', 'Status perbaikan berhasil diperbarui.');
-    }
+        return redirect()
+            ->route('keluhan.index')
+            ->with('success', 'Status perbaikan diperbarui.');
+            }
 
     // ──────────────────────────────────────────────────────────────────────────
     // RIWAYAT INDEX — Perbaikan yang sudah selesai

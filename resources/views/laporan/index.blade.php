@@ -106,38 +106,15 @@
         </form>
         
         {{-- Tabel Preview --}}
-        <div class="mt-6">
+        <div class="mt-6" id="tableContainer">
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr id="tableHeader">
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kode Asset</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Asset</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lokasi</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kondisi</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                        </tr>
-                    </thead>
-                    <tbody id="tableBody" class="bg-white divide-y divide-gray-200">
-                        <tr>
-                            <td colspan="8" class="px-6 py-8 text-center text-gray-500">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                                </svg>
-                                <p class="mt-2">Pilih rentang tanggal dan klik Filter untuk melihat data</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                    <tfoot id="tableFooter" class="bg-gray-50 font-bold hidden">
-                        <tr>
-                            <td colspan="7" class="px-6 py-3 text-right text-sm">Total Data:</td>
-                            <td class="px-6 py-3 text-left text-sm" id="totalData">0</td>
-                        </tr>
-                    </tfoot>
-                </table>
+                <div class="flex flex-col items-center py-8 text-gray-500" id="emptyState">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="mt-2">Pilih rentang tanggal dan klik Filter untuk melihat data</p>
+                </div>
+                <div id="tableResult"></div>
             </div>
         </div>
     </div>
@@ -247,11 +224,15 @@ function filterLaporan() {
     const jenisLaporan = document.querySelector('input[name="jenis_laporan"]:checked').value;
     
     // Show loading
-    const tableBody = document.getElementById('tableBody');
-    tableBody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center"><div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div><p class="mt-2">Memuat data...</p></td></tr>';
+    const tableResult = document.getElementById('tableResult');
+    const emptyState = document.getElementById('emptyState');
     
-    // Update header berdasarkan jenis laporan
-    updateTableHeader(jenisLaporan);
+    emptyState.classList.add('hidden');
+    tableResult.innerHTML = `
+        <div class="flex flex-col items-center py-8">
+            <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+            <p class="mt-2 text-gray-500">Memuat data...</p>
+        </div>`;
     
     fetch('{{ route("laporan.preview") }}', {
         method: 'POST',
@@ -270,20 +251,18 @@ function filterLaporan() {
     .then(response => response.json())
     .then(data => {
         if (data.error) {
-            tableBody.innerHTML = `<td><td colspan="8" class="px-6 py-8 text-center text-red-600">${data.error}</td></tr>`;
+            tableResult.innerHTML = `<p class="py-8 text-center text-red-600">${data.error}</p>`;
             return;
         }
         if (data.html) {
-            tableBody.innerHTML = data.html;
+            tableResult.innerHTML = data.html;
         } else {
-            tableBody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-gray-500">Tidak ada data</td></tr>';
+            tableResult.innerHTML = '<p class="py-8 text-center text-gray-500">Tidak ada data</p>';
         }
-        document.getElementById('tableFooter').classList.remove('hidden');
-        document.getElementById('totalData').innerText = data.filtered || 0;
     })
     .catch(error => {
         console.error('Error:', error);
-        tableBody.innerHTML = '<tr><td colspan="8" class="px-6 py-8 text-center text-red-600">Terjadi kesalahan saat memuat data</td></tr>';
+        tableResult.innerHTML = '<p class="py-8 text-center text-red-600">Terjadi kesalahan saat memuat data</p>';
     });
 }
 

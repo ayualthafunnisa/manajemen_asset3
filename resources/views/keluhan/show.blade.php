@@ -251,9 +251,9 @@
                     @if($kerusakan->perbaikan->status === 'dalam_perbaikan' && $kerusakan->perbaikan->teknisi_id === Auth::id())
                     <div class="mt-6 pt-6 border-t border-gray-200">
                         <h4 class="text-sm font-semibold text-gray-700 mb-3">Perbarui Status Perbaikan</h4>
-                        <form action="{{ route('keluhan.updateStatus', $kerusakan->perbaikan->perbaikanID) }}" method="POST" class="space-y-3">
+                        <form action="{{ route('perbaikan.updateStatus', $kerusakan->perbaikan->perbaikanID) }}" method="POST" class="space-y-3">
                             @csrf
-                            @method('PATCH')
+                            @method('POST')
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                                 <div>
                                     <label class="block text-xs font-medium text-gray-600 mb-1">Status Baru</label>
@@ -313,7 +313,7 @@
                             </tr>
                             <tr>
                                 <td class="py-2 text-sm font-medium text-gray-500">Kategori</td>
-                                <td class="py-2 text-sm text-gray-900">{{ $kerusakan->asset->kategori->nama_kategori ?? '-' }}</td>
+                                <td class="py-2 text-sm text-gray-900">{{ $kerusakan->asset->kategori->NamaKategori ?? '-' }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -334,7 +334,7 @@
                         <tbody class="divide-y divide-gray-100">
                             <tr>
                                 <td class="py-2 text-sm font-medium text-gray-500">Nama Lokasi</td>
-                                <td class="py-2 text-sm text-gray-900">{{ $kerusakan->lokasi->nama_lokasi }}</td>
+                                <td class="py-2 text-sm text-gray-900">{{ $kerusakan->lokasi->NamaLokasi }}</td>
                             </tr>
                             @if(isset($kerusakan->lokasi->gedung))
                             <tr>

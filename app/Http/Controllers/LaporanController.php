@@ -204,36 +204,36 @@ class LaporanController extends Controller
             case 'kerusakan':
                 $query = Kerusakan::with(['asset', 'user']);
                 
-                // Filter tanggal berdasarkan tanggal_laporan
                 if ($startDate && $endDate) {
-                    $query->whereBetween('tanggal_laporan', [$startDate, $endDate]);
+                    $query->whereDate('created_at', '>=', $startDate->toDateString())
+                        ->whereDate('created_at', '<=', $endDate->toDateString());
                 }
                 
-                $items = $query->orderBy('tanggal_laporan', 'desc')->get();
+                $items = $query->orderBy('created_at', 'desc')->get();
                 $total = Kerusakan::count();
                 break;
-                
+
             case 'penghapusan':
                 $query = Penghapusan::with(['asset', 'user']);
                 
-                // Filter tanggal berdasarkan tanggal_penghapusan
                 if ($startDate && $endDate) {
-                    $query->whereBetween('tanggal_penghapusan', [$startDate, $endDate]);
+                    $query->whereDate('created_at', '>=', $startDate->toDateString())
+                        ->whereDate('created_at', '<=', $endDate->toDateString());
                 }
                 
-                $items = $query->orderBy('tanggal_penghapusan', 'desc')->get();
+                $items = $query->orderBy('created_at', 'desc')->get();
                 $total = Penghapusan::count();
                 break;
-                
+
             case 'penyusutan':
                 $query = Penyusutan::with(['asset']);
                 
-                // Filter tanggal berdasarkan tanggal_mulai
                 if ($startDate && $endDate) {
-                    $query->whereBetween('tanggal_mulai', [$startDate, $endDate]);
+                    $query->whereDate('created_at', '>=', $startDate->toDateString())
+                        ->whereDate('created_at', '<=', $endDate->toDateString());
                 }
                 
-                $items = $query->orderBy('tanggal_mulai', 'desc')->get();
+                $items = $query->orderBy('created_at', 'desc')->get();
                 $total = Penyusutan::count();
                 break;
                 

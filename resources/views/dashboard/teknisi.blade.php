@@ -142,7 +142,7 @@
                             </span>
                         </td>
                         <td class="px-6 py-4">
-                            <a href="{{ route('teknisi.keluhan.show', $keluhan->kerusakanID) }}"
+                            <a href="{{ route('keluhan.show', $keluhan->kerusakanID) }}"
                                class="text-xs text-primary-600 hover:underline font-semibold">
                                 Detail
                             </a>
@@ -202,7 +202,7 @@
                     <p class="text-sm font-bold text-red-800">Peringatan!</p>
                 </div>
                 <p class="text-xs text-red-700">Ada <strong>{{ $keluhanKritis }} keluhan kritis</strong> yang menunggu penanganan segera.</p>
-                <a href="{{ route('teknisi.keluhan.index', ['prioritas' => 'kritis']) }}"
+                <a href="{{ route('keluhan.index', ['prioritas' => 'kritis']) }}"
                    class="mt-2 inline-block text-xs font-semibold text-red-700 hover:underline">
                     Tangani sekarang →
                 </a>

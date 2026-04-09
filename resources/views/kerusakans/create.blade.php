@@ -3,18 +3,18 @@
 @section('title', 'Tambah Laporan Kerusakan - Jobie')
 
 @section('header')
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900">Tambah Laporan Kerusakan</h1>
-        <p class="mt-1 text-gray-600">Buat laporan kerusakan aset baru</p>
+        <h1 class="text-2xl font-bold text-neutral-900">Tambah Laporan Kerusakan</h1>
+        <p class="mt-1 text-sm text-neutral-500">Buat laporan kerusakan aset baru</p>
     </div>
     <div class="mt-4 sm:mt-0">
         <a href="{{ route('kerusakan.index') }}"
-           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md font-semibold text-xs text-gray-700 uppercase tracking-widest hover:bg-gray-50 transition duration-150 ease-in-out">
+           class="inline-flex items-center px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 bg-white hover:bg-neutral-50 transition-all duration-200 shadow-sm hover:shadow">
             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
             </svg>
-            Kembali
+            Kembali ke Daftar
         </a>
     </div>
 </div>
@@ -24,225 +24,297 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css">
 <style>
     .ts-wrapper .ts-control {
-        padding: 0.625rem 1rem;
-        border: 1px solid #d1d5db;
+        padding: 0.75rem 1rem;
+        border: 2px solid #e5e5e5;
         border-radius: 0.5rem;
         font-size: 0.875rem;
         line-height: 1.5;
-        min-height: 48px;
+        min-height: 52px;
         box-shadow: none;
     }
     .ts-wrapper.focus .ts-control {
-        border-color: #8b5cf6;
-        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.3);
+        border-color: #7c3aed;
+        box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
         outline: none;
     }
-    .ts-wrapper .ts-dropdown { border-color: #8b5cf6; border-radius: 0.5rem; box-shadow: 0 4px 16px rgba(0,0,0,.10); }
-    .ts-wrapper .ts-dropdown .active { background: #ede9fe; color: #5b21b6; }
-    input[readonly] { background-color: #f3f4f6; cursor: not-allowed; color: #6b7280; }
-    #damage-bar-wrap { display: none; margin-top: 0.5rem; }
-    #damage-bar { height: 8px; border-radius: 99px; transition: width .4s ease, background-color .4s ease; }
-    /* Preview foto */
-    #foto-preview { display: none; max-height: 200px; border-radius: 0.5rem; border: 1px solid #e5e7eb; margin-top: 0.5rem; }
+    .ts-wrapper .ts-dropdown { 
+        border-color: #7c3aed; 
+        border-radius: 0.5rem; 
+        box-shadow: 0 4px 16px rgba(0,0,0,.10); 
+    }
+    .ts-wrapper .ts-dropdown .active { 
+        background: #ede9fe; 
+        color: #5b21b6; 
+    }
+    #damage-bar-wrap { 
+        margin-top: 0.5rem; 
+    }
+    #damage-bar { 
+        height: 8px; 
+        border-radius: 99px; 
+        transition: width .4s ease, background-color .4s ease; 
+    }
+    #foto-preview { 
+        display: none; 
+        max-height: 200px; 
+        border-radius: 0.5rem; 
+        border: 1px solid #e5e7eb; 
+        margin-top: 0.5rem; 
+    }
 </style>
 @endpush
 
 @section('content')
-<div class="max-w-4xl mx-auto">
-    <div class="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-        <div class="p-6 md:p-8">
-            <form action="{{ route('kerusakan.store') }}" method="POST"
-                  enctype="multipart/form-data" id="kerusakanForm">
+<div class="w-full">
+    <div class="bg-white rounded-xl shadow-card border border-neutral-200 overflow-hidden hover:shadow-card-hover transition-shadow duration-300">
+        {{-- Header Form --}}
+        <div class="px-8 py-6 border-b border-neutral-200 bg-gradient-to-r from-neutral-50 to-white">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-primary-100 rounded-lg">
+                    <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-lg font-semibold text-neutral-900">Form Laporan Kerusakan</h2>
+                    <p class="text-sm text-neutral-500">Lengkapi data kerusakan dengan detail dan akurat</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- Form Body --}}
+        <div class="px-8 py-8">
+            <form action="{{ route('kerusakan.store') }}" method="POST" enctype="multipart/form-data" id="kerusakanForm" class="space-y-8">
                 @csrf
 
-                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-                    <div class="flex">
-                        <svg class="h-5 w-5 text-yellow-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                {{-- Info Penting --}}
+                <div class="bg-warning-50 border-l-4 border-warning-500 rounded-r-xl p-5">
+                    <div class="flex items-start gap-3">
+                        <svg class="h-5 w-5 text-warning-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
                         </svg>
-                        <p class="ml-3 text-sm text-yellow-700">
-                            <span class="font-bold">Informasi:</span>
-                            Pastikan data sesuai kondisi kerusakan. Prioritas terisi otomatis dari jenis kerusakan.
-                        </p>
+                        <div>
+                            <p class="text-sm font-medium text-warning-800">Informasi Penting</p>
+                            <p class="text-sm text-warning-700 mt-1">Pastikan data sesuai kondisi kerusakan. Prioritas terisi otomatis dari jenis kerusakan yang dipilih.</p>
+                        </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {{-- Form Grid --}}
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {{-- Left Column --}}
+                    <div class="space-y-6">
+                        {{-- Pilih Aset --}}
+                        <div class="space-y-2">
+                            <label for="assetID" class="block text-sm font-semibold text-neutral-700">
+                                Pilih Aset <span class="text-danger-500">*</span>
+                            </label>
+                            <select name="assetID" id="assetID" class="w-full @error('assetID') border-danger-500 @enderror" required>
+                                <option value="">-- Pilih Aset --</option>
+                                @foreach($assets as $asset)
+                                <option value="{{ $asset->assetID }}" {{ old('assetID') == $asset->assetID ? 'selected' : '' }}>
+                                    {{ $asset->kode_asset }} — {{ $asset->nama_asset }}
+                                </option>
+                                @endforeach
+                            </select>
+                            @error('assetID')
+                                <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                    {{-- Pilih Aset (Tom Select) --}}
-                    <div class="space-y-2 md:col-span-2">
-                        <label for="assetID" class="block text-sm font-medium text-gray-700">
-                            Pilih Aset <span class="text-red-500">*</span>
-                        </label>
-                        <select name="assetID" id="assetID"
-                                class="w-full @error('assetID') border-red-500 @enderror"
-                                required>
-                            <option value="">-- Pilih Aset --</option>
-                            @foreach($assets as $asset)
-                            <option value="{{ $asset->assetID }}" {{ old('assetID') == $asset->assetID ? 'selected' : '' }}>
-                                {{ $asset->kode_asset }} — {{ $asset->nama_asset }}
-                            </option>
-                            @endforeach
-                        </select>
-                        @error('assetID')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                        {{-- Lokasi --}}
+                        <div class="space-y-2">
+                            <label for="LokasiID" class="block text-sm font-semibold text-neutral-700">
+                                Lokasi <span class="text-danger-500">*</span>
+                            </label>
+                            <select name="LokasiID" id="LokasiID"
+                                    class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('LokasiID') border-danger-500 @enderror"
+                                    required>
+                                <option value="">-- Pilih Lokasi --</option>
+                                @foreach($lokasis as $lokasi)
+                                <option value="{{ $lokasi->LokasiID }}" {{ old('LokasiID') == $lokasi->LokasiID ? 'selected' : '' }}>
+                                    {{ $lokasi->KodeLokasi }} - {{ $lokasi->NamaLokasi }}
+                                </option>
+                                @endforeach
+                            </select>
+                            @error('LokasiID')
+                                <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                    {{-- Lokasi --}}
-                    <div class="space-y-2">
-                        <label for="LokasiID" class="block text-sm font-medium text-gray-700">
-                            Lokasi <span class="text-red-500">*</span>
-                        </label>
-                        <select name="LokasiID" id="LokasiID"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('LokasiID') border-red-500 @enderror"
-                                required>
-                            <option value="">-- Pilih Lokasi --</option>
-                            @foreach($lokasis as $lokasi)
-                            <option value="{{ $lokasi->LokasiID }}" {{ old('LokasiID') == $lokasi->LokasiID ? 'selected' : '' }}>
-                                {{ $lokasi->KodeLokasi }} - {{ $lokasi->NamaLokasi }}
-                            </option>
-                            @endforeach
-                        </select>
-                        @error('LokasiID')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                        {{-- Tanggal Laporan --}}
+                        <div class="space-y-2">
+                            <label for="tanggal_laporan" class="block text-sm font-semibold text-neutral-700">
+                                Tanggal Laporan <span class="text-danger-500">*</span>
+                            </label>
+                            <input type="date" name="tanggal_laporan" id="tanggal_laporan"
+                                   value="{{ old('tanggal_laporan', date('Y-m-d')) }}"
+                                   class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('tanggal_laporan') border-danger-500 @enderror"
+                                   required>
+                            @error('tanggal_laporan')
+                                <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
 
-                    {{-- Kode Laporan (readonly, auto-generate) --}}
-                    <div class="space-y-2">
-                        <label for="kode_laporan" class="block text-sm font-medium text-gray-700">
-                            Kode Laporan
-                        </label>
-                        <input type="text" name="kode_laporan" id="kode_laporan"
-                               value="{{ old('kode_laporan', $kodeLaporan ?? '') }}"
-                               readonly
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg @error('kode_laporan') border-red-500 @enderror">
-                        @error('kode_laporan')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Tanggal Laporan --}}
-                    <div class="space-y-2">
-                        <label for="tanggal_laporan" class="block text-sm font-medium text-gray-700">
-                            Tanggal Laporan <span class="text-red-500">*</span>
-                        </label>
-                        <input type="date" name="tanggal_laporan" id="tanggal_laporan"
-                               value="{{ old('tanggal_laporan', date('Y-m-d')) }}"
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('tanggal_laporan') border-red-500 @enderror"
-                               required>
-                        @error('tanggal_laporan')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Tanggal Kerusakan --}}
-                    <div class="space-y-2">
-                        <label for="tanggal_kerusakan" class="block text-sm font-medium text-gray-700">
-                            Tanggal Kerusakan <span class="text-red-500">*</span>
-                        </label>
-                        <input type="date" name="tanggal_kerusakan" id="tanggal_kerusakan"
-                               value="{{ old('tanggal_kerusakan', date('Y-m-d')) }}"
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('tanggal_kerusakan') border-red-500 @enderror"
-                               required>
-                        @error('tanggal_kerusakan')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Jenis Kerusakan --}}
-                    <div class="space-y-2">
-                        <label for="jenis_kerusakan" class="block text-sm font-medium text-gray-700">
-                            Jenis Kerusakan <span class="text-red-500">*</span>
-                        </label>
-                        <select name="jenis_kerusakan" id="jenis_kerusakan"
-                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('jenis_kerusakan') border-red-500 @enderror"
-                                required>
-                            <option value="">-- Pilih Jenis Kerusakan --</option>
-                            <option value="ringan" {{ old('jenis_kerusakan') == 'ringan' ? 'selected' : '' }}>Ringan (25%)</option>
-                            <option value="sedang" {{ old('jenis_kerusakan') == 'sedang' ? 'selected' : '' }}>Sedang (50%)</option>
-                            <option value="berat"  {{ old('jenis_kerusakan') == 'berat'  ? 'selected' : '' }}>Berat (75%)</option>
-                            <option value="total"  {{ old('jenis_kerusakan') == 'total'  ? 'selected' : '' }}>Total (100%)</option>
-                        </select>
-                        @error('jenis_kerusakan')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    {{-- Tingkat Kerusakan (visual only, tidak dikirim — dihitung di controller) --}}
-                    <div class="space-y-2">
-                        <label class="block text-sm font-medium text-gray-700">Tingkat Kerusakan (%)</label>
-                        <input type="number" id="tingkat_display"
-                               readonly placeholder="Terisi otomatis dari jenis kerusakan"
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                        <div id="damage-bar-wrap">
-                            <div class="w-full bg-gray-200 rounded-full overflow-hidden" style="height:8px;">
-                                <div id="damage-bar" style="width:0%;"></div>
-                            </div>
-                            <p id="damage-bar-label" class="text-xs text-gray-500 mt-1"></p>
+                        {{-- Tanggal Kerusakan --}}
+                        <div class="space-y-2">
+                            <label for="tanggal_kerusakan" class="block text-sm font-semibold text-neutral-700">
+                                Tanggal Kerusakan <span class="text-danger-500">*</span>
+                            </label>
+                            <input type="date" name="tanggal_kerusakan" id="tanggal_kerusakan"
+                                   value="{{ old('tanggal_kerusakan', date('Y-m-d')) }}"
+                                   class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('tanggal_kerusakan') border-danger-500 @enderror"
+                                   required>
+                            @error('tanggal_kerusakan')
+                                <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
+                            @enderror
                         </div>
                     </div>
 
-                    {{-- Estimasi Biaya --}}
-                    <div class="space-y-2 md:col-span-2">
-                        <label for="estimasi_biaya" class="block text-sm font-medium text-gray-700">
-                            Estimasi Biaya (Rp)
-                        </label>
-                        <input type="number" name="estimasi_biaya" id="estimasi_biaya"
-                               value="{{ old('estimasi_biaya') }}"
-                               min="0" step="1000"
-                               placeholder="Masukkan estimasi biaya perbaikan (opsional)"
-                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('estimasi_biaya') border-red-500 @enderror">
-                        @error('estimasi_biaya')
-                            <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-                        @enderror
-                    </div>
+                    {{-- Right Column --}}
+                    <div class="space-y-6">
+                        {{-- Kode Laporan (readonly) --}}
+                        <div class="space-y-2">
+                            <label for="kode_laporan" class="block text-sm font-semibold text-neutral-700">Kode Laporan</label>
+                            <input type="text" name="kode_laporan" id="kode_laporan"
+                                   value="{{ old('kode_laporan', $kodeLaporan ?? '') }}"
+                                   readonly
+                                   class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg bg-neutral-50 text-neutral-600 @error('kode_laporan') border-danger-500 @enderror">
+                            @error('kode_laporan')
+                                <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
 
+                        {{-- Jenis Kerusakan --}}
+                        <div class="space-y-2">
+                            <label for="jenis_kerusakan" class="block text-sm font-semibold text-neutral-700">
+                                Jenis Kerusakan <span class="text-danger-500">*</span>
+                            </label>
+                            <select name="jenis_kerusakan" id="jenis_kerusakan"
+                                    class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('jenis_kerusakan') border-danger-500 @enderror"
+                                    required>
+                                <option value="">-- Pilih Jenis Kerusakan --</option>
+                                <option value="ringan" {{ old('jenis_kerusakan') == 'ringan' ? 'selected' : '' }}>Ringan (25%)</option>
+                                <option value="sedang" {{ old('jenis_kerusakan') == 'sedang' ? 'selected' : '' }}>Sedang (50%)</option>
+                                <option value="berat"  {{ old('jenis_kerusakan') == 'berat'  ? 'selected' : '' }}>Berat (75%)</option>
+                                <option value="total"  {{ old('jenis_kerusakan') == 'total'  ? 'selected' : '' }}>Total (100%)</option>
+                            </select>
+                            @error('jenis_kerusakan')
+                                <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Tingkat Kerusakan (visual only) --}}
+                        <div class="space-y-2">
+                            <label class="block text-sm font-semibold text-neutral-700">Tingkat Kerusakan (%)</label>
+                            <input type="number" id="tingkat_display" readonly
+                                   placeholder="Terisi otomatis dari jenis kerusakan"
+                                   class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg bg-neutral-50">
+                            <div id="damage-bar-wrap" style="display: none;">
+                                <div class="w-full bg-neutral-200 rounded-full overflow-hidden" style="height:8px;">
+                                    <div id="damage-bar" style="width:0%;"></div>
+                                </div>
+                                <p id="damage-bar-label" class="text-xs text-neutral-500 mt-1"></p>
+                            </div>
+                        </div>
+
+                        {{-- Estimasi Biaya --}}
+                        <div class="space-y-2">
+                            <label for="estimasi_biaya" class="block text-sm font-semibold text-neutral-700">Estimasi Biaya (Rp)</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-neutral-500 text-sm pointer-events-none">Rp</span>
+                                <input type="number" name="estimasi_biaya" id="estimasi_biaya"
+                                       value="{{ old('estimasi_biaya') }}"
+                                       min="0" step="1000"
+                                       placeholder="0"
+                                       class="w-full pl-12 pr-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('estimasi_biaya') border-danger-500 @enderror">
+                            </div>
+                            @error('estimasi_biaya')
+                                <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Deskripsi Kerusakan --}}
-                <div class="mt-6 space-y-2">
-                    <label for="deskripsi_kerusakan" class="block text-sm font-medium text-gray-700">
-                        Deskripsi Kerusakan <span class="text-red-500">*</span>
+                <div class="space-y-2">
+                    <label for="deskripsi_kerusakan" class="block text-sm font-semibold text-neutral-700">
+                        Deskripsi Kerusakan <span class="text-danger-500">*</span>
                     </label>
                     <textarea name="deskripsi_kerusakan" id="deskripsi_kerusakan" rows="4"
-                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('deskripsi_kerusakan') border-red-500 @enderror"
+                              class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 resize-y @error('deskripsi_kerusakan') border-danger-500 @enderror"
                               placeholder="Jelaskan kondisi dan lokasi kerusakan secara detail (min. 10 karakter)"
                               required>{{ old('deskripsi_kerusakan') }}</textarea>
+                    <p class="text-xs text-neutral-500">Deskripsi minimal 10 karakter</p>
                     @error('deskripsi_kerusakan')
-                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
 
-                {{-- Foto Kerusakan (wajib — kolom NOT NULL di migration) --}}
-                <div class="mt-6 space-y-2">
-                    <label for="foto_kerusakan" class="block text-sm font-medium text-gray-700">
-                        Foto Kerusakan <span class="text-red-500">*</span>
+                {{-- Foto Kerusakan --}}
+                <div class="space-y-2">
+                    <label for="foto_kerusakan" class="block text-sm font-semibold text-neutral-700">
+                        Foto Kerusakan <span class="text-danger-500">*</span>
                     </label>
-                    <input type="file" name="foto_kerusakan" id="foto_kerusakan"
-                           accept="image/*"
-                           class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('foto_kerusakan') border-red-500 @enderror"
-                           required>
-                    <p class="text-xs text-gray-500">Format: JPG, PNG, WEBP. Maks 2 MB.</p>
-                    <img id="foto-preview" src="#" alt="Preview foto kerusakan">
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-neutral-200 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition-all duration-200">
+                        <div class="space-y-1 text-center">
+                            <svg class="mx-auto h-12 w-12 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <div class="flex text-sm text-neutral-600 justify-center">
+                                <label for="foto_kerusakan" class="cursor-pointer font-medium text-primary-600 hover:text-primary-500">
+                                    <span>Upload file</span>
+                                    <input id="foto_kerusakan" name="foto_kerusakan" type="file" class="sr-only" accept="image/jpg,image/jpeg,image/png,image/webp" required>
+                                </label>
+                                <p class="pl-1">atau drag and drop</p>
+                            </div>
+                            <p class="text-xs text-neutral-500">PNG, JPG, WEBP. Maks 2 MB.</p>
+                            <p id="foto_name" class="text-xs text-primary-600 mt-2 hidden"></p>
+                        </div>
+                    </div>
+                    <img id="foto-preview" src="#" alt="Preview foto kerusakan" class="mt-2 max-h-48 rounded-lg object-cover">
                     @error('foto_kerusakan')
-                        <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
+                        <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
                     @enderror
                 </div>
+
+                {{-- Alert Messages --}}
+                @if(session('success'))
+                <div class="rounded-lg bg-success-50 border border-success-200 p-4 animate-fade-in">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-success-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        <p class="text-sm text-success-700">{{ session('success') }}</p>
+                    </div>
+                </div>
+                @endif
+
+                @if(session('error'))
+                <div class="rounded-lg bg-danger-50 border border-danger-200 p-4 animate-fade-in">
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-danger-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                        </svg>
+                        <p class="text-sm text-danger-700">{{ session('error') }}</p>
+                    </div>
+                </div>
+                @endif
 
                 {{-- Form Actions --}}
-                <div class="pt-6 border-t border-gray-200 mt-6">
-                    <div class="flex justify-end space-x-3">
+                <div class="pt-6 border-t-2 border-neutral-100">
+                    <div class="flex flex-col sm:flex-row justify-end gap-3">
                         <a href="{{ route('kerusakan.index') }}"
-                           class="px-6 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition duration-150 ease-in-out">
+                           class="inline-flex items-center justify-center px-6 py-3 border-2 border-neutral-300 rounded-lg font-medium text-neutral-700 bg-white hover:bg-neutral-50 hover:border-neutral-400 transition-all duration-200">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
                             Batal
                         </a>
-                        <button type="button"
-                                onclick="confirmSubmit()"
-                                class="px-6 py-3 bg-purple-600 border border-transparent rounded-lg font-medium text-white hover:bg-purple-700 transition duration-150 ease-in-out">
-                            <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        <button type="button" onclick="confirmSubmit()"
+                                class="inline-flex items-center justify-center px-6 py-3 bg-gradient-primary rounded-lg font-medium text-white hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                             </svg>
                             Simpan Laporan
                         </button>
@@ -257,27 +329,21 @@
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
+const damageMap = {
+    ringan: { pct: 25, color: '#22c55e', label: 'Ringan — kerusakan kecil, masih berfungsi normal' },
+    sedang: { pct: 50, color: '#f59e0b', label: 'Sedang — fungsi terganggu, perlu perbaikan segera' },
+    berat:  { pct: 75, color: '#f97316', label: 'Berat — hampir tidak berfungsi, butuh perbaikan besar' },
+    total:  { pct: 100, color: '#ef4444', label: 'Total — tidak berfungsi sama sekali' },
+};
+
 document.addEventListener('DOMContentLoaded', function () {
+    new TomSelect('#assetID', { searchField: ['text'], maxOptions: 200, highlight: true });
 
-    new TomSelect('#assetID', {
-        searchField: ['text'],
-        maxOptions: 200,
-        highlight: true,
-    });
-
-    // ── Damage bar ────────────────────────────────────────────────────────────
-    const damageMap = {
-        ringan: { pct: 25,  color: '#22c55e', label: 'Ringan — kerusakan kecil, masih berfungsi normal' },
-        sedang: { pct: 50,  color: '#f59e0b', label: 'Sedang — fungsi terganggu, perlu perbaikan segera' },
-        berat:  { pct: 75,  color: '#f97316', label: 'Berat — hampir tidak berfungsi, butuh perbaikan besar' },
-        total:  { pct: 100, color: '#ef4444', label: 'Total — tidak berfungsi sama sekali' },
-    };
-
-    const jenisEl   = document.getElementById('jenis_kerusakan');
+    const jenisEl = document.getElementById('jenis_kerusakan');
     const displayEl = document.getElementById('tingkat_display');
-    const barWrap   = document.getElementById('damage-bar-wrap');
-    const bar       = document.getElementById('damage-bar');
-    const barLabel  = document.getElementById('damage-bar-label');
+    const barWrap = document.getElementById('damage-bar-wrap');
+    const bar = document.getElementById('damage-bar');
+    const barLabel = document.getElementById('damage-bar-label');
 
     function updateBar(val) {
         if (!val || !damageMap[val]) {
@@ -286,148 +352,121 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         const d = damageMap[val];
-        displayEl.value           = d.pct;
-        bar.style.width           = d.pct + '%';
+        displayEl.value = d.pct;
+        bar.style.width = d.pct + '%';
         bar.style.backgroundColor = d.color;
-        barLabel.textContent      = d.label;
-        barWrap.style.display     = 'block';
+        barLabel.textContent = d.label;
+        barWrap.style.display = 'block';
     }
 
     jenisEl.addEventListener('change', () => updateBar(jenisEl.value));
     if (jenisEl.value) updateBar(jenisEl.value);
 
-    // ── Preview foto ──────────────────────────────────────────────────────────
-    document.getElementById('foto_kerusakan').addEventListener('change', function () {
-        const preview = document.getElementById('foto-preview');
-        const file    = this.files[0];
+    // Preview foto
+    const fotoInput = document.getElementById('foto_kerusakan');
+    const fotoPreview = document.getElementById('foto-preview');
+    const fotoName = document.getElementById('foto_name');
+
+    fotoInput.addEventListener('change', function () {
+        const file = this.files[0];
         if (file) {
+            fotoName.textContent = `File: ${file.name}`;
+            fotoName.classList.remove('hidden');
             const reader = new FileReader();
-            reader.onload = e => { preview.src = e.target.result; preview.style.display = 'block'; };
+            reader.onload = e => { fotoPreview.src = e.target.result; fotoPreview.style.display = 'block'; };
             reader.readAsDataURL(file);
         } else {
-            preview.style.display = 'none';
+            fotoName.classList.add('hidden');
+            fotoPreview.style.display = 'none';
         }
     });
 
-    // Real-time validation untuk required fields
+    // Real-time validation
     const requiredInputs = document.querySelectorAll('[required]');
     requiredInputs.forEach(input => {
         if (input.type !== 'file') {
             input.addEventListener('input', function() {
                 if (this.value.trim()) {
-                    this.classList.remove('border-red-500');
-                }
-            });
-            input.addEventListener('change', function() {
-                if (this.value.trim()) {
-                    this.classList.remove('border-red-500');
+                    this.classList.remove('border-danger-500');
+                    this.classList.add('border-neutral-200');
                 }
             });
         }
     });
 });
 
-// Fungsi konfirmasi sebelum menyimpan
 function confirmSubmit() {
     const form = document.getElementById('kerusakanForm');
-    
-    // Reset error styles
     const requiredFields = form.querySelectorAll('[required]');
     let isValid = true;
     let firstInvalid = null;
     let errorMessages = [];
-    
-    // Validasi required fields
+
     requiredFields.forEach(field => {
-        let fieldValue = field.value;
-        
-        // Handle khusus untuk file input
         if (field.type === 'file') {
             if (!field.files || field.files.length === 0) {
                 isValid = false;
-                field.classList.add('border-red-500');
-                
+                field.closest('.border-dashed')?.classList.add('border-danger-500');
                 const label = document.querySelector(`label[for="${field.id}"]`);
                 const fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
                 errorMessages.push(`${fieldName} wajib diunggah`);
-                
                 if (!firstInvalid) firstInvalid = field;
-            } else {
-                field.classList.remove('border-red-500');
             }
         } else if (field.type !== 'hidden') {
             if (!field.value.trim()) {
                 isValid = false;
-                field.classList.add('border-red-500');
-                
+                field.classList.add('border-danger-500');
+                field.classList.remove('border-neutral-200');
                 const label = document.querySelector(`label[for="${field.id}"]`);
-                const fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
+                let fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
                 errorMessages.push(`${fieldName} wajib diisi`);
-                
                 if (!firstInvalid) firstInvalid = field;
             } else {
-                field.classList.remove('border-red-500');
+                field.classList.remove('border-danger-500');
+                field.classList.add('border-neutral-200');
             }
         }
     });
-    
-    // Validasi khusus: tanggal kerusakan tidak boleh setelah tanggal laporan
-    const tanggalLaporan = document.getElementById('tanggal_laporan').value;
-    const tanggalKerusakan = document.getElementById('tanggal_kerusakan').value;
-    
-    if (tanggalLaporan && tanggalKerusakan) {
-        const tglLaporan = new Date(tanggalLaporan);
-        const tglKerusakan = new Date(tanggalKerusakan);
-        
-        if (tglKerusakan > tglLaporan) {
-            isValid = false;
-            document.getElementById('tanggal_kerusakan').classList.add('border-red-500');
-            errorMessages.push('Tanggal kerusakan tidak boleh setelah tanggal laporan');
-            
-            if (!firstInvalid) firstInvalid = document.getElementById('tanggal_kerusakan');
-        }
+
+    const tglLaporan = document.getElementById('tanggal_laporan').value;
+    const tglKerusakan = document.getElementById('tanggal_kerusakan').value;
+    if (tglLaporan && tglKerusakan && new Date(tglKerusakan) > new Date(tglLaporan)) {
+        isValid = false;
+        document.getElementById('tanggal_kerusakan').classList.add('border-danger-500');
+        errorMessages.push('Tanggal kerusakan tidak boleh setelah tanggal laporan');
+        if (!firstInvalid) firstInvalid = document.getElementById('tanggal_kerusakan');
     }
-    
-    // Validasi deskripsi minimal 10 karakter
+
     const deskripsi = document.getElementById('deskripsi_kerusakan');
     if (deskripsi.value.trim().length < 10) {
         isValid = false;
-        deskripsi.classList.add('border-red-500');
+        deskripsi.classList.add('border-danger-500');
         errorMessages.push('Deskripsi kerusakan minimal 10 karakter');
-        
         if (!firstInvalid) firstInvalid = deskripsi;
     }
-    
-    // Validasi file gambar (ukuran maks 2MB)
+
     const fotoInput = document.getElementById('foto_kerusakan');
     if (fotoInput.files && fotoInput.files[0]) {
         const fileSize = fotoInput.files[0].size;
-        const maxSize = 2 * 1024 * 1024; // 2MB
-        
-        if (fileSize > maxSize) {
+        if (fileSize > 2 * 1024 * 1024) {
             isValid = false;
-            fotoInput.classList.add('border-red-500');
+            fotoInput.closest('.border-dashed')?.classList.add('border-danger-500');
             errorMessages.push('Ukuran foto maksimal 2MB');
-            
             if (!firstInvalid) firstInvalid = fotoInput;
         }
     }
-    
+
     if (!isValid) {
         let errorMessage = 'Mohon lengkapi data berikut:\n\n';
-        errorMessages.forEach(msg => {
-            errorMessage += `• ${msg}\n`;
-        });
+        errorMessages.forEach(msg => errorMessage += `• ${msg}\n`);
         alert(errorMessage);
-        
         if (firstInvalid) {
             firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            firstInvalid.focus();
+            if (firstInvalid.type !== 'file') firstInvalid.focus();
         }
         return;
     }
-    
-    // Tampilkan konfirmasi
+
     if (confirm('Apakah Anda yakin ingin menyimpan laporan kerusakan ini?')) {
         form.submit();
     }

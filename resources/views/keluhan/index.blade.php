@@ -131,7 +131,7 @@
                             <div class="text-xs text-neutral-500">{{ $keluhan->asset->kode_asset ?? '-' }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
-                            {{ $keluhan->lokasi->nama_lokasi ?? '-' }}
+                            {{ $keluhan->lokasi->NamaLokasi ?? '-' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @php
