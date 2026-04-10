@@ -1,172 +1,222 @@
 @php
     $items = $data['items'] ?? collect();
     $jenis = $jenisLaporan ?? $data['jenis'] ?? 'asset';
-    $startDate = isset($data['start_date']) ? $data['start_date'] : null;
-    $endDate = isset($data['end_date']) ? $data['end_date'] : null;
+    $startDate = $data['start_date'] ?? null;
+    $endDate   = $data['end_date'] ?? null;
 @endphp
 
 <div class="bg-white rounded-lg">
-    <div class="mb-4 p-3 bg-gray-50 rounded-lg flex justify-between items-center">
-        <div>
-            <span class="text-sm text-gray-600">Total Data: </span>
-            <span class="font-semibold text-gray-900">{{ $data['filtered'] ?? 0 }}</span>
-            <span class="text-sm text-gray-500"> dari {{ $data['total'] ?? 0 }}</span>
+    {{-- Summary bar --}}
+    <div class="mb-4 px-4 py-3 bg-gray-50 rounded-lg border border-gray-100 flex flex-wrap justify-between items-center gap-2">
+        <div class="flex items-center gap-4 text-sm">
+            <span class="text-gray-500">
+                Menampilkan <span class="font-semibold text-gray-800">{{ $data['filtered'] ?? 0 }}</span>
+                dari <span class="font-semibold text-gray-800">{{ $data['total'] ?? 0 }}</span> data
+            </span>
+            @php
+                $jenisLabel = [
+                    'asset'       => 'Data Asset',
+                    'kerusakan'   => 'Kerusakan Asset',
+                    'penghapusan' => 'Penghapusan Asset',
+                    'penyusutan'  => 'Penyusutan Asset',
+                ][$jenis] ?? 'Laporan';
+            @endphp
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+                {{ $jenisLabel }}
+            </span>
         </div>
         @if($startDate && $endDate)
-        <div class="text-sm text-gray-500">
-            Periode: {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} - 
-            {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
+        <div class="text-xs text-gray-500">
+            Periode:
+            <span class="font-medium text-gray-700">
+                {{ \Carbon\Carbon::parse($startDate)->format('d/m/Y') }} —
+                {{ \Carbon\Carbon::parse($endDate)->format('d/m/Y') }}
+            </span>
         </div>
         @endif
     </div>
-    
-    <div class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
-                @if($jenis == 'asset')
+
+    <div class="overflow-x-auto rounded-lg border border-gray-200">
+        <table class="min-w-full divide-y divide-gray-200 text-sm">
+
+            {{-- ======================== DATA ASSET ======================== --}}
+            @if($jenis === 'asset')
+            <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold tracking-wider">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kode Asset</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nama Asset</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kategori</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lokasi</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Merk</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Serial Number</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kondisi</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Dibuat</th>
+                    <th class="px-4 py-3 text-left w-10">No</th>
+                    <th class="px-4 py-3 text-left">Kode Asset</th>
+                    <th class="px-4 py-3 text-left">Nama Asset</th>
+                    <th class="px-4 py-3 text-left">Kategori</th>
+                    <th class="px-4 py-3 text-left">Lokasi</th>
+                    <th class="px-4 py-3 text-left">Status</th>
+                    <th class="px-4 py-3 text-left">Kondisi</th>
+                    <th class="px-4 py-3 text-left">Tanggal Masuk</th>
                 </tr>
-                @elseif($jenis == 'kerusakan')
-                <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asset</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kode Asset</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Deskripsi</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Laporan</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lokasi</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Pelapor</th>
-                </tr>
-                @elseif($jenis == 'penghapusan')
-                <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asset</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kode Asset</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Penghapusan</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Alasan</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Disetujui Oleh</th>
-                </tr>
-                @elseif($jenis == 'penyusutan')
-                <tr>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Asset</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Kode Asset</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nilai Awal</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nilai Akhir</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Penyusutan/Tahun</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Metode</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tanggal Mulai</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Masa Manfaat</th>
-                </tr>
-                @endif
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                @forelse($items as $index => $item)
-                <tr class="hover:bg-gray-50">
-                    @if($jenis == 'asset')
-                    <td class="px-4 py-3 text-sm text-gray-900">{{ $index + 1 }}</td>
-                    <td class="px-4 py-3 text-sm font-mono text-gray-900">{{ $item->kode_asset ?? '-' }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-900">{{ $item->nama_asset ?? '-' }}</td>
-                    {{-- PERBAIKAN: Gunakan snake_case untuk nama kolom --}}
-                    <td class="px-4 py-3 text-sm text-gray-600">{{ $item->kategori->nama_kategori ?? $item->kategori->NamaKategori ?? '-' }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-600">{{ $item->lokasi->nama_lokasi ?? $item->lokasi->NamaLokasi ?? '-' }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-600">{{ $item->merk ?? '-' }}</td>
-                    <td class="px-4 py-3 text-sm font-mono text-gray-600">{{ $item->serial_number ?? '-' }}</td>
+            <tbody class="divide-y divide-gray-100 bg-white">
+                @forelse($items as $i => $item)
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-4 py-3 text-gray-400">{{ $i + 1 }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-gray-700">{{ $item->kode_asset ?? '-' }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ $item->nama_asset ?? '-' }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ $item->kategori->NamaKategori ?? '-' }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ $item->lokasi->NamaLokasi ?? '-' }}</td>
                     <td class="px-4 py-3">
-                        <span class="inline-flex px-2 py-1 text-xs rounded-full
-                            @if($item->kondisi == 'baik' || $item->kondisi == 'Baik') bg-green-100 text-green-800
-                            @elseif($item->kondisi == 'rusak_ringan' || $item->kondisi == 'Rusak Ringan') bg-yellow-100 text-yellow-800
-                            @elseif($item->kondisi == 'rusak_berat' || $item->kondisi == 'Rusak Berat') bg-red-100 text-red-800
-                            @else bg-gray-100 text-gray-800 @endif">
-                            {{ ucfirst(str_replace('_', ' ', $item->kondisi ?? '-')) }}
+                        @php $st = strtolower($item->status_asset ?? ''); @endphp
+                        <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {{ $st === 'aktif'    ? 'bg-green-100 text-green-700' :
+                              ($st === 'rusak'    ? 'bg-red-100 text-red-700' :
+                              ($st === 'perbaikan'? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600')) }}">
+                            {{ $item->status_asset ?? '-' }}
                         </span>
                     </td>
-                    <td class="px-4 py-3">
-                        <span class="inline-flex px-2 py-1 text-xs rounded-full
-                            @if($item->status_asset == 'aktif' || $item->status_asset == 'Aktif') bg-green-100 text-green-800
-                            @elseif($item->status_asset == 'dipinjam' || $item->status_asset == 'Dipinjam') bg-blue-100 text-blue-800
-                            @else bg-gray-100 text-gray-800 @endif">
-                            {{ ucfirst(str_replace('_', ' ', $item->status_asset ?? '-')) }}
-                        </span>
+                    <td class="px-4 py-3 text-gray-600">{{ $item->kondisi ?? '-' }}</td>
+                    <td class="px-4 py-3 text-gray-500 text-xs">
+                        {{ $item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') : '-' }}
                     </td>
-                    <td class="px-4 py-3 text-sm text-gray-500">
-                        {{ $item->created_at ? $item->created_at->format('d/m/Y') : '-' }}
-                    </td>
-                    
-                    @elseif($jenis == 'kerusakan')
-                    <td class="px-4 py-3 text-sm text-gray-900">{{ $index + 1 }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-900">{{ $item->asset->nama_asset ?? '-' }}</td>
-                    <td class="px-4 py-3 text-sm font-mono text-gray-600">{{ $item->asset->kode_asset ?? '-' }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-600">{{ Str::limit($item->deskripsi_kerusakan ?? $item->deskripsi ?? '-', 50) }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-500">{{ isset($item->tanggal_laporan) ? \Carbon\Carbon::parse($item->tanggal_laporan)->format('d/m/Y') : '-' }}</td>
-                    <td class="px-4 py-3">
-                        <span class="inline-flex px-2 py-1 text-xs rounded-full
-                            @if(($item->status_perbaikan ?? $item->status) == 'selesai' || ($item->status_perbaikan ?? $item->status) == 'Selesai') bg-green-100 text-green-800
-                            @elseif(($item->status_perbaikan ?? $item->status) == 'proses' || ($item->status_perbaikan ?? $item->status) == 'Proses') bg-yellow-100 text-yellow-800
-                            @else bg-red-100 text-red-800 @endif">
-                            {{ ucfirst($item->status_perbaikan ?? $item->status ?? '-') }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3 text-sm text-gray-600">{{ $item->lokasi_kerusakan ?? $item->lokasi ?? '-' }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-600">{{ $item->user->name ?? $item->pelapor ?? '-' }}</td>
-                    
-                    @elseif($jenis == 'penghapusan')
-                    <td class="px-4 py-3 text-sm text-gray-900">{{ $index + 1 }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-900">{{ $item->asset->nama_asset ?? '-' }}</td>
-                    <td class="px-4 py-3 text-sm font-mono text-gray-600">{{ $item->asset->kode_asset ?? '-' }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-500">{{ isset($item->tanggal_penghapusan) ? \Carbon\Carbon::parse($item->tanggal_penghapusan)->format('d/m/Y') : '-' }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-600">{{ Str::limit($item->alasan_penghapusan ?? $item->alasan ?? '-', 50) }}</td>
-                    <td class="px-4 py-3">
-                        <span class="inline-flex px-2 py-1 text-xs rounded-full
-                            @if(($item->status_penghapusan ?? $item->status) == 'disetujui' || ($item->status_penghapusan ?? $item->status) == 'Disetujui') bg-green-100 text-green-800
-                            @elseif(($item->status_penghapusan ?? $item->status) == 'pending' || ($item->status_penghapusan ?? $item->status) == 'Pending') bg-yellow-100 text-yellow-800
-                            @else bg-red-100 text-red-800 @endif">
-                            {{ ucfirst($item->status_penghapusan ?? $item->status ?? '-') }}
-                        </span>
-                    </td>
-                    <td class="px-4 py-3 text-sm text-gray-600">{{ $item->approved_by ?? $item->disetujui_oleh ?? '-' }}</td>
-                    
-                    @elseif($jenis == 'penyusutan')
-                    <td class="px-4 py-3 text-sm text-gray-900">{{ $index + 1 }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-900">{{ $item->asset->nama_asset ?? '-' }}</td>
-                    <td class="px-4 py-3 text-sm font-mono text-gray-600">{{ $item->asset->kode_asset ?? '-' }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-900">Rp {{ number_format($item->nilai_awal ?? 0, 0, ',', '.') }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-900">Rp {{ number_format($item->nilai_akhir ?? 0, 0, ',', '.') }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-600">{{ $item->penyusutan_per_tahun ?? $item->persentase ?? 0 }}%</td>
-                    <td class="px-4 py-3 text-sm text-gray-600">{{ $item->metode_penyusutan ?? $item->metode ?? '-' }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-500">{{ isset($item->tanggal_mulai) ? \Carbon\Carbon::parse($item->tanggal_mulai)->format('d/m/Y') : '-' }}</td>
-                    <td class="px-4 py-3 text-sm text-gray-600">{{ $item->masa_manfaat ?? '-' }} tahun</td>
-                    @endif
                 </tr>
                 @empty
-                <tr>
-                    <td colspan="10" class="px-4 py-8 text-center text-gray-500">
-                        <div class="flex flex-col items-center">
-                            <svg class="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                            </svg>
-                            <p>Tidak ada data untuk periode yang dipilih</p>
-                            <p class="text-sm text-gray-400 mt-1">
-                                @if(isset($data['start_date']) && isset($data['end_date']))
-                                    Periode: {{ \Carbon\Carbon::parse($data['start_date'])->format('d/m/Y') }} - {{ \Carbon\Carbon::parse($data['end_date'])->format('d/m/Y') }}
-                                @endif
-                            </p>
-                        </div>
-                    </td>
-                </tr>
+                <tr><td colspan="8" class="px-4 py-10 text-center text-gray-400 text-sm">Tidak ada data asset untuk periode ini.</td></tr>
                 @endforelse
             </tbody>
+
+            {{-- ======================== KERUSAKAN ======================== --}}
+            @elseif($jenis === 'kerusakan')
+            <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold tracking-wider">
+                <tr>
+                    <th class="px-4 py-3 text-left w-10">No</th>
+                    <th class="px-4 py-3 text-left">Kode Laporan</th>
+                    <th class="px-4 py-3 text-left">Nama Asset</th>
+                    <th class="px-4 py-3 text-left">Jenis Kerusakan</th>
+                    <th class="px-4 py-3 text-left">Tingkat</th>
+                    <th class="px-4 py-3 text-left">Lokasi</th>
+                    <th class="px-4 py-3 text-left">Status</th>
+                    <th class="px-4 py-3 text-left">Tanggal Laporan</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+                @forelse($items as $i => $item)
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-4 py-3 text-gray-400">{{ $i + 1 }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-gray-700">{{ $item->kode_laporan ?? '-' }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ $item->asset->nama_asset ?? '-' }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ $item->jenis_kerusakan ?? '-' }}</td>
+                    <td class="px-4 py-3">
+                        @php $tk = strtolower($item->tingkat_kerusakan ?? ''); @endphp
+                        <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {{ $tk === 'kritis' ? 'bg-red-100 text-red-700' :
+                              ($tk === 'berat'  ? 'bg-orange-100 text-orange-700' :
+                              ($tk === 'sedang' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600')) }}">
+                            {{ ucfirst($item->tingkat_kerusakan ?? '-') }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-gray-600">{{ $item->lokasi->nama_lokasi ?? '-' }}</td>
+                    <td class="px-4 py-3">
+                        @php $sp = strtolower($item->status_perbaikan ?? ''); @endphp
+                        <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {{ $sp === 'selesai'    ? 'bg-green-100 text-green-700' :
+                              ($sp === 'diproses'   ? 'bg-blue-100 text-blue-700' :
+                              ($sp === 'dilaporkan' ? 'bg-yellow-100 text-yellow-700' :
+                              ($sp === 'ditolak'    ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'))) }}">
+                            {{ ucfirst($item->status_perbaikan ?? '-') }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-gray-500 text-xs">
+                        {{ $item->tanggal_laporan
+                            ? \Carbon\Carbon::parse($item->tanggal_laporan)->format('d/m/Y')
+                            : ($item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') : '-') }}
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="8" class="px-4 py-10 text-center text-gray-400 text-sm">Tidak ada data kerusakan untuk periode ini.</td></tr>
+                @endforelse
+            </tbody>
+
+            {{-- ======================== PENGHAPUSAN ======================== --}}
+            @elseif($jenis === 'penghapusan')
+            <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold tracking-wider">
+                <tr>
+                    <th class="px-4 py-3 text-left w-10">No</th>
+                    <th class="px-4 py-3 text-left">Kode Asset</th>
+                    <th class="px-4 py-3 text-left">Nama Asset</th>
+                    <th class="px-4 py-3 text-left">Kategori</th>
+                    <th class="px-4 py-3 text-left">Alasan</th>
+                    <th class="px-4 py-3 text-left">Status</th>
+                    <th class="px-4 py-3 text-left">Diajukan Oleh</th>
+                    <th class="px-4 py-3 text-left">Tanggal</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+                @forelse($items as $i => $item)
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-4 py-3 text-gray-400">{{ $i + 1 }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-gray-700">{{ $item->asset->kode_asset ?? '-' }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ $item->asset->nama_asset ?? '-' }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ $item->asset->kategori->nama_kategori ?? '-' }}</td>
+                    <td class="px-4 py-3 text-gray-600 max-w-xs">
+                        <span class="line-clamp-2">{{ $item->alasan ?? $item->keterangan ?? '-' }}</span>
+                    </td>
+                    <td class="px-4 py-3">
+                        @php $sp = strtolower($item->status ?? ''); @endphp
+                        <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {{ $sp === 'disetujui' ? 'bg-green-100 text-green-700' :
+                              ($sp === 'ditolak'   ? 'bg-red-100 text-red-700' :
+                              ($sp === 'pending'   ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600')) }}">
+                            {{ ucfirst($item->status ?? '-') }}
+                        </span>
+                    </td>
+                    <td class="px-4 py-3 text-gray-600">{{ optional($item->pengaju ?? $item->diajukanOleh)->name ?? '-' }}</td>
+                    <td class="px-4 py-3 text-gray-500 text-xs">
+                        {{ $item->tanggal_penghapusan
+                            ? \Carbon\Carbon::parse($item->tanggal_penghapusan)->format('d/m/Y')
+                            : ($item->created_at ? \Carbon\Carbon::parse($item->created_at)->format('d/m/Y') : '-') }}
+                    </td>
+                </tr>
+                @empty
+                <tr><td colspan="8" class="px-4 py-10 text-center text-gray-400 text-sm">Tidak ada data penghapusan untuk periode ini.</td></tr>
+                @endforelse
+            </tbody>
+
+            {{-- ======================== PENYUSUTAN ======================== --}}
+            @elseif($jenis === 'penyusutan')
+            <thead class="bg-gray-50 text-xs uppercase text-gray-500 font-semibold tracking-wider">
+                <tr>
+                    <th class="px-4 py-3 text-left w-10">No</th>
+                    <th class="px-4 py-3 text-left">Kode Asset</th>
+                    <th class="px-4 py-3 text-left">Nama Asset</th>
+                    <th class="px-4 py-3 text-right">Nilai Awal (Rp)</th>
+                    <th class="px-4 py-3 text-right">Nilai Buku (Rp)</th>
+                    <th class="px-4 py-3 text-right">Penyusutan/Tahun (Rp)</th>
+                    <th class="px-4 py-3 text-left">Metode</th>
+                    <th class="px-4 py-3 text-left">Masa Manfaat</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+                @forelse($items as $i => $item)
+                <tr class="hover:bg-gray-50 transition">
+                    <td class="px-4 py-3 text-gray-400">{{ $i + 1 }}</td>
+                    <td class="px-4 py-3 font-mono text-xs text-gray-700">{{ $item->asset->kode_asset ?? '-' }}</td>
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ $item->asset->nama_asset ?? '-' }}</td>
+                    <td class="px-4 py-3 text-right text-gray-700">
+                        {{ $item->nilai_awal ? 'Rp ' . number_format($item->nilai_awal, 0, ',', '.') : '-' }}
+                    </td>
+                    <td class="px-4 py-3 text-right text-gray-700">
+                        @php $nb = $item->nilai_buku ?? $item->nilai_akhir ?? null; @endphp
+                        {{ $nb ? 'Rp ' . number_format($nb, 0, ',', '.') : '-' }}
+                    </td>
+                    <td class="px-4 py-3 text-right font-medium text-red-600">
+                        @php $np = $item->penyusutan_per_tahun ?? $item->nilai_penyusutan ?? null; @endphp
+                        {{ $np ? 'Rp ' . number_format($np, 0, ',', '.') : '-' }}
+                    </td>
+                    <td class="px-4 py-3 text-gray-600">{{ $item->metode ?? '-' }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ $item->masa_manfaat ? $item->masa_manfaat . ' Tahun' : '-' }}</td>
+                </tr>
+                @empty
+                <tr><td colspan="8" class="px-4 py-10 text-center text-gray-400 text-sm">Tidak ada data penyusutan untuk periode ini.</td></tr>
+                @endforelse
+            </tbody>
+            @endif
+
         </table>
     </div>
 </div>

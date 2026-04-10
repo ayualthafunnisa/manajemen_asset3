@@ -9,11 +9,13 @@ use Illuminate\Support\Facades\Auth;
 class NotificationController extends Controller
 {
     /**
-     * Get all notifications for current user
+     * Get all notifications for current user (only unread)
      */
     public function index()
     {
+        // Hanya ambil notifikasi yang belum dibaca
         $notifications = Notification::where('user_id', Auth::id())
+            ->where('is_read', false)
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 
@@ -37,6 +39,15 @@ class NotificationController extends Controller
                 case 'approval_completed':
                     $notif->icon = '✅';
                     break;
+                case 'keluhan_baru':
+                    $notif->icon = '🔧';
+                    break;
+                case 'perbaikan_selesai':
+                    $notif->icon = '✅';
+                    break;
+                case 'perbaikan_tidak_bisa':
+                    $notif->icon = '⚠️';
+                    break;
                 default:
                     $notif->icon = '🔔';
             }
@@ -45,6 +56,12 @@ class NotificationController extends Controller
             if ($notif->type == 'registration_pending') {
                 $data = is_string($notif->data) ? json_decode($notif->data, true) : $notif->data;
                 $notif->detail_link = route('admin.approvals.show', $data['license_id'] ?? $data['user_id'] ?? 0);
+            } elseif ($notif->type == 'keluhan_baru') {
+                $data = is_string($notif->data) ? json_decode($notif->data, true) : $notif->data;
+                $notif->detail_link = route('keluhan.show', $data['kerusakan_id'] ?? 0);
+            } elseif (in_array($notif->type, ['perbaikan_selesai', 'perbaikan_tidak_bisa'])) {
+                $data = is_string($notif->data) ? json_decode($notif->data, true) : $notif->data;
+                $notif->detail_link = route('laporan_masuk.lihat', $data['perbaikan_id'] ?? 0);
             } else {
                 $notif->detail_link = '#';
             }
@@ -61,6 +78,19 @@ class NotificationController extends Controller
     }
 
     /**
+     * Get read notifications history
+     */
+    public function history()
+    {
+        $notifications = Notification::where('user_id', Auth::id())
+            ->where('is_read', true)
+            ->orderBy('created_at', 'desc')
+            ->paginate(20);
+
+        return view('notifications.history', compact('notifications'));
+    }
+
+    /**
      * Get unread notifications count (for navbar badge)
      */
     public function getUnreadCount()
@@ -73,7 +103,39 @@ class NotificationController extends Controller
             ->where('is_read', false)
             ->orderBy('created_at', 'desc')
             ->limit(5)
-            ->get();
+            ->get()
+            ->map(function ($notif) {
+                // Format data untuk frontend
+                $timeAgo = $notif->created_at->diffForHumans();
+                
+                $icon = match ($notif->type) {
+                    'keluhan_baru' => '🔧',
+                    'perbaikan_selesai' => '✅',
+                    'perbaikan_tidak_bisa' => '⚠️',
+                    'registration_pending' => '📝',
+                    default => '🔔'
+                };
+                
+                $detailUrl = '#';
+                if ($notif->type == 'keluhan_baru') {
+                    $data = is_string($notif->data) ? json_decode($notif->data, true) : $notif->data;
+                    $detailUrl = route('keluhan.show', $data['kerusakan_id'] ?? 0);
+                } elseif (in_array($notif->type, ['perbaikan_selesai', 'perbaikan_tidak_bisa'])) {
+                    $data = is_string($notif->data) ? json_decode($notif->data, true) : $notif->data;
+                    $detailUrl = route('laporan_masuk.lihat', $data['perbaikan_id'] ?? 0);
+                }
+                
+                return [
+                    'id' => $notif->id,
+                    'title' => $notif->title,
+                    'message' => $notif->message,
+                    'icon' => $icon,
+                    'is_read' => $notif->is_read,
+                    'time_ago' => $timeAgo,
+                    'detail_url' => $detailUrl,
+                    'type' => $notif->type
+                ];
+            });
 
         return response()->json([
             'count' => $count,
@@ -137,16 +199,19 @@ class NotificationController extends Controller
     }
 
     /**
-     * Clear all notifications
+     * Clear all unread notifications
      */
     public function clearAll()
     {
-        Notification::where('user_id', Auth::id())->delete();
+        // Hanya hapus notifikasi yang belum dibaca
+        Notification::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->delete();
 
         if (request()->ajax()) {
             return response()->json(['success' => true]);
         }
 
-        return back()->with('success', 'Semua notifikasi dihapus.');
+        return back()->with('success', 'Semua notifikasi yang belum dibaca dihapus.');
     }
 }

@@ -9,6 +9,18 @@
         <p class="mt-0.5 text-neutral-400 text-sm">Kelola semua notifikasi sistem Anda</p>
     </div>
     <div class="flex items-center space-x-2">
+        {{-- Tab Navigation --}}
+        <div class="flex items-center space-x-1 bg-neutral-100 rounded-xl p-1 mr-2">
+            <a href="{{ route('notifications.index') }}" 
+               class="px-4 py-2 text-sm font-semibold rounded-lg {{ request()->routeIs('notifications.index') ? 'bg-white text-primary-600 shadow-sm' : 'text-neutral-600 hover:text-primary-600' }} transition-all">
+                Belum Dibaca
+            </a>
+            <a href="{{ route('notifications.history') }}" 
+               class="px-4 py-2 text-sm font-semibold rounded-lg {{ request()->routeIs('notifications.history') ? 'bg-white text-primary-600 shadow-sm' : 'text-neutral-600 hover:text-primary-600' }} transition-all">
+                Riwayat
+            </a>
+        </div>
+        
         <form action="{{ route('notifications.mark-all-read') }}" method="POST" class="inline">
             @csrf
             <button type="submit"
@@ -46,15 +58,6 @@
         </div>
         <div>
             <p class="text-2xl font-bold text-neutral-900">{{ $notifications->total() }}</p>
-            <p class="text-xs text-neutral-400 font-medium">Total</p>
-        </div>
-    </div>
-    <div class="bg-white rounded-2xl border border-neutral-100 shadow-soft px-5 py-4 flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-            <div class="w-3 h-3 bg-red-500 rounded-full"></div>
-        </div>
-        <div>
-            <p class="text-2xl font-bold text-neutral-900">{{ $unreadCount }}</p>
             <p class="text-xs text-neutral-400 font-medium">Belum Dibaca</p>
         </div>
     </div>
@@ -65,8 +68,8 @@
             </svg>
         </div>
         <div>
-            <p class="text-2xl font-bold text-neutral-900">{{ $notifications->total() - $unreadCount }}</p>
-            <p class="text-xs text-neutral-400 font-medium">Sudah Dibaca</p>
+            <p class="text-2xl font-bold text-neutral-900">{{ $unreadCount }}</p>
+            <p class="text-xs text-neutral-400 font-medium">Total Notifikasi</p>
         </div>
     </div>
 </div>
@@ -279,6 +282,8 @@
         fetch(`/notifications/${id}/read`, {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Content-Type': 'application/json' }
+        }).then(() => {
+            location.reload();
         }).catch(e => console.error(e));
     }
 

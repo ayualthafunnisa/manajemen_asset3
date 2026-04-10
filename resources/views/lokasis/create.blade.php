@@ -73,20 +73,29 @@
                             <label for="KodeLokasi" class="block text-sm font-semibold text-neutral-700">
                                 Kode Lokasi <span class="text-danger-500">*</span>
                             </label>
-                            <div class="relative group">
-                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                    <svg class="h-5 w-5 text-neutral-400 group-focus-within:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
-                                    </svg>
+                            <div class="flex gap-2">
+                                <div class="relative group flex-1">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                        <svg class="h-5 w-5 text-neutral-400 group-focus-within:text-primary-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                                        </svg>
+                                    </div>
+                                    <input type="text" name="KodeLokasi" id="KodeLokasi"
+                                        value="{{ old('KodeLokasi') }}"
+                                        class="w-full pl-12 pr-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('KodeLokasi') border-danger-500 @enderror"
+                                        placeholder="Contoh: LOK-001"
+                                        maxlength="20"
+                                        required>
                                 </div>
-                                <input type="text" name="KodeLokasi" id="KodeLokasi"
-                                       value="{{ old('KodeLokasi') }}"
-                                       class="w-full pl-12 pr-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('KodeLokasi') border-danger-500 @enderror"
-                                       placeholder="Contoh: LOK-001"
-                                       maxlength="20"
-                                       required>
+                                <button type="button" onclick="generateKodeLokasi()"
+                                        class="px-4 py-3 bg-neutral-100 border-2 border-neutral-200 rounded-lg hover:bg-neutral-200 hover:border-primary-300 transition-all duration-200 group"
+                                        title="Generate kode otomatis">
+                                    <svg class="w-5 h-5 text-neutral-600 group-hover:text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                    </svg>
+                                </button>
                             </div>
-                            <p class="text-xs text-neutral-500">Kode lokasi harus unik dan tidak boleh sama dengan lokasi lain</p>
+                            <p class="text-xs text-neutral-500">Kode lokasi harus unik. Klik tombol refresh untuk generate otomatis</p>
                             @error('KodeLokasi')
                                 <p class="text-sm text-danger-600 mt-1 flex items-center gap-1">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -322,5 +331,14 @@ function confirmSubmit() {
         form.submit();
     }
 }
+
+window.generateKodeLokasi = function () {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+    document.getElementById('KodeLokasi').value = `LOK-${year}${month}${day}-${random}`;
+};
 </script>
 @endpush

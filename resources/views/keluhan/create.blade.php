@@ -53,7 +53,7 @@
                     </div>
                     <div>
                         <p class="text-xs text-warning-600 font-medium">Lokasi</p>
-                        <p class="text-sm font-semibold text-warning-900">{{ $kerusakan->lokasi->nama_lokasi ?? '-' }}</p>
+                        <p class="text-sm font-semibold text-warning-900">{{ $kerusakan->lokasi->NamaLokasi ?? '-' }}</p>
                     </div>
                     <div>
                         <p class="text-xs text-warning-600 font-medium">Jenis Kerusakan</p>

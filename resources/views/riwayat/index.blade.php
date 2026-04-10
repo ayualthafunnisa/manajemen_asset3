@@ -145,7 +145,7 @@
                             <div class="text-sm font-medium text-neutral-900">{{ $r->kerusakan->asset->nama_asset ?? '-' }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
-                            {{ $r->kerusakan->lokasi->nama_lokasi ?? '-' }}
+                            {{ $r->kerusakan->lokasi->NamaLokasi ?? '-' }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
                             {{ $r->biaya_aktual ? 'Rp ' . number_format($r->biaya_aktual, 0, ',', '.') : '-' }}

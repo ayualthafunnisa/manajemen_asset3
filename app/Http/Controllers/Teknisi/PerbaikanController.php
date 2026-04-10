@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Teknisi;
 use App\Http\Controllers\Controller;
 use App\Models\Kerusakan;
 use App\Models\Perbaikan;
+use App\Helpers\NotificationHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PerbaikanController extends Controller
 {
@@ -118,7 +120,7 @@ class PerbaikanController extends Controller
             $fotoPath = $request->file('foto_sesudah')->store('perbaikan', 'public');
         }
 
-        Perbaikan::create([
+        $perbaikan = Perbaikan::create([
             'kerusakanID'        => $kerusakanId,
             'InstansiID'         => Auth::user()->InstansiID,
             'kode_perbaikan'     => $request->kode_perbaikan,
@@ -132,7 +134,7 @@ class PerbaikanController extends Controller
             'mulai_perbaikan'    => $request->mulai_perbaikan,
             'selesai_perbaikan'  => $request->status === 'selesai' ? ($request->selesai_perbaikan ?? now()) : $request->selesai_perbaikan,
             'teknisi_id'         => Auth::id(),
-            'ditugaskan_oleh'    => Auth::id(), // teknisi menugaskan diri sendiri; bisa diubah jika ada alur admin
+            'ditugaskan_oleh'    => Auth::id(),
         ]);
 
         // Sinkronisasi status kerusakan
@@ -141,6 +143,11 @@ class PerbaikanController extends Controller
             default                             => 'diproses',
         };
         $kerusakan->update(['status_perbaikan' => $statusKerusakan]);
+
+        // Kirim notifikasi ke admin sekolah jika perbaikan selesai atau tidak bisa diperbaiki
+        if (in_array($request->status, ['selesai', 'tidak_bisa_diperbaiki'])) {
+            $this->sendNotificationToAdmin($perbaikan);
+        }
 
         $pesan = match ($request->status) {
             'selesai'                => 'Perbaikan selesai! Laporan berhasil disimpan ke riwayat.',
@@ -170,6 +177,7 @@ class PerbaikanController extends Controller
             'selesai_perbaikan'  => 'nullable|date',
         ]);
 
+        $oldStatus = $perbaikan->status;
         $data = ['status' => $request->status];
 
         if ($request->status === 'selesai') {
@@ -182,7 +190,14 @@ class PerbaikanController extends Controller
         $perbaikan->update($data);
 
         // Sinkron status kerusakan
-       if (in_array($request->status, ['selesai', 'tidak_bisa_diperbaiki'])) {
+        if (in_array($request->status, ['selesai', 'tidak_bisa_diperbaiki'])) {
+            $perbaikan->kerusakan->update(['status_perbaikan' => 'selesai']);
+            
+            // Kirim notifikasi ke admin sekolah jika status berubah ke selesai/tidak_bisa
+            if ($oldStatus !== $request->status) {
+                $this->sendNotificationToAdmin($perbaikan);
+            }
+            
             return redirect()
                 ->route('riwayat.index')
                 ->with('success', 'Perbaikan selesai dan masuk ke riwayat.');
@@ -191,7 +206,7 @@ class PerbaikanController extends Controller
         return redirect()
             ->route('keluhan.index')
             ->with('success', 'Status perbaikan diperbarui.');
-            }
+    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // RIWAYAT INDEX — Perbaikan yang sudah selesai
@@ -263,8 +278,69 @@ class PerbaikanController extends Controller
             'kerusakan.asset', 'kerusakan.lokasi', 'kerusakan.pelapor', 'teknisi',
         ])->findOrFail($id);
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('riwayat.pdf', compact('perbaikan'));
+        $pdf = Pdf::loadView('riwayat.pdf', compact('perbaikan'));
+        $pdf->setPaper('a4', 'portrait');
 
         return $pdf->download('Laporan-Perbaikan-' . $perbaikan->kode_perbaikan . '.pdf');
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // PRIVATE METHOD — Send notification to admin sekolah
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /**
+     * Send notification to admin sekolah when repair is completed or cannot be repaired
+     */
+    private function sendNotificationToAdmin($perbaikan)
+    {
+        try {
+            $kerusakan = $perbaikan->kerusakan;
+            $assetName = $kerusakan->asset->nama_asset ?? 'Asset';
+            $teknisiName = $perbaikan->teknisi->name ?? 'Teknisi';
+            
+            $isSelesai = $perbaikan->status === 'selesai';
+            
+            $title = $isSelesai 
+                ? "✅ Perbaikan Selesai: {$assetName}"
+                : "⚠️ Perbaikan Tidak Bisa: {$assetName}";
+            
+            $message = $isSelesai
+                ? "Perbaikan oleh {$teknisiName} telah selesai. " . ($perbaikan->biaya_aktual ? "Biaya: Rp " . number_format($perbaikan->biaya_aktual, 0, ',', '.') : "")
+                : "Perbaikan oleh {$teknisiName} tidak dapat diselesaikan. Alasan: " . substr($perbaikan->alasan_tidak_bisa, 0, 100);
+            
+            $data = [
+                'perbaikan_id' => $perbaikan->perbaikanID,
+                'kerusakan_id' => $kerusakan->kerusakanID,
+                'kode_perbaikan' => $perbaikan->kode_perbaikan,
+                'kode_laporan' => $kerusakan->kode_laporan,
+                'asset_name' => $assetName,
+                'status' => $perbaikan->status,
+                'teknisi_name' => $teknisiName,
+                'biaya_aktual' => $perbaikan->biaya_aktual,
+                'alasan_tidak_bisa' => $perbaikan->alasan_tidak_bisa
+            ];
+            
+            // Log untuk debugging
+            \Log::info('Sending notification to admins for instansi: ' . $perbaikan->InstansiID);
+            \Log::info('Notification title: ' . $title);
+            
+            // Kirim notifikasi ke semua admin sekolah
+            $result = NotificationHelper::sendToAdmins(
+                $perbaikan->InstansiID,
+                $isSelesai ? 'perbaikan_selesai' : 'perbaikan_tidak_bisa',
+                $title,
+                $message,
+                $data,
+                $isSelesai ? '✅' : '⚠️'
+            );
+            
+            \Log::info('Notification result: ' . ($result ? 'success' : 'failed'));
+            
+            return $result;
+        } catch (\Exception $e) {
+            \Log::error('Failed to send notification: ' . $e->getMessage());
+            \Log::error('Stack trace: ' . $e->getTraceAsString());
+            return false;
+        }
     }
 }

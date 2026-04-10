@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Helpers\NotificationHelper;
 
 class Kerusakan extends Model
 {
@@ -55,9 +56,6 @@ class Kerusakan extends Model
         return $this->belongsTo(User::class, 'dilaporkan_oleh');
     }
 
-    /**
-     * Relasi ke tabel perbaikans (satu kerusakan bisa punya satu catatan perbaikan aktif).
-     */
     public function perbaikan()
     {
         return $this->hasOne(Perbaikan::class, 'kerusakanID', 'kerusakanID');
@@ -66,6 +64,62 @@ class Kerusakan extends Model
     public function perbaikans()
     {
         return $this->hasMany(Perbaikan::class, 'kerusakanID', 'kerusakanID');
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // EVENTS
+    // ──────────────────────────────────────────────────────────────────────────
+    
+    protected static function booted()
+    {
+        static::addGlobalScope('instansi', function ($query) {
+            if (auth()->check() && auth()->user()->role !== 'super_admin') {
+                $query->where('kerusakans.InstansiID', auth()->user()->InstansiID);
+            }
+        });
+
+        // Kirim notifikasi ke teknisi saat kerusakan baru dilaporkan
+        static::created(function ($kerusakan) {
+            // Cari semua teknisi di instansi yang sama
+            $teknisi = User::where('InstansiID', $kerusakan->InstansiID)
+                ->where('role', 'teknisi')
+                ->where('status', 'active')
+                ->get();
+            
+            // Data untuk notifikasi
+            $assetName = $kerusakan->asset->nama_asset ?? 'Asset';
+            $priorityLabels = [
+                'kritis' => '🔴 KRITIS',
+                'tinggi' => '🟠 Tinggi',
+                'sedang' => '🟡 Sedang',
+                'rendah' => '🟢 Rendah'
+            ];
+            $priorityLabel = $priorityLabels[$kerusakan->prioritas] ?? $kerusakan->prioritas;
+            
+            $title = "Keluhan Baru: {$assetName}";
+            $message = "{$priorityLabel} - {$kerusakan->deskripsi_kerusakan}";
+            
+            $data = [
+                'kerusakan_id' => $kerusakan->kerusakanID,
+                'kode_laporan' => $kerusakan->kode_laporan,
+                'asset_name' => $assetName,
+                'prioritas' => $kerusakan->prioritas,
+                'lokasi' => $kerusakan->lokasi->nama_lokasi ?? 'Tidak diketahui',
+                'dilaporkan_oleh' => $kerusakan->pelapor->name ?? 'User'
+            ];
+            
+            // Kirim notifikasi ke setiap teknisi
+            foreach ($teknisi as $teknisiUser) {
+                NotificationHelper::send(
+                    $teknisiUser->id,
+                    'keluhan_baru',
+                    $title,
+                    $message,
+                    $data,
+                    
+                );
+            }
+        });
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -103,18 +157,5 @@ class Kerusakan extends Model
             'ditolak'    => 'Ditolak',
             default      => ucfirst($this->status_perbaikan),
         };
-    }
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // GLOBAL SCOPE — isolasi data per instansi
-    // ──────────────────────────────────────────────────────────────────────────
-
-    protected static function booted()
-    {
-        static::addGlobalScope('instansi', function ($query) {
-            if (auth()->check() && auth()->user()->role !== 'super_admin') {
-                $query->where('kerusakans.InstansiID', auth()->user()->InstansiID);
-            }
-        });
     }
 }

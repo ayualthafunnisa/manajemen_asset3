@@ -26,7 +26,7 @@
             <div class="flex items-center space-x-2">
 
                 {{-- ── NOTIFICATION BELL ── --}}
-                <div class="relative" x-data="notificationComponent()" x-init="init()">
+                <div class="relative" x-data="notificationComponent()" x-init="init()" @click.away="open = false">
 
                     <button @click="toggleDropdown()"
                             class="relative p-2.5 rounded-xl hover:bg-primary-50 transition-all duration-200 group">
@@ -36,6 +36,7 @@
                                   d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                         </svg>
                         <span x-show="unreadCount > 0"
+                              x-cloak
                               x-text="unreadCount > 9 ? '9+' : unreadCount"
                               class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-sm">
                         </span>
@@ -43,7 +44,7 @@
 
                     <!-- Notification Dropdown -->
                     <div x-show="open"
-                         @click.away="open = false"
+                         x-cloak
                          x-transition:enter="transition ease-out duration-200"
                          x-transition:enter-start="transform opacity-0 scale-95 translate-y-2"
                          x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
@@ -56,69 +57,73 @@
                             <div class="flex items-center space-x-2.5">
                                 <h3 class="text-sm font-bold text-neutral-800">Notifikasi</h3>
                                 <span x-show="unreadCount > 0"
+                                      x-cloak
                                       class="bg-primary-100 text-primary-700 text-xs font-bold px-2 py-0.5 rounded-full"
                                       x-text="unreadCount + ' baru'">
                                 </span>
                             </div>
                             <button @click="markAllAsRead()"
                                     x-show="unreadCount > 0"
+                                    x-cloak
                                     class="text-xs text-primary-600 hover:text-primary-800 font-semibold hover:bg-primary-50 px-2.5 py-1.5 rounded-lg transition-all duration-150">
                                 Tandai semua dibaca
                             </button>
                         </div>
 
                         <div class="max-h-[420px] overflow-y-auto notif-scroll">
+                            <!-- Loading State -->
                             <div x-show="loading" class="px-5 py-8 text-center">
                                 <div class="w-6 h-6 border-2 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto"></div>
-                                <p class="text-xs text-neutral-400 mt-2">Memuat...</p>
+                                <p class="text-xs text-neutral-400 mt-2">Memuat notifikasi...</p>
                             </div>
 
-                            <template x-if="!loading">
-                                <div>
-                                    <template x-for="notif in notifications" :key="notif.id">
-                                        <a :href="notif.detail_url ? notif.detail_url : '{{ url('/notifications') }}/' + notif.id"
-                                           @click="handleNotifClick(notif)"
-                                           class="flex items-start space-x-3.5 px-5 py-3.5 hover:bg-neutral-50/80 transition-all duration-150 cursor-pointer group border-b border-neutral-50 last:border-0 no-underline"
-                                           :class="{ 'bg-primary-50/40': !notif.is_read }">
-                                            <div class="flex-shrink-0 relative">
-                                                <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                                                     :class="notif.is_read ? 'bg-neutral-100' : 'bg-primary-100'">
-                                                    <span x-text="notif.icon || '🔔'"></span>
-                                                </div>
-                                                <div x-show="!notif.is_read"
-                                                     class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary-500 rounded-full border-2 border-white"></div>
+                            <!-- Notifications List -->
+                            <div x-show="!loading && notifications.length > 0" x-cloak>
+                                <template x-for="notif in notifications" :key="notif.id">
+                                    <a :href="notif.detail_url || '#'"
+                                       @click.prevent="handleNotifClick(notif, $event)"
+                                       class="flex items-start space-x-3.5 px-5 py-3.5 hover:bg-neutral-50/80 transition-all duration-150 cursor-pointer group border-b border-neutral-50 last:border-0 no-underline"
+                                       :class="{ 'bg-primary-50/40': !notif.is_read }">
+                                        <div class="flex-shrink-0 relative">
+                                            <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xl"
+                                                 :class="notif.is_read ? 'bg-neutral-100' : 'bg-primary-100'">
+                                                <span x-text="notif.icon || '🔔'"></span>
                                             </div>
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-sm font-semibold text-neutral-800 group-hover:text-primary-700 transition-colors leading-snug"
-                                                   x-text="notif.title"
-                                                   :class="{ 'text-primary-800': !notif.is_read }"></p>
-                                                <p class="text-xs text-neutral-500 mt-0.5 line-clamp-2 leading-relaxed" x-text="notif.message"></p>
-                                                <div class="flex items-center space-x-1.5 mt-1.5">
-                                                    <svg class="w-3 h-3 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                                    </svg>
-                                                    <p class="text-[11px] text-neutral-400" x-text="notif.time_ago"></p>
-                                                </div>
-                                            </div>
-                                            <div class="flex-shrink-0 self-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <svg class="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                                            <div x-show="!notif.is_read"
+                                                 x-cloak
+                                                 class="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-primary-500 rounded-full border-2 border-white"></div>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <p class="text-sm font-semibold text-neutral-800 group-hover:text-primary-700 transition-colors leading-snug"
+                                               x-text="notif.title"
+                                               :class="{ 'text-primary-800': !notif.is_read }"></p>
+                                            <p class="text-xs text-neutral-500 mt-0.5 line-clamp-2 leading-relaxed" x-text="notif.message"></p>
+                                            <div class="flex items-center space-x-1.5 mt-1.5">
+                                                <svg class="w-3 h-3 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                                 </svg>
+                                                <p class="text-[11px] text-neutral-400" x-text="notif.time_ago"></p>
                                             </div>
-                                        </a>
-                                    </template>
-
-                                    <div x-show="notifications.length === 0" class="py-14 text-center px-6">
-                                        <div class="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                                            <svg class="w-7 h-7 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                        </div>
+                                        <div class="flex-shrink-0 self-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <svg class="w-4 h-4 text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                                             </svg>
                                         </div>
-                                        <p class="text-sm font-medium text-neutral-500">Semua sudah dibaca</p>
-                                        <p class="text-xs text-neutral-400 mt-1">Tidak ada notifikasi baru</p>
-                                    </div>
+                                    </a>
+                                </template>
+                            </div>
+
+                            <!-- Empty State -->
+                            <div x-show="!loading && notifications.length === 0" x-cloak class="py-14 text-center px-6">
+                                <div class="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                                    <svg class="w-7 h-7 text-neutral-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                                    </svg>
                                 </div>
-                            </template>
+                                <p class="text-sm font-medium text-neutral-500">Tidak ada notifikasi</p>
+                                <p class="text-xs text-neutral-400 mt-1">Semua notifikasi akan muncul di sini</p>
+                            </div>
                         </div>
 
                         <div class="px-5 py-3 border-t border-neutral-100 bg-neutral-50/60">
@@ -134,7 +139,7 @@
                 </div>
 
                 {{-- ── USER PROFILE DROPDOWN ── --}}
-                <div class="relative" x-data="{ profileOpen: false }">
+                <div class="relative" x-data="{ profileOpen: false }" @click.away="profileOpen = false">
 
                     @php
                         $user     = auth()->user();
@@ -197,7 +202,7 @@
 
                     <!-- Profile Dropdown -->
                     <div x-show="profileOpen"
-                         @click.away="profileOpen = false"
+                         x-cloak
                          x-transition:enter="transition ease-out duration-200"
                          x-transition:enter-start="transform opacity-0 scale-95 translate-y-2"
                          x-transition:enter-end="transform opacity-100 scale-100 translate-y-0"
@@ -319,57 +324,125 @@ function notificationComponent() {
         loading: false,
         notifications: [],
         unreadCount: 0,
+        pollingInterval: null,
 
         init() {
             this.fetchNotifications();
-            setInterval(() => this.fetchNotifications(), 30000);
+            // Polling every 30 seconds
+            this.pollingInterval = setInterval(() => this.fetchNotifications(), 30000);
         },
 
         toggleDropdown() {
             this.open = !this.open;
-            if (this.open) {
+            if (this.open && this.notifications.length === 0) {
                 this.loading = true;
-                this.fetchNotifications().finally(() => { this.loading = false; });
+                this.fetchNotifications().finally(() => { 
+                    this.loading = false; 
+                });
             }
         },
 
         async fetchNotifications() {
             try {
-                const res  = await fetch('{{ route("notifications.unread") }}');
-                const data = await res.json();
-                this.unreadCount  = data.count;
-                this.notifications = data.notifications;
-            } catch (e) {
-                console.error('Error fetching notifications:', e);
+                const response = await fetch('{{ route("notifications.unread") }}', {
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                const data = await response.json();
+                this.unreadCount = data.count || 0;
+                this.notifications = data.notifications || [];
+                
+                // Update title badge
+                if (this.unreadCount > 0) {
+                    document.title = `(${this.unreadCount}) AsetKu`;
+                } else {
+                    document.title = 'AsetKu';
+                }
+            } catch (error) {
+                console.error('Error fetching notifications:', error);
+                // Set empty state on error
+                this.notifications = [];
+                this.unreadCount = 0;
             }
         },
 
-        handleNotifClick(notif) {
+        async handleNotifClick(notif, event) {
+            event.preventDefault();
+            
+            // Mark as read if unread
             if (!notif.is_read) {
-                fetch(`/notifications/${notif.id}/read`, {
+                try {
+                    const response = await fetch(`/notifications/${notif.id}/read`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        // Update local state
+                        notif.is_read = true;
+                        this.unreadCount = Math.max(0, this.unreadCount - 1);
+                        
+                        // Update notifications list
+                        const index = this.notifications.findIndex(n => n.id === notif.id);
+                        if (index !== -1) {
+                            this.notifications[index].is_read = true;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error marking notification as read:', error);
+                }
+            }
+            
+            // Close dropdown
+            this.open = false;
+            
+            // Redirect to detail URL
+            if (notif.detail_url && notif.detail_url !== '#') {
+                window.location.href = notif.detail_url;
+            }
+        },
+
+        async markAllAsRead() {
+            try {
+                const response = await fetch('{{ route("notifications.mark-all-read") }}', {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     }
-                }).catch(e => console.error(e));
-                notif.is_read = true;
-                this.unreadCount = Math.max(0, this.unreadCount - 1);
-            }
-            this.open = false;
-        },
-
-        markAllAsRead() {
-            fetch('{{ route("notifications.mark-all-read") }}', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Content-Type': 'application/json'
+                });
+                
+                if (response.ok) {
+                    // Mark all as read locally
+                    this.notifications.forEach(n => n.is_read = true);
+                    this.unreadCount = 0;
+                    
+                    // Refresh notifications
+                    await this.fetchNotifications();
                 }
-            }).then(() => {
-                this.notifications.forEach(n => n.is_read = true);
-                this.unreadCount = 0;
-            }).catch(e => console.error(e));
+            } catch (error) {
+                console.error('Error marking all as read:', error);
+            }
+        },
+        
+        // Cleanup on component destroy
+        destroy() {
+            if (this.pollingInterval) {
+                clearInterval(this.pollingInterval);
+            }
         }
     }
 }

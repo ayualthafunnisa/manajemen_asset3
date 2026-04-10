@@ -74,6 +74,7 @@
                 $navItems[] = ['route' => 'kategori.index', 'label' => 'Kategori',    'icon' => 'M3 7a2 2 0 012-2h3l2 2h9a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z',                'group' => 'Master Data'];
                 $navItems[] = ['route' => 'lokasi.index',  'label' => 'Lokasi Asset', 'icon' => 'M12 21s-6-5.686-6-10a6 6 0 1112 0c0 4.314-6 10-6 10zM12 11a2 2 0 100-4 2 2 0 000 4z', 'group' => 'Master Data'];
                 $navItems[] = ['route' => 'user.index',    'label' => 'User',         'icon' => 'M17 20h5v-2a4 4 0 00-5.477-3.685M9 20H4v-2a4 4 0 015.477-3.685M15 7a4 4 0 11-8 0 4 4 0 018 0z', 'group' => 'Master Data'];
+                $navItems[] = ['route' => 'laporan_masuk.index',    'label' => 'Laporan Perbaikan',     'icon'  => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',     'group' => 'Laporan',];
             }
 
             // Admin Sekolah + Petugas + Super Admin

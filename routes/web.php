@@ -18,6 +18,7 @@ use App\Http\Controllers\Teknisi\PerbaikanController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Admin\ApprovalController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Admin\LaporanPerbaikanController;
 
 /*
 |--------------------------------------------------------------------------
@@ -86,6 +87,7 @@ Route::middleware('auth')->group(function () {
     // Notification Routes
     Route::middleware(['auth'])->prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/', [NotificationController::class, 'index'])->name('index');
+        Route::get('/history', [NotificationController::class, 'history'])->name('history'); // TAMBAHKAN ROUTE INI
         Route::get('/unread', [NotificationController::class, 'getUnreadCount'])->name('unread');
         Route::post('/{id}/read', [NotificationController::class, 'markAsRead'])->name('mark-read');
         Route::post('/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('mark-all-read');
@@ -169,5 +171,14 @@ Route::middleware('auth')->group(function () {
         Route::get('/riwayat', [PerbaikanController::class, 'riwayat'])->name('riwayat.index');
         Route::get('/riwayat/{id}', [PerbaikanController::class, 'riwayatShow'])->name('riwayat.show');
         Route::get('/riwayat/{id}/pdf', [PerbaikanController::class, 'cetakPdf'])->name('riwayat.pdf');
+    });
+
+    // Laporan Perbaikan — Admin Sekolah
+    Route::middleware('role:admin_sekolah,super_admin')
+        ->prefix('admin/laporan-perbaikan')
+        ->name('laporan_masuk.')
+        ->group(function () {
+        Route::get('/', [LaporanPerbaikanController::class, 'index'])->name('index');
+        Route::get('/{id}/lihat', [LaporanPerbaikanController::class, 'lihat'])->name('lihat');
     });
 });
