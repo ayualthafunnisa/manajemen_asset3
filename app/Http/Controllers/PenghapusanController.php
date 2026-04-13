@@ -16,7 +16,7 @@ class PenghapusanController extends Controller
         // Staf hanya melihat pengajuan yang dia buat sendiri.
         $query = Penghapusan::with(['asset', 'pengaju', 'penyetuju']);
 
-        if (Auth::user()->role === 'staf_asset') {
+        if (Auth::user()->role === 'petugas') {
             $query->where('diajukan_oleh', Auth::id());
         }
 
@@ -24,7 +24,7 @@ class PenghapusanController extends Controller
 
         // Summary card
         $summaryQuery = Penghapusan::query();
-        if (Auth::user()->role === 'staf_asset') {
+        if (Auth::user()->role === 'petugas') {
             $summaryQuery->where('diajukan_oleh', Auth::id());
         }
 
@@ -52,7 +52,6 @@ class PenghapusanController extends Controller
             'assetID'               => 'required|exists:assets,assetID',
             'no_surat_penghapusan'  => 'required|unique:penghapusans',
             'tanggal_pengajuan'     => 'required|date',
-            'jenis_penghapusan'     => 'required|in:rusak_total,usang,hilang,dijual,hibah,musnah',
             'alasan_penghapusan'    => 'required|in:kerusakan_permanen,teknologi_tertinggal,tidak_layak_pakai,kehilangan,penggantian,restrukturisasi',
             'nilai_buku'            => 'required|numeric|min:1',
             'harga_jual'            => 'nullable|numeric|min:0',
@@ -80,7 +79,6 @@ class PenghapusanController extends Controller
             'InstansiID'            => Auth::user()->InstansiID, // inject otomatis
             'no_surat_penghapusan'  => $request->no_surat_penghapusan,
             'tanggal_pengajuan'     => $request->tanggal_pengajuan,
-            'jenis_penghapusan'     => $request->jenis_penghapusan,
             'alasan_penghapusan'    => $request->alasan_penghapusan,
             'nilai_buku'            => $request->nilai_buku,
             'harga_jual'            => $request->harga_jual,
@@ -101,7 +99,7 @@ class PenghapusanController extends Controller
         $penghapusan = Penghapusan::with(['asset', 'pengaju', 'penyetuju', 'instansi']) ->findOrFail($id);
 
         // Staf hanya bisa lihat pengajuan miliknya sendiri
-        if (Auth::user()->role === 'staf_asset' && $penghapusan->diajukan_oleh !== Auth::id()) {
+        if (Auth::user()->role === 'petugas' && $penghapusan->diajukan_oleh !== Auth::id()) {
             abort(403, 'Anda tidak memiliki akses ke data ini.');
         }
 
@@ -115,7 +113,7 @@ class PenghapusanController extends Controller
     {
         $penghapusan = Penghapusan::findOrFail($id);
 
-        if (Auth::user()->role === 'staf_asset' && $penghapusan->diajukan_oleh !== Auth::id()) {
+        if (Auth::user()->role === 'petugas' && $penghapusan->diajukan_oleh !== Auth::id()) {
             abort(403, 'Anda tidak memiliki akses ke data ini.');
         }
 
@@ -133,7 +131,7 @@ class PenghapusanController extends Controller
     {
         $penghapusan = Penghapusan::findOrFail($id);
 
-        if (Auth::user()->role === 'staf_asset' && $penghapusan->diajukan_oleh !== Auth::id()) {
+        if (Auth::user()->role === 'petugas' && $penghapusan->diajukan_oleh !== Auth::id()) {
             abort(403, 'Anda tidak memiliki akses ke data ini.');
         }
 
@@ -146,8 +144,6 @@ class PenghapusanController extends Controller
             'assetID'               => 'required|exists:assets,assetID',
             'no_surat_penghapusan'  => 'required|unique:penghapusans,no_surat_penghapusan,' . $id . ',penghapusanID',
             'tanggal_pengajuan'     => 'required|date',
-            'jenis_penghapusan'     => 'required|in:rusak_total,usang,hilang,dijual,hibah,musnah',
-            'alasan_penghapusan'    => 'required|in:kerusakan_permanen,teknologi_tertinggal,tidak_layak_pakai,kehilangan,penggantian,restrukturisasi',
             'nilai_buku'            => 'required|numeric|min:1',
             'harga_jual'            => 'nullable|numeric|min:0',
             'deskripsi_penghapusan' => 'required|min:10',
@@ -164,7 +160,6 @@ class PenghapusanController extends Controller
             'assetID'               => $request->assetID,
             'no_surat_penghapusan'  => $request->no_surat_penghapusan,
             'tanggal_pengajuan'     => $request->tanggal_pengajuan,
-            'jenis_penghapusan'     => $request->jenis_penghapusan,
             'alasan_penghapusan'    => $request->alasan_penghapusan,
             'nilai_buku'            => $request->nilai_buku,
             'harga_jual'            => $request->harga_jual,
@@ -273,7 +268,7 @@ class PenghapusanController extends Controller
             $query = Penghapusan::where('penghapusanID', $id)
                                 ->where('InstansiID', Auth::user()->InstansiID);
 
-            if (Auth::user()->role === 'staf_asset') {
+            if (Auth::user()->role === 'petugas') {
                 $query->where('diajukan_oleh', Auth::id());
             }
 

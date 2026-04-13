@@ -20,6 +20,35 @@
 </div>
 @endsection
 
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css">
+<style>
+    .ts-wrapper .ts-control {
+        padding: 0.75rem 1rem;
+        border: 2px solid #e5e5e5;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        min-height: 52px;
+        box-shadow: none;
+    }
+    .ts-wrapper.focus .ts-control {
+        border-color: #7c3aed;
+        box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+        outline: none;
+    }
+    .ts-wrapper .ts-dropdown { 
+        border-color: #7c3aed; 
+        border-radius: 0.5rem; 
+        box-shadow: 0 4px 16px rgba(0,0,0,.10); 
+    }
+    .ts-wrapper .ts-dropdown .active { 
+        background: #ede9fe; 
+        color: #5b21b6; 
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="w-full">
     <div class="bg-white rounded-xl shadow-card border border-neutral-200 overflow-hidden hover:shadow-card-hover transition-shadow duration-300">
@@ -77,7 +106,7 @@
                                 Kategori Asset <span class="text-danger-500">*</span>
                             </label>
                             <select name="KategoriID" id="KategoriID" 
-                                    class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('KategoriID') border-danger-500 @enderror"
+                                    class="w-full @error('KategoriID') border-danger-500 @enderror"
                                     required>
                                 <option value="">Pilih Kategori</option>
                                 @foreach($kategoris as $kategori)
@@ -97,7 +126,7 @@
                                 Lokasi Asset <span class="text-danger-500">*</span>
                             </label>
                             <select name="LokasiID" id="LokasiID" 
-                                    class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('LokasiID') border-danger-500 @enderror"
+                                    class="w-full @error('LokasiID') border-danger-500 @enderror"
                                     required>
                                 <option value="">Pilih Lokasi</option>
                                 @foreach($lokasis as $lokasi)
@@ -470,8 +499,25 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // TomSelect untuk Kategori
+    new TomSelect('#KategoriID', { 
+        searchField: ['text'], 
+        maxOptions: 200, 
+        highlight: true,
+        placeholder: 'Cari kategori...'
+    });
+    
+    // TomSelect untuk Lokasi
+    new TomSelect('#LokasiID', { 
+        searchField: ['text'], 
+        maxOptions: 200, 
+        highlight: true,
+        placeholder: 'Cari lokasi...'
+    });
+    
     window.generateKodeAsset = function () {
         const date = new Date();
         const year = date.getFullYear();
@@ -516,15 +562,9 @@ function confirmSubmit() {
     
     requiredFields.forEach(field => {
         if (field.type === 'file') {
-            if (!field.files || field.files.length === 0) {
-                isValid = false;
-                field.closest('.border-dashed')?.classList.add('border-danger-500');
-                const label = document.querySelector(`label[for="${field.id}"]`);
-                const fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
-                errorMessages.push(`${fieldName} wajib diunggah`);
-                if (!firstInvalid) firstInvalid = field;
-            }
-        } else if (!field.value.trim()) {
+            return;
+        }
+        if (!field.value.trim()) {
             isValid = false;
             field.classList.add('border-danger-500');
             field.classList.remove('border-neutral-200');

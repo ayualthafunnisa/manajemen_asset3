@@ -146,7 +146,7 @@
                 <td>{{ Str::limit($item->deskripsi_kerusakan, 60) }}</td>
                 <td>{{ \Carbon\Carbon::parse($item->tanggal_laporan)->format('d/m/Y') }}</td>
                 <td>{{ ucfirst($item->status_perbaikan) }}</td>
-                <td>{{ $item->lokasi_kerusakan ?? '-' }}</td>
+                <td>{{ $item->lokasi->NamaLokasi ?? '-' }}</td>
                 <td>{{ $item->user->name ?? '-' }}</td>
                 @elseif($jenisLaporan == 'penghapusan')
                 <td class="text-center">{{ $index + 1 }}</td>

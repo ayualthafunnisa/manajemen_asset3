@@ -31,6 +31,35 @@
 </div>
 @endsection
 
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css">
+<style>
+    .ts-wrapper .ts-control {
+        padding: 0.625rem 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        min-height: 44px;
+        box-shadow: none;
+    }
+    .ts-wrapper.focus .ts-control {
+        border-color: #8b5cf6;
+        box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+        outline: none;
+    }
+    .ts-wrapper .ts-dropdown { 
+        border-color: #8b5cf6; 
+        border-radius: 0.5rem; 
+        box-shadow: 0 4px 16px rgba(0,0,0,.10); 
+    }
+    .ts-wrapper .ts-dropdown .active { 
+        background: #ede9fe; 
+        color: #6d28d9; 
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     {{-- Main Form --}}
@@ -80,7 +109,7 @@
                                 Kategori <span class="text-red-500">*</span>
                             </label>
                             <select name="KategoriID" id="KategoriID" 
-                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('KategoriID') border-red-500 @enderror"
+                                    class="w-full @error('KategoriID') border-red-500 @enderror"
                                     required>
                                 <option value="">Pilih Kategori</option>
                                 @foreach($kategoris as $kategori)
@@ -100,7 +129,7 @@
                                 Lokasi <span class="text-red-500">*</span>
                             </label>
                             <select name="LokasiID" id="LokasiID" 
-                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 @error('LokasiID') border-red-500 @enderror"
+                                    class="w-full @error('LokasiID') border-red-500 @enderror"
                                     required>
                                 <option value="">Pilih Lokasi</option>
                                 @foreach($lokasis as $lokasi)
@@ -578,8 +607,25 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // TomSelect untuk Kategori
+        new TomSelect('#KategoriID', { 
+            searchField: ['text'], 
+            maxOptions: 200, 
+            highlight: true,
+            placeholder: 'Cari kategori...'
+        });
+        
+        // TomSelect untuk Lokasi
+        new TomSelect('#LokasiID', { 
+            searchField: ['text'], 
+            maxOptions: 200, 
+            highlight: true,
+            placeholder: 'Cari lokasi...'
+        });
+        
         const fileInputs = [
             { input: 'gambar_asset', preview: 'gambar_name' },
             { input: 'dokumen_pendukung', preview: 'dokumen_name' }

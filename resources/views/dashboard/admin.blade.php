@@ -137,7 +137,7 @@
                     @forelse ($penghapusanList ?? [] as $item)
                     <tr class="hover:bg-neutral-50 transition-colors">
                         <td class="px-6 py-4">
-                            <div class="text-sm font-semibold text-neutral-900">{{ $item->asset->NamaAsset ?? '-' }}</div>
+                            <div class="text-sm font-semibold text-neutral-900">{{ $item->asset->nama_asset ?? '-' }}</div>
                             <div class="text-xs text-neutral-500">{{ $item->asset->KodeAsset ?? '-' }}</div>
                         </td>
                         <td class="px-6 py-4 text-sm text-neutral-600">{{ $item->created_at->format('d/m/Y') }}</td>
@@ -224,8 +224,8 @@
                 @forelse ($kerusakanTerbaru ?? [] as $kerusakan)
                 <tr class="hover:bg-neutral-50 transition-colors">
                     <td class="px-6 py-4">
-                        <div class="text-sm font-semibold text-neutral-900">{{ $kerusakan->asset->NamaAsset ?? '-' }}</div>
-                        <div class="text-xs text-neutral-500">{{ $kerusakan->asset->KodeAsset ?? '-' }}</div>
+                        <div class="text-sm font-semibold text-neutral-900">{{ $kerusakan->asset->nama_asset ?? '-' }}</div>
+                        <div class="text-xs text-neutral-500">{{ $kerusakan->asset->kode_asset ?? '-' }}</div>
                     </td>
                     <td class="px-6 py-4 text-sm text-neutral-600">{{ $kerusakan->asset->lokasi->NamaLokasi ?? '-' }}</td>
                     <td class="px-6 py-4 text-sm text-neutral-500">{{ $kerusakan->created_at->format('d/m/Y') }}</td>

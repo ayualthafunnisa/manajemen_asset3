@@ -116,7 +116,7 @@
                             {{ $kerusakans->firstItem() + $index }}
                         </td>
 
-                        {{-- Kolom QR Code — gaya asset index --}}
+                        {{-- Kolom QR Code --}}
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="relative inline-block qr-container">
                                 <button type="button"
@@ -215,29 +215,15 @@
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex items-center gap-2">
 
-                                {{-- Proses: admin, dari dilaporkan --}}
-                                @if(auth()->user()->role == 'admin_sekolah' && $kerusakan->status_perbaikan == 'dilaporkan')
-                                <form action="{{ route('kerusakan.updateStatus', $kerusakan->kerusakanID) }}" method="POST" class="inline">
-                                    @csrf
-                                    <input type="hidden" name="status_perbaikan" value="diproses">
-                                    <button type="submit" title="Proses Perbaikan"
-                                            class="text-blue-600 hover:text-blue-900 transition duration-150">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                                        </svg>
-                                    </button>
-                                </form>
-                                @endif
-
-                                {{-- Selesai: admin, dari diproses --}}
-                                @if(auth()->user()->role == 'admin_sekolah' && $kerusakan->status_perbaikan == 'diproses')
-                                <button type="button" title="Tandai Selesai"
-                                        onclick="showSelesaiModal({{ $kerusakan->kerusakanID }})"
-                                        class="text-green-600 hover:text-green-900 transition duration-150">
+                                {{-- EDIT: Untuk semua user dengan status dilaporkan --}}
+                                @if($kerusakan->status_perbaikan == 'dilaporkan')
+                                <a href="{{ route('kerusakan.edit', $kerusakan->kerusakanID) }}"
+                                   title="Edit Laporan"
+                                   class="text-blue-600 hover:text-blue-900 transition duration-150">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                                     </svg>
-                                </button>
+                                </a>
                                 @endif
 
                                 {{-- Detail --}}
@@ -299,64 +285,13 @@
         @endif
     </div>
 </div>
-
-{{-- Modal Tandai Selesai --}}
-<div id="selesaiModal" class="fixed inset-0 z-50 hidden overflow-y-auto" role="dialog" aria-modal="true">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onclick="hideSelesaiModal()"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full">
-            <form id="selesaiForm" method="POST">
-                @csrf
-                <input type="hidden" name="status_perbaikan" value="selesai">
-                <div class="bg-white px-6 pt-5 pb-4">
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0 flex items-center justify-center h-10 w-10 rounded-full bg-green-100">
-                            <svg class="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                            </svg>
-                        </div>
-                        <div class="ml-4 w-full">
-                            <h3 class="text-lg font-medium text-gray-900">Tandai Perbaikan Selesai</h3>
-                            <p class="text-sm text-gray-500 mt-1 mb-4">Isi informasi penyelesaian perbaikan (opsional).</p>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Biaya Aktual (Rp)</label>
-                                    <input type="number" name="biaya_aktual" min="0" step="1000"
-                                           placeholder="Masukkan biaya aktual perbaikan"
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-1">Catatan Perbaikan</label>
-                                    <textarea name="catatan_perbaikan" rows="3"
-                                              placeholder="Deskripsi perbaikan yang telah dilakukan..."
-                                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"></textarea>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="bg-gray-50 px-6 py-3 flex flex-row-reverse gap-2">
-                    <button type="submit"
-                            class="inline-flex justify-center rounded-md border border-transparent px-4 py-2 bg-green-600 text-sm font-medium text-white hover:bg-green-700">
-                        Tandai Selesai
-                    </button>
-                    <button type="button" onclick="hideSelesaiModal()"
-                            class="inline-flex justify-center rounded-md border border-gray-300 px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
-                        Batal
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
 @endsection
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
 
-    // ── QR Code Popup Handler (sama persis dengan asset index) ──
+    // ── QR Code Popup Handler ──
     const qrTriggers = document.querySelectorAll('.qr-trigger');
     let activePopup = null;
 
@@ -410,11 +345,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // ── Filter & Search ──────────────────────────────────────
+    // ── Filter & Search ──
     const searchInput  = document.getElementById('search');
     const statusFilter = document.getElementById('statusFilter');
     const jenisFilter  = document.getElementById('jenisFilter');
-    let searchTimeout;
 
     function applyFilters() {
         const searchTerm  = searchInput.value.toLowerCase();
@@ -425,7 +359,6 @@ document.addEventListener('DOMContentLoaded', function () {
             if (row.querySelector('td[colspan]')) return;
 
             const text       = row.textContent.toLowerCase();
-            // Jenis = kolom ke-6 (index 5), Status = kolom ke-8 (index 7)
             const jenisCell  = row.querySelector('td:nth-child(6) span');
             const statusCell = row.querySelector('td:nth-child(8) span');
 
@@ -441,17 +374,6 @@ document.addEventListener('DOMContentLoaded', function () {
     statusFilter.addEventListener('change', applyFilters);
     jenisFilter.addEventListener('change', applyFilters);
 });
-
-// ── Modal Selesai ────────────────────────────────────────────
-function showSelesaiModal(id) {
-    const baseUrl = "{{ url('kerusakan') }}";
-    document.getElementById('selesaiForm').action = `${baseUrl}/${id}/update-status`;
-    document.getElementById('selesaiModal').classList.remove('hidden');
-}
-
-function hideSelesaiModal() {
-    document.getElementById('selesaiModal').classList.add('hidden');
-}
 </script>
 @endpush
 

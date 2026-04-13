@@ -15,7 +15,7 @@ class Penghapusan extends Model
         'no_surat_penghapusan',
         'tanggal_pengajuan',
         'tanggal_penghapusan',
-        'jenis_penghapusan',
+        
         'alasan_penghapusan',
         'nilai_buku',
         'harga_jual',

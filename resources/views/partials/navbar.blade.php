@@ -248,7 +248,7 @@
                                     <p class="text-[11px] text-orange-600 mt-0.5 leading-relaxed">
                                         Semua menu terkunci hingga data instansi dilengkapi.
                                     </p>
-                                    <a href="{{ route('instansi.edit', $user->InstansiID ?? 0) }}"
+                                    <a href=""
                                        class="inline-flex items-center gap-1 mt-2 text-[11px] font-bold
                                               text-white bg-orange-500 hover:bg-orange-600 px-2.5 py-1 rounded-lg transition-colors">
                                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -20,6 +20,35 @@
 </div>
 @endsection
 
+@push('styles')
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css">
+<style>
+    .ts-wrapper .ts-control {
+        padding: 0.75rem 1rem;
+        border: 2px solid #e5e5e5;
+        border-radius: 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        min-height: 52px;
+        box-shadow: none;
+    }
+    .ts-wrapper.focus .ts-control {
+        border-color: #7c3aed;
+        box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+        outline: none;
+    }
+    .ts-wrapper .ts-dropdown { 
+        border-color: #7c3aed; 
+        border-radius: 0.5rem; 
+        box-shadow: 0 4px 16px rgba(0,0,0,.10); 
+    }
+    .ts-wrapper .ts-dropdown .active { 
+        background: #ede9fe; 
+        color: #5b21b6; 
+    }
+</style>
+@endpush
+
 @section('content')
 <div class="w-full">
     <div class="bg-white rounded-xl shadow-card border border-neutral-200 overflow-hidden hover:shadow-card-hover transition-shadow duration-300">
@@ -65,7 +94,7 @@
                                 Pilih Aset <span class="text-danger-500">*</span>
                             </label>
                             <select name="assetID" id="assetID"
-                                    class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('assetID') border-danger-500 @enderror"
+                                    class="w-full @error('assetID') border-danger-500 @enderror"
                                     required>
                                 <option value="">-- Pilih Aset --</option>
                                 @foreach($assets as $asset)
@@ -355,8 +384,17 @@
 @endsection
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // TomSelect untuk Aset
+    new TomSelect('#assetID', { 
+        searchField: ['text'], 
+        maxOptions: 200, 
+        highlight: true,
+        placeholder: 'Cari aset...'
+    });
+    
     const assetSelect = document.getElementById('assetID');
     const nilaiBuku = document.getElementById('nilai_buku');
     const hargaJual = document.getElementById('harga_jual');

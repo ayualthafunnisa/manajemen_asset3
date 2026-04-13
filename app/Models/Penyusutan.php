@@ -60,4 +60,13 @@ class Penyusutan extends Model
             }
         });
     }
+
+    public function getTarifGarisLurusAttribute(): ?float
+    {
+        if ($this->metode !== 'garis_lurus' || !$this->asset) {
+            return null;
+        }
+        $umur = $this->asset->umur_ekonomis;
+        return $umur > 0 ? round(100 / $umur, 2) : null;
+    }
 }

@@ -33,15 +33,13 @@
             $role  = $user->role ?? null;
 
             // ── Cek kelengkapan data instansi ──────────────────────────
-            // Menu akan terkunci jika admin_sekolah belum mengisi NamaInstansi.
-            // Sesuaikan kolom wajib ini dengan kebutuhan proyek Anda.
             $instansiLengkap = $role !== 'admin_sekolah'
                 || ($user->instansi && !empty($user->instansi->NamaSekolah));
 
             // ── Susun item navigasi ────────────────────────────────────
             $navItems = [];
 
-            // Dashboard — selalu bypass (bisa diakses tanpa instansi)
+            // Dashboard — selalu bypass
             $dashRoutes = [
                 'super_admin'   => 'dashboard.superadmin',
                 'admin_sekolah' => 'dashboard.admin',
@@ -74,16 +72,20 @@
                 $navItems[] = ['route' => 'kategori.index', 'label' => 'Kategori',    'icon' => 'M3 7a2 2 0 012-2h3l2 2h9a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z',                'group' => 'Master Data'];
                 $navItems[] = ['route' => 'lokasi.index',  'label' => 'Lokasi Asset', 'icon' => 'M12 21s-6-5.686-6-10a6 6 0 1112 0c0 4.314-6 10-6 10zM12 11a2 2 0 100-4 2 2 0 000 4z', 'group' => 'Master Data'];
                 $navItems[] = ['route' => 'user.index',    'label' => 'User',         'icon' => 'M17 20h5v-2a4 4 0 00-5.477-3.685M9 20H4v-2a4 4 0 015.477-3.685M15 7a4 4 0 11-8 0 4 4 0 018 0z', 'group' => 'Master Data'];
-                $navItems[] = ['route' => 'laporan_masuk.index',    'label' => 'Laporan Perbaikan',     'icon'  => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',     'group' => 'Laporan',];
             }
 
             // Admin Sekolah + Petugas + Super Admin
             if (in_array($role, ['admin_sekolah', 'petugas', 'super_admin'])) {
-                $navItems[] = ['route' => 'asset.index',       'label' => 'Asset',       'icon' => 'M20 7l-8-4-8 4m16 0v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7m16 0l-8 4-8-4',                                                                                                                       'group' => 'Manajemen'];
-                $navItems[] = ['route' => 'kerusakan.index',   'label' => 'Kerusakan',   'icon' => 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z',                                                                                      'group' => 'Manajemen'];
-                $navItems[] = ['route' => 'penghapusan.index', 'label' => 'Penghapusan', 'icon' => 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',                                                           'group' => 'Manajemen'];
-                $navItems[] = ['route' => 'penyusutan.index',  'label' => 'Penyusutan',  'icon' => 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6',                                                                                                                                                           'group' => 'Manajemen'];
-                $navItems[] = ['route' => 'laporan.index',     'label' => 'Laporan',     'icon' => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',                                                           'group' => 'Laporan'];
+                $navItems[] = ['route' => 'asset.index',       'label' => 'Asset',       'icon' => 'M20 7l-8-4-8 4m16 0v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7m16 0l-8 4-8-4',           'group' => 'Manajemen'];
+                $navItems[] = ['route' => 'kerusakan.index',   'label' => 'Kerusakan',   'icon' => 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'group' => 'Manajemen'];
+                $navItems[] = ['route' => 'penghapusan.index', 'label' => 'Penghapusan', 'icon' => 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', 'group' => 'Manajemen'];
+                $navItems[] = ['route' => 'penyusutan.index',  'label' => 'Penyusutan',  'icon' => 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6',                                     'group' => 'Manajemen'];
+            }
+
+            // Laporan (dipisah di group sendiri, diletakkan di bawah Manajemen)
+            if (in_array($role, ['admin_sekolah', 'petugas', 'super_admin'])) {
+                $navItems[] = ['route' => 'laporan_masuk.index', 'label' => 'Laporan Perbaikan', 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'group' => 'Laporan'];
+                $navItems[] = ['route' => 'laporan.index',        'label' => 'Laporan',            'icon' => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'group' => 'Laporan'];
             }
 
             // Teknisi
@@ -92,7 +94,7 @@
                 $navItems[] = ['route' => 'riwayat.index', 'label' => 'Riwayat Perbaikan', 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'group' => 'Pekerjaan'];
             }
 
-            // Kelompokkan per group
+            // Kelompokkan per group (urutan group akan sesuai urutan pertama kali muncul)
             $grouped = [];
             foreach ($navItems as $item) {
                 $grouped[$item['group'] ?? ''][] = $item;
@@ -122,7 +124,6 @@
                 {{-- ── MENU TERKUNCI ── --}}
                 <div class="relative group/blocked">
 
-                    {{-- Tampilan item (tidak bisa diklik) --}}
                     <div class="flex items-center gap-3 px-3 py-2.5 rounded-xl cursor-not-allowed select-none">
                         <span class="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-neutral-300">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -130,14 +131,12 @@
                             </svg>
                         </span>
                         <span class="text-sm font-medium text-neutral-300 flex-1">{{ $item['label'] }}</span>
-                        {{-- Ikon gembok --}}
                         <svg class="w-3.5 h-3.5 text-neutral-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                   d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
                         </svg>
                     </div>
 
-                    {{-- Tooltip muncul saat hover --}}
                     <div class="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50
                                 opacity-0 group-hover/blocked:opacity-100 transition-opacity duration-150 w-52">
                         <div class="bg-neutral-800 text-white text-xs rounded-xl shadow-xl p-3">
@@ -151,7 +150,6 @@
                             <p class="text-neutral-300 leading-relaxed">
                                 Lengkapi data instansi sekolah terlebih dahulu untuk membuka menu ini.
                             </p>
-                            {{-- Panah kiri --}}
                             <div class="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-neutral-800"></div>
                         </div>
                     </div>
@@ -184,26 +182,9 @@
             @endforeach
         @endforeach
 
-        {{-- ── Divider + Logout ── --}}
-        <div class="pt-3 mt-3 border-t border-neutral-100">
-            <form method="POST" action="{{ route('logout') }}">
-                @csrf
-                <button type="submit"
-                        class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-50 hover:text-red-600 transition-all duration-150">
-                    <span class="w-8 h-8 flex items-center justify-center rounded-lg text-red-400">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
-                        </svg>
-                    </span>
-                    Logout
-                </button>
-            </form>
-        </div>
-
     </nav>
 
-    {{-- ===== BANNER INSTANSI BELUM DIISI (di dalam sidebar) ===== --}}
+    {{-- ===== BANNER INSTANSI BELUM DIISI ===== --}}
     @if(!$instansiLengkap)
     <div class="mx-3 mb-3 p-3 rounded-xl bg-orange-50 border border-orange-200">
         <div class="flex items-start gap-2">
@@ -226,10 +207,10 @@
     </div>
     @endif
 
-    {{-- ===== USER PROFILE (Bottom) ===== --}}
+    {{-- ===== USER PROFILE + LOGOUT ===== --}}
     <div class="px-4 py-4 border-t border-neutral-100">
-        <div class="flex items-center gap-3 px-3 py-3 bg-neutral-50 rounded-xl">
-
+        {{-- User Profile --}}
+        <div class="flex items-center gap-3 px-3 py-3 bg-neutral-50 rounded-xl mb-3">
             @php $instansi = $user->instansi ?? null; @endphp
 
             @if($instansi && $instansi->Logo)
@@ -252,6 +233,21 @@
                 </p>
             </div>
         </div>
+
+        {{-- Logout --}}
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button type="submit"
+                    class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-50 hover:text-red-600 transition-all duration-150">
+                <span class="w-8 h-8 flex items-center justify-center rounded-lg text-red-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                    </svg>
+                </span>
+                Logout
+            </button>
+        </form>
     </div>
 
 </aside>

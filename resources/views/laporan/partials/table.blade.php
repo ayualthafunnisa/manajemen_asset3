@@ -110,7 +110,7 @@
                             {{ ucfirst($item->tingkat_kerusakan ?? '-') }}
                         </span>
                     </td>
-                    <td class="px-4 py-3 text-gray-600">{{ $item->lokasi->nama_lokasi ?? '-' }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ $item->lokasi->NamaLokasi ?? '-' }}</td>
                     <td class="px-4 py-3">
                         @php $sp = strtolower($item->status_perbaikan ?? ''); @endphp
                         <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium

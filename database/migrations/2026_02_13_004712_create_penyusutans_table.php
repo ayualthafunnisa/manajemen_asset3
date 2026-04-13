@@ -34,7 +34,7 @@ return new class extends Migration
 
         // Metode
         $table->enum('metode', ['garis_lurus', 'saldo_menurun']);
-        $table->decimal('persentase_penyusutan', 5, 2);
+        $table->decimal('persentase_penyusutan', 5, 2)->nullable();
 
         $table->text('catatan')->nullable();
 

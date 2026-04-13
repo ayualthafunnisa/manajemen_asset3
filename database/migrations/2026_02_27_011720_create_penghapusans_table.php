@@ -27,7 +27,6 @@ return new class extends Migration
             $table->date('tanggal_penghapusan')->nullable(); // Tanggal disetujui/dieksekusi
             
             // Alasan dan Jenis
-            $table->enum('jenis_penghapusan', ['rusak_total', 'usang', 'hilang', 'dijual', 'hibah', 'musnah']); // Kategori penghapusan
             $table->enum('alasan_penghapusan', [
                 'kerusakan_permanen', 
                 'teknologi_tertinggal',

@@ -28,7 +28,8 @@ class KerusakanController extends Controller
 
     public function index(Request $request)
     {
-        $query = Kerusakan::with(['asset', 'lokasi', 'pelapor']);
+        $query = Kerusakan::with(['asset', 'lokasi', 'pelapor'])
+        ->whereIn('status_perbaikan', ['dilaporkan', 'diproses']);
 
         // Search
         if ($request->filled('search')) {
@@ -78,7 +79,13 @@ class KerusakanController extends Controller
 
     public function create()
     {
-        $assets  = Asset::where('status_asset', 'aktif')->get();
+        $assetSedangDiproses = Kerusakan::whereIn('status_perbaikan', ['dilaporkan', 'diproses'])
+            ->pluck('assetID')
+            ->toArray();
+
+        $assets = Asset::where('status_asset', 'aktif')
+            ->whereNotIn('assetID', $assetSedangDiproses)
+            ->get();
         $lokasis = LokasiAsset::all();
 
         $tahun    = date('Y');
