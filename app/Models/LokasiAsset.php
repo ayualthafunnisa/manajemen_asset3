@@ -14,6 +14,7 @@ class LokasiAsset extends Model
         'KodeLokasi',
         'NamaLokasi',
         'PenanggungJawab',
+        'nip',
         'TeleponPenanggungJawab',
         'JenisLokasi',
         'Status',

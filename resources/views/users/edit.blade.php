@@ -420,7 +420,7 @@
                     </a>
                     
                     @if($user->status == 'pending')
-                    <form action="{{ route('user.activate', $user->id) }}" method="POST" class="block">
+                    <form action="{{ route('user.active', $user->id) }}" method="POST" class="block">
                         @csrf
                         <button type="submit" 
                                 class="w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 transition group text-left">

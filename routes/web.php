@@ -39,6 +39,8 @@ Route::prefix('api')->group(function () {
 |--------------------------------------------------------------------------
 */
 
+
+
 Route::get('/', function () {
     return view('welcome');
 });
@@ -150,6 +152,7 @@ Route::middleware('auth')->group(function () {
         Route::resource('kerusakan', KerusakanController::class);
         Route::post('kerusakan/{id}/update-status', [KerusakanController::class, 'updateStatus'])->name('kerusakan.updateStatus');
 
+        Route::post('user/{id}/active', [UserController::class, 'activate'])->name('user.active');
         Route::get('/asset/{id}/qrcode',      [AssetController::class, 'downloadQrCode'])->name('asset.qrcode.download');
         Route::get('/kerusakan/{id}/qrcode',  [KerusakanController::class, 'downloadQrCode'])->name('kerusakan.qrcode.download');
         Route::post('asset/barcode-pdf',      [AssetController::class, 'generateBarcodePdf'])->name('asset.barcode-pdf');

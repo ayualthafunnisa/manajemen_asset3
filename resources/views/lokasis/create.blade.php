@@ -173,31 +173,41 @@
                     </div>
                 </div>
 
-                {{-- Penanggung Jawab & Telepon --}}
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <div class="space-y-2">
-                        <label for="PenanggungJawab" class="block text-sm font-semibold text-neutral-700">Penanggung Jawab</label>
+                        <label for="PenanggungJawab" class="block text-sm font-semibold text-neutral-700">
+                            Penanggung Jawab
+                        </label>
                         <input type="text" name="PenanggungJawab" id="PenanggungJawab"
-                               value="{{ old('PenanggungJawab') }}"
-                               class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('PenanggungJawab') border-danger-500 @enderror"
-                               placeholder="Nama penanggung jawab"
-                               maxlength="100">
-                        @error('PenanggungJawab')
-                            <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
-                        @enderror
+                            value="{{ old('PenanggungJawab') }}"
+                            class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500"
+                            placeholder="Nama penanggung jawab"
+                            maxlength="100">
+                    </div>
+
+                    {{-- TAMBAH FIELD INI --}}
+                    <div class="space-y-2">
+                        <label for="NIP" class="block text-sm font-semibold text-neutral-700">
+                            NIP
+                        </label>
+                        <input type="text" name="NIP" id="NIP"
+                            value="{{ old('NIP') }}"
+                            class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500"
+                            placeholder="Contoh: 19801234200101001"
+                            maxlength="30">
                     </div>
 
                     <div class="space-y-2">
-                        <label for="TeleponPenanggungJawab" class="block text-sm font-semibold text-neutral-700">Telepon Penanggung Jawab</label>
+                        <label for="TeleponPenanggungJawab" class="block text-sm font-semibold text-neutral-700">
+                            Telepon Penanggung Jawab
+                        </label>
                         <input type="text" name="TeleponPenanggungJawab" id="TeleponPenanggungJawab"
-                               value="{{ old('TeleponPenanggungJawab') }}"
-                               class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('TeleponPenanggungJawab') border-danger-500 @enderror"
-                               placeholder="Contoh: 081234567890"
-                               maxlength="20">
-                        @error('TeleponPenanggungJawab')
-                            <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
-                        @enderror
+                            value="{{ old('TeleponPenanggungJawab') }}"
+                            class="w-full px-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500"
+                            placeholder="Contoh: 081234567890"
+                            maxlength="20">
                     </div>
+
                 </div>
 
                 {{-- Keterangan --}}

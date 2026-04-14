@@ -23,7 +23,7 @@ return new class extends Migration
             $table->string('kelurahan_code', 10)->nullable();
             $table->string('KodePos');
             $table->string('EmailSekolah')->unique();
-            $table->string('Logo');
+            $table->string('Logo')->nullable();
             $table->string('NamaKepalaSekolah');
             $table->string('NIPKepalaSekolah');
             $table->date('TanggalBerdiri');

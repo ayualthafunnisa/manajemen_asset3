@@ -43,24 +43,41 @@
             'diajukan'  => 'yellow',
             'disetujui' => 'green',
             'ditolak'   => 'red',
-            'selesai'   => 'blue',
         ];
         $statusLabels = [
-            'diajukan'  => 'Menunggu Persetujuan Admin',
-            'disetujui' => 'Disetujui',
+            'diajukan'  => 'Menunggu Persetujuan Admin Sekolah',
+            'disetujui' => 'Disetujui — Aset Telah Dihapus',
             'ditolak'   => 'Ditolak',
-            'selesai'   => 'Selesai',
+        ];
+        $statusIcons = [
+            'diajukan'  => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+            'disetujui' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+            'ditolak'   => 'M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z',
         ];
         $color = $statusColors[$penghapusan->status_penghapusan] ?? 'gray';
+        $icon  = $statusIcons[$penghapusan->status_penghapusan] ?? 'M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z';
     @endphp
     <div class="mb-6 bg-{{ $color }}-50 border-l-4 border-{{ $color }}-400 p-4 rounded-lg flex items-center">
-        <svg class="h-5 w-5 text-{{ $color }}-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
+        <svg class="h-5 w-5 text-{{ $color }}-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $icon }}"/>
         </svg>
         <p class="text-sm text-{{ $color }}-700">
             Status: <span class="font-bold">{{ $statusLabels[$penghapusan->status_penghapusan] ?? ucfirst($penghapusan->status_penghapusan) }}</span>
         </p>
     </div>
+
+    {{-- Info khusus untuk petugas jika ditolak: bisa ajukan ulang --}}
+    @if(auth()->user()->role === 'petugas' && $penghapusan->status_penghapusan === 'ditolak')
+    <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+        <svg class="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+        </svg>
+        <div>
+            <p class="text-sm font-medium text-blue-800">Pengajuan Ditolak</p>
+            <p class="text-sm text-blue-700 mt-1">Anda dapat memperbaiki pengajuan dan mengajukan ulang. Silakan perhatikan alasan penolakan dari admin.</p>
+        </div>
+    </div>
+    @endif
 
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
@@ -101,7 +118,7 @@
                         <tbody class="divide-y divide-gray-200">
                             <tr>
                                 <td class="py-3 text-sm font-medium text-gray-500 w-1/3">No. Surat</td>
-                                <td class="py-3 text-sm text-gray-900 font-medium">{{ $penghapusan->no_surat_penghapusan }}</td>
+                                <td class="py-3 text-sm text-gray-900 font-medium font-mono">{{ $penghapusan->no_surat_penghapusan }}</td>
                             </tr>
                             <tr>
                                 <td class="py-3 text-sm font-medium text-gray-500">Tanggal Pengajuan</td>
@@ -114,12 +131,20 @@
                             </tr>
                             @endif
                             <tr>
-                                <td class="py-3 text-sm font-medium text-gray-500">Jenis Penghapusan</td>
-                                <td class="py-3 text-sm text-gray-900">{{ ucfirst(str_replace('_', ' ', $penghapusan->jenis_penghapusan)) }}</td>
-                            </tr>
-                            <tr>
                                 <td class="py-3 text-sm font-medium text-gray-500">Alasan Penghapusan</td>
-                                <td class="py-3 text-sm text-gray-900">{{ ucfirst(str_replace('_', ' ', $penghapusan->alasan_penghapusan)) }}</td>
+                                <td class="py-3 text-sm text-gray-900">
+                                    @php
+                                        $alasanLabel = [
+                                            'kerusakan_permanen'   => 'Kerusakan Permanen',
+                                            'teknologi_tertinggal' => 'Teknologi Tertinggal',
+                                            'tidak_layak_pakai'    => 'Tidak Layak Pakai',
+                                            'kehilangan'           => 'Kehilangan',
+                                            'penggantian'          => 'Penggantian',
+                                            'restrukturisasi'      => 'Restrukturisasi',
+                                        ];
+                                    @endphp
+                                    {{ $alasanLabel[$penghapusan->alasan_penghapusan] ?? ucfirst(str_replace('_', ' ', $penghapusan->alasan_penghapusan)) }}
+                                </td>
                             </tr>
                             <tr>
                                 <td class="py-3 text-sm font-medium text-gray-500">Deskripsi</td>
@@ -134,7 +159,11 @@
                             @if($penghapusan->alasan_penolakan)
                             <tr>
                                 <td class="py-3 text-sm font-medium text-gray-500">Alasan Penolakan</td>
-                                <td class="py-3 text-sm text-red-600 font-medium">{{ $penghapusan->alasan_penolakan }}</td>
+                                <td class="py-3">
+                                    <div class="bg-red-50 border border-red-200 rounded-lg p-3">
+                                        <p class="text-sm text-red-700 font-medium">{{ $penghapusan->alasan_penolakan }}</p>
+                                    </div>
+                                </td>
                             </tr>
                             @endif
                             @if($penghapusan->dokumen_pendukung)
@@ -154,35 +183,90 @@
                         </tbody>
                     </table>
 
-                    {{-- Timeline --}}
+                    {{-- Timeline / Riwayat Proses --}}
                     <div class="mt-6 pt-4 border-t border-gray-200">
-                        <h4 class="font-medium text-gray-900 mb-3">Riwayat Proses</h4>
-                        <div class="space-y-3">
-                            <div class="flex items-start">
-                                <span class="flex-shrink-0 w-28 text-sm text-gray-500">Diajukan</span>
-                                <div>
-                                    <p class="text-sm font-medium">{{ \Carbon\Carbon::parse($penghapusan->tanggal_pengajuan)->format('d/m/Y') }}</p>
-                                    <p class="text-xs text-gray-500">Oleh: {{ $penghapusan->pengaju->name ?? '-' }}</p>
+                        <h4 class="font-medium text-gray-900 mb-4">Riwayat Proses</h4>
+                        <div class="relative">
+                            {{-- Garis vertikal --}}
+                            <div class="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+
+                            <div class="space-y-4">
+                                {{-- Step 1: Diajukan --}}
+                                <div class="relative flex items-start pl-10">
+                                    <div class="absolute left-0 w-8 h-8 rounded-full bg-purple-100 border-2 border-purple-400 flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-gray-800">Pengajuan Dikirim</p>
+                                        <p class="text-xs text-gray-500">{{ \Carbon\Carbon::parse($penghapusan->tanggal_pengajuan)->format('d/m/Y') }}</p>
+                                        <p class="text-xs text-gray-500">Oleh: {{ $penghapusan->pengaju->name ?? '-' }}</p>
+                                    </div>
                                 </div>
-                            </div>
-                            @if(in_array($penghapusan->status_penghapusan, ['disetujui', 'selesai']))
-                            <div class="flex items-start">
-                                <span class="flex-shrink-0 w-28 text-sm text-green-600 font-medium">✓ Disetujui</span>
-                                <div>
-                                    <p class="text-sm font-medium">{{ $penghapusan->tanggal_persetujuan ? \Carbon\Carbon::parse($penghapusan->tanggal_persetujuan)->format('d/m/Y H:i') : '-' }}</p>
-                                    <p class="text-xs text-gray-500">Oleh: {{ $penghapusan->penyetuju->name ?? '-' }}</p>
+
+                                {{-- Step 2: Menunggu / Disetujui / Ditolak --}}
+                                @if($penghapusan->status_penghapusan === 'diajukan')
+                                <div class="relative flex items-start pl-10">
+                                    <div class="absolute left-0 w-8 h-8 rounded-full bg-yellow-100 border-2 border-yellow-400 flex items-center justify-center animate-pulse">
+                                        <svg class="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-yellow-700">Menunggu Persetujuan Admin</p>
+                                        <p class="text-xs text-gray-500">Pengajuan sedang direview oleh admin sekolah</p>
+                                    </div>
                                 </div>
-                            </div>
-                            @endif
-                            @if($penghapusan->status_penghapusan === 'ditolak')
-                            <div class="flex items-start">
-                                <span class="flex-shrink-0 w-28 text-sm text-red-600 font-medium">✗ Ditolak</span>
-                                <div>
-                                    <p class="text-sm font-medium">{{ $penghapusan->tanggal_persetujuan ? \Carbon\Carbon::parse($penghapusan->tanggal_persetujuan)->format('d/m/Y H:i') : '-' }}</p>
-                                    <p class="text-xs text-gray-500">Oleh: {{ $penghapusan->penyetuju->name ?? '-' }}</p>
+
+                                @elseif($penghapusan->status_penghapusan === 'disetujui')
+                                <div class="relative flex items-start pl-10">
+                                    <div class="absolute left-0 w-8 h-8 rounded-full bg-green-100 border-2 border-green-500 flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-green-700">Disetujui oleh Admin</p>
+                                        <p class="text-xs text-gray-500">
+                                            {{ $penghapusan->tanggal_persetujuan ? \Carbon\Carbon::parse($penghapusan->tanggal_persetujuan)->format('d/m/Y H:i') : '-' }}
+                                        </p>
+                                        <p class="text-xs text-gray-500">Oleh: {{ $penghapusan->penyetuju->name ?? '-' }}</p>
+                                    </div>
                                 </div>
+                                {{-- Step 3: Aset dihapus --}}
+                                <div class="relative flex items-start pl-10">
+                                    <div class="absolute left-0 w-8 h-8 rounded-full bg-red-100 border-2 border-red-500 flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-red-700">Status Aset Diubah → Dihapus</p>
+                                        <p class="text-xs text-gray-500">
+                                            {{ $penghapusan->tanggal_penghapusan ? \Carbon\Carbon::parse($penghapusan->tanggal_penghapusan)->format('d/m/Y') : '-' }}
+                                        </p>
+                                        <p class="text-xs text-gray-500">Aset telah dikeluarkan dari daftar aset aktif</p>
+                                    </div>
+                                </div>
+
+                                @elseif($penghapusan->status_penghapusan === 'ditolak')
+                                <div class="relative flex items-start pl-10">
+                                    <div class="absolute left-0 w-8 h-8 rounded-full bg-red-100 border-2 border-red-500 flex items-center justify-center">
+                                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-semibold text-red-700">Ditolak oleh Admin</p>
+                                        <p class="text-xs text-gray-500">
+                                            {{ $penghapusan->tanggal_persetujuan ? \Carbon\Carbon::parse($penghapusan->tanggal_persetujuan)->format('d/m/Y H:i') : '-' }}
+                                        </p>
+                                        <p class="text-xs text-gray-500">Oleh: {{ $penghapusan->penyetuju->name ?? '-' }}</p>
+                                    </div>
+                                </div>
+                                @endif
                             </div>
-                            @endif
                         </div>
                     </div>
                 </div>
@@ -203,7 +287,7 @@
                         <tbody class="divide-y divide-gray-200">
                             <tr>
                                 <td class="py-2 text-sm text-gray-500">Kode Aset</td>
-                                <td class="py-2 text-sm font-medium text-gray-900">{{ $penghapusan->asset->kode_asset }}</td>
+                                <td class="py-2 text-sm font-medium text-gray-900 font-mono">{{ $penghapusan->asset->kode_asset }}</td>
                             </tr>
                             <tr>
                                 <td class="py-2 text-sm text-gray-500">Nama Aset</td>
@@ -222,9 +306,14 @@
                                             'rusak'   => 'bg-yellow-100 text-yellow-800',
                                             'dihapus' => 'bg-red-100 text-red-800',
                                         ];
+                                        $asetStatusLabel = [
+                                            'aktif'   => 'Aktif',
+                                            'rusak'   => 'Rusak',
+                                            'dihapus' => 'Dihapus',
+                                        ];
                                     @endphp
                                     <span class="px-2 py-1 text-xs font-medium rounded-full {{ $asetStatusColor[$penghapusan->asset->status_asset] ?? 'bg-gray-100 text-gray-800' }}">
-                                        {{ ucfirst($penghapusan->asset->status_asset) }}
+                                        {{ $asetStatusLabel[$penghapusan->asset->status_asset] ?? ucfirst($penghapusan->asset->status_asset) }}
                                     </span>
                                 </td>
                             </tr>
@@ -267,31 +356,32 @@
                 </div>
             </div>
 
-            {{-- Tombol Aksi Admin --}}
-            @if(auth()->user()->role == 'admin_sekolah' && $penghapusan->status_penghapusan == 'diajukan')
-            <div class="bg-white shadow-lg rounded-xl overflow-hidden border border-gray-200">
-                <div class="p-6">
-                    <h4 class="font-medium text-gray-900 mb-3">Tindakan</h4>
-                    <div class="space-y-3">
-                        <form action="{{ route('penghapusan.approve', $penghapusan->penghapusanID) }}" method="POST">
-                            @csrf
-                            <button type="submit"
-                                    onclick="return confirm('Setujui pengajuan penghapusan ini? Status aset akan berubah menjadi dihapus.')"
-                                    class="w-full px-4 py-3 bg-green-600 rounded-lg font-medium text-white hover:bg-green-700 transition duration-150">
-                                <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                Setujui Penghapusan
-                            </button>
-                        </form>
-                        <button type="button" onclick="showRejectModal()"
-                                class="w-full px-4 py-3 bg-red-600 rounded-lg font-medium text-white hover:bg-red-700 transition duration-150">
-                            <svg class="w-4 h-4 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            {{-- Tombol Aksi Admin: approve / reject --}}
+            @if(auth()->user()->role === 'admin_sekolah' && $penghapusan->status_penghapusan === 'diajukan')
+            <div class="bg-white shadow-lg rounded-xl overflow-hidden border border-yellow-200">
+                <div class="bg-yellow-50 px-6 py-4 border-b border-yellow-100">
+                    <h4 class="font-semibold text-yellow-900">Tindakan Admin</h4>
+                    <p class="text-xs text-yellow-700 mt-1">Setelah disetujui, status aset otomatis berubah menjadi <strong>dihapus</strong>.</p>
+                </div>
+                <div class="p-6 space-y-3">
+                    <form action="{{ route('penghapusan.approve', $penghapusan->penghapusanID) }}" method="POST">
+                        @csrf
+                        <button type="submit"
+                                onclick="return confirm('Setujui pengajuan penghapusan ini?\n\nPerhatian: Status aset akan berubah menjadi DIHAPUS dan tidak dapat dibatalkan!')"
+                                class="w-full px-4 py-3 bg-green-600 rounded-lg font-medium text-white hover:bg-green-700 transition duration-150 flex items-center justify-center">
+                            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                             </svg>
-                            Tolak Pengajuan
+                            Setujui Penghapusan
                         </button>
-                    </div>
+                    </form>
+                    <button type="button" onclick="showRejectModal()"
+                            class="w-full px-4 py-3 bg-red-600 rounded-lg font-medium text-white hover:bg-red-700 transition duration-150 flex items-center justify-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Tolak Pengajuan
+                    </button>
                 </div>
             </div>
             @endif
@@ -317,7 +407,7 @@
                         </div>
                         <div class="ml-4 w-full">
                             <h3 class="text-lg font-medium text-gray-900">Tolak Pengajuan Penghapusan</h3>
-                            <p class="text-sm text-gray-500 mt-1 mb-3">Berikan alasan penolakan (minimal 10 karakter).</p>
+                            <p class="text-sm text-gray-500 mt-1 mb-3">Berikan alasan penolakan (minimal 10 karakter). Petugas dapat memperbaiki dan mengajukan ulang.</p>
                             <textarea name="alasan_penolakan" rows="4" required minlength="10"
                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
                                       placeholder="Masukkan alasan penolakan..."></textarea>

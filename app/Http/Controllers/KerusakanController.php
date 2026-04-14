@@ -147,6 +147,10 @@ class KerusakanController extends Controller
             'dilaporkan_oleh'     => Auth::id(),
         ]);
 
+        // Tandai asset sebagai "diperbaiki" agar tidak bisa dipilih di laporan lain
+        Asset::where('assetID', $request->assetID)
+            ->update(['status_asset' => 'diperbaiki']);
+
         return redirect()->route('kerusakan.index')
             ->with('success', 'Laporan kerusakan berhasil dibuat dan menunggu tindak lanjut admin.');
     }
@@ -288,10 +292,36 @@ class KerusakanController extends Controller
 
         $kerusakan->update(['status_perbaikan' => $statusBaru]);
 
+        // Sinkronisasi status_asset pada Asset ketika laporan diselesaikan atau ditolak
+        $asset = $kerusakan->asset;
+        if ($asset) {
+            if ($statusBaru === 'selesai') {
+                // Cek apakah ada perbaikan dengan status tidak_bisa_diperbaiki
+                $tidakBisa = $kerusakan->perbaikans()
+                    ->where('status', 'tidak_bisa_diperbaiki')
+                    ->exists();
+
+                if ($tidakBisa) {
+                    $asset->update([
+                        'status_asset' => 'non_aktif',
+                        'kondisi'      => 'tidak_berfungsi',
+                    ]);
+                } else {
+                    $asset->update([
+                        'status_asset' => 'aktif',
+                        'kondisi'      => 'baik',
+                    ]);
+                }
+            } elseif ($statusBaru === 'ditolak') {
+                // Laporan ditolak → kembalikan asset ke aktif (laporan salah/tidak valid)
+                $asset->update(['status_asset' => 'aktif']);
+            }
+        }
+
         $pesan = [
             'diproses' => 'Status diubah: aset sedang dalam proses perbaikan.',
-            'selesai'  => 'Perbaikan selesai. Status laporan telah ditandai selesai.',
-            'ditolak'  => 'Laporan kerusakan telah ditolak.',
+            'selesai'  => 'Perbaikan selesai. Status laporan dan aset telah diperbarui.',
+            'ditolak'  => 'Laporan kerusakan telah ditolak dan aset dikembalikan ke aktif.',
         ];
 
         return back()->with('success', $pesan[$statusBaru]);
@@ -316,6 +346,11 @@ class KerusakanController extends Controller
         // Hapus file foto dari storage
         if ($kerusakan->foto_kerusakan) {
             \Illuminate\Support\Facades\Storage::disk('public')->delete($kerusakan->foto_kerusakan);
+        }
+
+        // Kembalikan status asset ke aktif karena laporan dihapus
+        if ($kerusakan->asset) {
+            $kerusakan->asset->update(['status_asset' => 'aktif']);
         }
 
         $kerusakan->delete();

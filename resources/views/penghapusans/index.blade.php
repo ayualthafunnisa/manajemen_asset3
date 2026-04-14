@@ -8,6 +8,9 @@
         <h1 class="text-2xl font-bold text-neutral-900">Data Penghapusan Aset</h1>
         <p class="mt-1 text-neutral-600">Kelola pengajuan dan persetujuan penghapusan aset</p>
     </div>
+
+    {{-- Tombol ajukan hanya untuk petugas --}}
+    @if(auth()->user()->role === 'petugas')
     <div class="mt-4 sm:mt-0">
         <a href="{{ route('penghapusan.create') }}"
            class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-purple-700 transition ease-in-out duration-150">
@@ -17,6 +20,7 @@
             Ajukan Penghapusan Baru
         </a>
     </div>
+    @endif
 </div>
 @endsection
 
@@ -60,16 +64,15 @@
                         <option value="diajukan">Diajukan</option>
                         <option value="disetujui">Disetujui</option>
                         <option value="ditolak">Ditolak</option>
-                        <option value="selesai">Selesai</option>
                     </select>
-                    <select id="jenisFilter" class="border border-neutral-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
-                        <option value="">Semua Jenis</option>
-                        <option value="rusak total">Rusak Total</option>
-                        <option value="usang">Usang</option>
-                        <option value="hilang">Hilang</option>
-                        <option value="dijual">Dijual</option>
-                        <option value="hibah">Hibah</option>
-                        <option value="musnah">Musnah</option>
+                    <select id="alasanFilter" class="border border-neutral-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                        <option value="">Semua Alasan</option>
+                        <option value="kerusakan permanen">Kerusakan Permanen</option>
+                        <option value="teknologi tertinggal">Teknologi Tertinggal</option>
+                        <option value="tidak layak pakai">Tidak Layak Pakai</option>
+                        <option value="kehilangan">Kehilangan</option>
+                        <option value="penggantian">Penggantian</option>
+                        <option value="restrukturisasi">Restrukturisasi</option>
                     </select>
                 </div>
             </div>
@@ -82,7 +85,7 @@
                 <p class="text-2xl font-bold text-neutral-900">{{ $summary['total'] }}</p>
             </div>
             <div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-yellow-400">
-                <p class="text-sm text-neutral-600">Diajukan</p>
+                <p class="text-sm text-neutral-600">Menunggu Approval</p>
                 <p class="text-2xl font-bold text-yellow-600">{{ $summary['diajukan'] }}</p>
             </div>
             <div class="bg-white rounded-lg p-4 shadow-sm border-l-4 border-green-400">
@@ -95,8 +98,20 @@
             </div>
         </div>
 
+        {{-- Info banner untuk admin: ada pengajuan menunggu --}}
+        @if(auth()->user()->role === 'admin_sekolah' && $summary['diajukan'] > 0)
+        <div class="mx-6 mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3 flex items-center gap-2">
+            <svg class="w-5 h-5 text-yellow-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+            </svg>
+            <p class="text-sm text-yellow-800">
+                Terdapat <strong>{{ $summary['diajukan'] }}</strong> pengajuan penghapusan yang menunggu persetujuan Anda.
+            </p>
+        </div>
+        @endif
+
         {{-- Table --}}
-        <div class="overflow-x-auto">
+        <div class="overflow-x-auto mt-4">
             <table class="min-w-full divide-y divide-neutral-200">
                 <thead class="bg-neutral-50">
                     <tr>
@@ -104,7 +119,7 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">No Surat</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Aset</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Nilai Buku</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Jenis</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Alasan</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Pengaju</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Aksi</th>
@@ -129,17 +144,17 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             @php
-                                $jenisColor = [
-                                    'rusak_total' => 'bg-red-100 text-red-800',
-                                    'usang'       => 'bg-yellow-100 text-yellow-800',
-                                    'hilang'      => 'bg-orange-100 text-orange-800',
-                                    'dijual'      => 'bg-green-100 text-green-800',
-                                    'hibah'       => 'bg-blue-100 text-blue-800',
-                                    'musnah'      => 'bg-purple-100 text-purple-800',
+                                $alasanColor = [
+                                    'kerusakan_permanen'  => 'bg-red-100 text-red-800',
+                                    'teknologi_tertinggal'=> 'bg-yellow-100 text-yellow-800',
+                                    'tidak_layak_pakai'   => 'bg-orange-100 text-orange-800',
+                                    'kehilangan'          => 'bg-pink-100 text-pink-800',
+                                    'penggantian'         => 'bg-blue-100 text-blue-800',
+                                    'restrukturisasi'     => 'bg-purple-100 text-purple-800',
                                 ];
                             @endphp
-                            <span class="px-2.5 py-0.5 text-xs font-medium rounded-full inline-flex items-center {{ $jenisColor[$penghapusan->jenis_penghapusan] ?? 'bg-gray-100 text-gray-800' }}">
-                                {{ ucfirst(str_replace('_', ' ', $penghapusan->jenis_penghapusan)) }}
+                            <span class="px-2.5 py-0.5 text-xs font-medium rounded-full inline-flex items-center {{ $alasanColor[$penghapusan->alasan_penghapusan] ?? 'bg-gray-100 text-gray-800' }}">
+                                {{ ucfirst(str_replace('_', ' ', $penghapusan->alasan_penghapusan)) }}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-600">
@@ -151,34 +166,41 @@
                                     'diajukan'  => 'bg-yellow-100 text-yellow-800',
                                     'disetujui' => 'bg-green-100 text-green-800',
                                     'ditolak'   => 'bg-red-100 text-red-800',
-                                    'selesai'   => 'bg-blue-100 text-blue-800',
+                                ];
+                                $statusLabel = [
+                                    'diajukan'  => 'Menunggu Approval',
+                                    'disetujui' => 'Disetujui',
+                                    'ditolak'   => 'Ditolak',
                                 ];
                             @endphp
                             <span class="px-2.5 py-0.5 text-xs font-medium rounded-full inline-flex items-center {{ $statusColor[$penghapusan->status_penghapusan] ?? 'bg-gray-100 text-gray-800' }}">
-                                {{ ucfirst($penghapusan->status_penghapusan) }}
+                                {{ $statusLabel[$penghapusan->status_penghapusan] ?? ucfirst($penghapusan->status_penghapusan) }}
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex items-center gap-2">
 
-                                {{-- Approve & Reject: hanya admin, status diajukan --}}
-                                @if(auth()->user()->role == 'admin_sekolah' && $penghapusan->status_penghapusan == 'diajukan')
+                                {{-- Approve & Reject: hanya admin_sekolah, status diajukan --}}
+                                @if(auth()->user()->role === 'admin_sekolah' && $penghapusan->status_penghapusan === 'diajukan')
                                 <form action="{{ route('penghapusan.approve', $penghapusan->penghapusanID) }}"
                                       method="POST" class="inline"
-                                      onsubmit="return confirm('Setujui pengajuan penghapusan ini?')">
+                                      onsubmit="return confirm('Setujui pengajuan penghapusan ini? Status aset akan berubah menjadi DIHAPUS.')">
                                     @csrf
-                                    <button type="submit" title="Setujui" class="text-green-600 hover:text-green-900 transition duration-150">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <button type="submit" title="Setujui"
+                                            class="inline-flex items-center px-2 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition duration-150 text-xs font-medium">
+                                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
                                         </svg>
+                                        Setujui
                                     </button>
                                 </form>
                                 <button type="button" title="Tolak"
                                         onclick="showRejectModal({{ $penghapusan->penghapusanID }})"
-                                        class="text-red-600 hover:text-red-900 transition duration-150">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        class="inline-flex items-center px-2 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition duration-150 text-xs font-medium">
+                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                                     </svg>
+                                    Tolak
                                 </button>
                                 @endif
 
@@ -191,11 +213,20 @@
                                     </svg>
                                 </a>
 
-                                {{-- Hapus --}}
-                                @if(in_array($penghapusan->status_penghapusan, ['diajukan', 'ditolak']))
+                                {{--
+                                    Hapus data pengajuan:
+                                    - Hanya petugas yang mengajukan sendiri
+                                    - Hanya jika status masih 'diajukan' atau 'ditolak'
+                                    - Tidak berlaku jika sudah 'disetujui' (asset sudah berubah jadi dihapus)
+                                --}}
+                                @if(
+                                    auth()->user()->role === 'petugas'
+                                    && $penghapusan->diajukan_oleh === auth()->id()
+                                    && in_array($penghapusan->status_penghapusan, ['diajukan', 'ditolak'])
+                                )
                                 <form action="{{ route('penghapusan.destroy', $penghapusan->penghapusanID) }}"
                                       method="POST" class="inline"
-                                      onsubmit="return confirm('Hapus data penghapusan ini?')">
+                                      onsubmit="return confirm('Hapus data pengajuan penghapusan ini?')">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" title="Hapus" class="text-red-400 hover:text-red-700 transition duration-150">
@@ -216,7 +247,14 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                             </svg>
                             <h3 class="mt-2 text-sm font-medium text-neutral-900">Belum ada data penghapusan</h3>
-                            <p class="mt-1 text-sm text-neutral-500">Mulai dengan mengajukan penghapusan aset baru.</p>
+                            <p class="mt-1 text-sm text-neutral-500">
+                                @if(auth()->user()->role === 'petugas')
+                                    Mulai dengan mengajukan penghapusan aset baru.
+                                @else
+                                    Belum ada pengajuan penghapusan dari petugas.
+                                @endif
+                            </p>
+                            @if(auth()->user()->role === 'petugas')
                             <div class="mt-6">
                                 <a href="{{ route('penghapusan.create') }}"
                                    class="inline-flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-md hover:bg-purple-700">
@@ -226,6 +264,7 @@
                                     Ajukan Penghapusan Baru
                                 </a>
                             </div>
+                            @endif
                         </td>
                     </tr>
                     @endforelse
@@ -258,7 +297,7 @@
                         </div>
                         <div class="ml-4 w-full">
                             <h3 class="text-lg font-medium text-gray-900">Tolak Pengajuan Penghapusan</h3>
-                            <p class="text-sm text-gray-500 mt-1 mb-3">Berikan alasan penolakan (minimal 10 karakter).</p>
+                            <p class="text-sm text-gray-500 mt-1 mb-3">Berikan alasan penolakan (minimal 10 karakter). Petugas dapat mengajukan ulang setelah perbaikan.</p>
                             <textarea name="alasan_penolakan" id="alasan_penolakan" rows="4" required minlength="10"
                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                                       placeholder="Masukkan alasan penolakan..."></textarea>
@@ -284,32 +323,32 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const searchInput  = document.getElementById('search');
-    const statusFilter = document.getElementById('statusFilter');
-    const jenisFilter  = document.getElementById('jenisFilter');
+    const searchInput   = document.getElementById('search');
+    const statusFilter  = document.getElementById('statusFilter');
+    const alasanFilter  = document.getElementById('alasanFilter');
 
     function applyFilters() {
-        const searchTerm  = searchInput.value.toLowerCase();
-        const statusValue = statusFilter.value.toLowerCase();
-        const jenisValue  = jenisFilter.value.toLowerCase();
+        const searchTerm   = searchInput.value.toLowerCase();
+        const statusValue  = statusFilter.value.toLowerCase();
+        const alasanValue  = alasanFilter.value.toLowerCase();
 
         document.querySelectorAll('#tableBody tr').forEach(row => {
             if (row.querySelector('td[colspan]')) return;
-            const text       = row.textContent.toLowerCase();
-            const jenisCell  = row.querySelector('td:nth-child(5) span');
-            const statusCell = row.querySelector('td:nth-child(7) span');
+            const text        = row.textContent.toLowerCase();
+            const alasanCell  = row.querySelector('td:nth-child(5) span');
+            const statusCell  = row.querySelector('td:nth-child(7) span');
 
             const matchSearch = !searchTerm  || text.includes(searchTerm);
             const matchStatus = !statusValue || (statusCell && statusCell.textContent.toLowerCase().includes(statusValue));
-            const matchJenis  = !jenisValue  || (jenisCell  && jenisCell.textContent.toLowerCase().includes(jenisValue));
+            const matchAlasan = !alasanValue || (alasanCell && alasanCell.textContent.toLowerCase().includes(alasanValue));
 
-            row.style.display = (matchSearch && matchStatus && matchJenis) ? '' : 'none';
+            row.style.display = (matchSearch && matchStatus && matchAlasan) ? '' : 'none';
         });
     }
 
     searchInput.addEventListener('input', applyFilters);
     statusFilter.addEventListener('change', applyFilters);
-    jenisFilter.addEventListener('change', applyFilters);
+    alasanFilter.addEventListener('change', applyFilters);
 });
 
 function showRejectModal(id) {

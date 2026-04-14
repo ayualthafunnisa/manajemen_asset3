@@ -25,6 +25,8 @@ class Kerusakan extends Model
         'estimasi_biaya',
         'status_perbaikan',
         'dilaporkan_oleh',
+        'nama_pelapor',    
+        'telepon_pelapor',
     ];
 
     protected $casts = [
@@ -158,4 +160,37 @@ class Kerusakan extends Model
             default      => ucfirst($this->status_perbaikan),
         };
     }
+
+    // Helper — tampilkan nama pelapor apapun sumbernya
+    public function getNamaPelaporDisplayAttribute(): string
+    {
+        // Kalau lapor via sistem (login)
+        if ($this->pelapor) {
+            return $this->pelapor->name;
+        }
+
+        // Kalau lapor via scan barcode (tanpa login)
+        if ($this->nama_pelapor) {
+            return $this->nama_pelapor . ' (Publik)';
+        }
+
+        return 'Tidak diketahui';
+    }
+
+    // Helper — tampilkan kontak pelapor
+    public function getKontakPelaporDisplayAttribute(): string
+    {
+        if ($this->pelapor) {
+            return $this->pelapor->phone ?? '-';
+        }
+
+        return $this->telepon_pelapor ?? '-';
+    }
+
+    // Helper — cek apakah laporan dari publik (scan barcode)
+    public function getDariPublikAttribute(): bool
+    {
+        return is_null($this->dilaporkan_oleh);
+    }
+
 }

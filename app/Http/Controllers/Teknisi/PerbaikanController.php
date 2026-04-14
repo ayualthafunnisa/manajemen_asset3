@@ -144,14 +144,35 @@ class PerbaikanController extends Controller
         };
         $kerusakan->update(['status_perbaikan' => $statusKerusakan]);
 
+        // Sinkronisasi status_asset dan kondisi pada Asset
+        $asset = $kerusakan->asset;
+        if ($asset) {
+            if ($request->status === 'tidak_bisa_diperbaiki') {
+                // Aset tidak bisa diperbaiki → non-aktifkan dan tandai kondisi
+                $asset->update([
+                    'status_asset' => 'non_aktif',
+                    'kondisi'      => 'tidak_berfungsi',
+                ]);
+            } elseif ($request->status === 'selesai') {
+                // Perbaikan selesai → kembalikan aset ke aktif dan kondisi baik
+                $asset->update([
+                    'status_asset' => 'aktif',
+                    'kondisi'      => 'baik',
+                ]);
+            } elseif ($request->status === 'dalam_perbaikan') {
+                // Sedang diperbaiki → tandai status asset diperbaiki
+                $asset->update(['status_asset' => 'diperbaiki']);
+            }
+        }
+
         // Kirim notifikasi ke admin sekolah jika perbaikan selesai atau tidak bisa diperbaiki
         if (in_array($request->status, ['selesai', 'tidak_bisa_diperbaiki'])) {
             $this->sendNotificationToAdmin($perbaikan);
         }
 
         $pesan = match ($request->status) {
-            'selesai'                => 'Perbaikan selesai! Laporan berhasil disimpan ke riwayat.',
-            'tidak_bisa_diperbaiki'  => 'Laporan disimpan. Aset ditandai tidak bisa diperbaiki.',
+            'selesai'                => 'Perbaikan selesai! Aset telah dikembalikan ke status aktif.',
+            'tidak_bisa_diperbaiki'  => 'Laporan disimpan. Aset ditandai tidak bisa diperbaiki dan status diubah ke non-aktif.',
             default                  => 'Laporan perbaikan disimpan. Status keluhan diubah ke "Diproses".',
         };
 
@@ -189,18 +210,45 @@ class PerbaikanController extends Controller
 
         $perbaikan->update($data);
 
-        // Sinkron status kerusakan
+        // Sinkron status kerusakan dan asset
+        $kerusakan = $perbaikan->kerusakan;
+        $asset     = $kerusakan?->asset;
+
         if (in_array($request->status, ['selesai', 'tidak_bisa_diperbaiki'])) {
-            $perbaikan->kerusakan->update(['status_perbaikan' => 'selesai']);
-            
+            $kerusakan?->update(['status_perbaikan' => 'selesai']);
+
+            // Update status_asset dan kondisi berdasarkan hasil perbaikan
+            if ($asset) {
+                if ($request->status === 'tidak_bisa_diperbaiki') {
+                    $asset->update([
+                        'status_asset' => 'non_aktif',
+                        'kondisi'      => 'tidak_berfungsi',
+                    ]);
+                } elseif ($request->status === 'selesai') {
+                    $asset->update([
+                        'status_asset' => 'aktif',
+                        'kondisi'      => 'baik',
+                    ]);
+                }
+            }
+
             // Kirim notifikasi ke admin sekolah jika status berubah ke selesai/tidak_bisa
             if ($oldStatus !== $request->status) {
                 $this->sendNotificationToAdmin($perbaikan);
             }
-            
+
+            $pesan = $request->status === 'tidak_bisa_diperbaiki'
+                ? 'Perbaikan selesai. Aset ditandai tidak bisa diperbaiki dan dinonaktifkan.'
+                : 'Perbaikan selesai! Aset telah dikembalikan ke status aktif.';
+
             return redirect()
                 ->route('riwayat.index')
-                ->with('success', 'Perbaikan selesai dan masuk ke riwayat.');
+                ->with('success', $pesan);
+        }
+
+        // Masih dalam_perbaikan → pastikan status asset = diperbaiki
+        if ($asset && $request->status === 'dalam_perbaikan') {
+            $asset->update(['status_asset' => 'diperbaiki']);
         }
 
         return redirect()

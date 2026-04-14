@@ -261,7 +261,7 @@
                         <div class="text-sm font-semibold text-neutral-900">{{ $r->kerusakan->asset->nama_asset ?? '-' }}</div>
                         <div class="text-xs text-neutral-500 font-mono">{{ $r->kerusakan->kode_laporan ?? '-' }}</div>
                     </td>
-                    <td class="px-6 py-4 text-sm text-neutral-600">{{ $r->kerusakan->lokasi->nama_lokasi ?? '-' }}</td>
+                    <td class="px-6 py-4 text-sm text-neutral-600">{{ $r->kerusakan->lokasi->NamaLokasi ?? '-' }}</td>
                     <td class="px-6 py-4 text-sm text-neutral-700">
                         {{ $r->biaya_aktual ? 'Rp ' . number_format($r->biaya_aktual, 0, ',', '.') : '-' }}
                     </td>

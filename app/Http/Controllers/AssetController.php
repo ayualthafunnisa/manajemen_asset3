@@ -6,6 +6,7 @@ use App\Models\Asset;
 use App\Models\Instansi;
 use App\Models\Kategori;
 use App\Models\LokasiAsset;
+use App\Models\Kerusakan;
 use Illuminate\Http\Request;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use Illuminate\Support\Facades\Auth;
@@ -121,7 +122,12 @@ class AssetController extends Controller
                     ->store('assets/dokumen', 'public');
             }
 
-            Asset::create($validated);
+            $kondisiRusak = ['rusak_ringan', 'rusak_berat', 'tidak_berfungsi'];
+            if (in_array($validated['kondisi'], $kondisiRusak)) {
+                $validated['status_asset'] = 'diperbaiki';
+            }
+            $asset = Asset::create($validated);
+            $this->autoLaporKerusakan($asset);
 
             return redirect()->route('asset.index')
                 ->with('success', 'Asset berhasil ditambahkan.');
@@ -211,7 +217,14 @@ class AssetController extends Controller
                     ->store('assets/dokumen', 'public');
             }
 
+            $kondisiRusak = ['rusak_ringan', 'rusak_berat', 'tidak_berfungsi'];
+            if (in_array($validated['kondisi'], $kondisiRusak)) {
+                $validated['status_asset'] = 'diperbaiki';
+            }
+
             $asset->update($validated);
+            $asset->refresh(); // pastikan data terbaru
+            $this->autoLaporKerusakan($asset);
 
             return redirect()->route('asset.index')
                 ->with('success', 'Asset berhasil diperbarui.');
@@ -248,6 +261,63 @@ class AssetController extends Controller
             return redirect()->route('asset.index')
                 ->with('error', 'Gagal menghapus asset: ' . $e->getMessage());
         }
+    }
+
+    private function autoLaporKerusakan(Asset $asset): void
+    {
+        $kondisiRusak = ['rusak_ringan', 'rusak_berat', 'tidak_berfungsi'];
+
+        if (! in_array($asset->kondisi, $kondisiRusak)) {
+            return; // kondisi baik/hilang → tidak perlu laporan otomatis
+        }
+
+        // Cek apakah sudah ada laporan aktif untuk asset ini
+        $sudahAda = Kerusakan::where('assetID', $asset->assetID)
+            ->whereIn('status_perbaikan', ['dilaporkan', 'diproses'])
+            ->exists();
+
+        if ($sudahAda) {
+            return; // hindari duplikasi laporan
+        }
+
+        // Generate kode laporan unik
+        $tahun    = date('Y');
+        $lastKode = Kerusakan::withoutGlobalScopes()
+            ->whereYear('created_at', $tahun)
+            ->orderByDesc('kerusakanID')
+            ->value('kode_laporan');
+
+        $urutan      = $lastKode ? ((int) substr($lastKode, -3) + 1) : 1;
+        $kodeLaporan = 'KR-' . $tahun . '-' . str_pad($urutan, 3, '0', STR_PAD_LEFT);
+
+        // Mapping kondisi → jenis & tingkat kerusakan
+        $jenisMap = [
+            'rusak_ringan'    => ['jenis' => 'ringan', 'tingkat' => 25, 'prioritas' => 'rendah'],
+            'rusak_berat'     => ['jenis' => 'berat',  'tingkat' => 75, 'prioritas' => 'tinggi'],
+            'tidak_berfungsi' => ['jenis' => 'total',  'tingkat' => 100,'prioritas' => 'kritis'],
+        ];
+
+        $info = $jenisMap[$asset->kondisi];
+
+        Kerusakan::create([
+            'assetID'             => $asset->assetID,
+            'InstansiID'          => $asset->InstansiID,
+            'LokasiID'            => $asset->LokasiID,
+            'kode_laporan'        => $kodeLaporan,
+            'tanggal_laporan'     => now()->toDateString(),
+            'tanggal_kerusakan'   => now()->toDateString(),
+            'jenis_kerusakan'     => $info['jenis'],
+            'tingkat_kerusakan'   => $info['tingkat'],
+            'foto_kerusakan'      => $asset->gambar_asset ?? 'default/no-photo.jpg',
+            'deskripsi_kerusakan' => 'Laporan otomatis dari input asset. Kondisi tercatat: ' . str_replace('_', ' ', $asset->kondisi) . '.',
+            'prioritas'           => $info['prioritas'],
+            'estimasi_biaya'      => null,
+            'status_perbaikan'    => 'dilaporkan',
+            'dilaporkan_oleh'     => Auth::id(),
+        ]);
+
+        // Update status asset jadi "diperbaiki" agar tidak dipilih ulang
+        $asset->update(['status_asset' => 'diperbaiki']);
     }
 
     public function downloadQrCode($id)

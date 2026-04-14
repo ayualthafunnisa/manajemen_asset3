@@ -3,7 +3,6 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use App\Helpers\NotificationHelper;
 
 class Perbaikan extends Model
 {
@@ -69,56 +68,31 @@ class Perbaikan extends Model
             }
         });
 
-        // Kirim notifikasi ke admin sekolah saat perbaikan selesai
+        // Sinkronisasi status_asset pada Asset saat status perbaikan berubah
         static::updated(function ($perbaikan) {
-            // Cek jika status berubah menjadi 'selesai' atau 'tidak_bisa_diperbaiki'
-            if ($perbaikan->wasChanged('status') && 
-                in_array($perbaikan->status, ['selesai', 'tidak_bisa_diperbaiki'])) {
-                
-                // Cari admin sekolah di instansi yang sama
-                $adminSekolah = User::where('InstansiID', $perbaikan->InstansiID)
-                    ->where('role', 'admin_sekolah')
-                    ->where('status', 'active')
-                    ->get();
-                
-                $kerusakan = $perbaikan->kerusakan;
-                $assetName = $kerusakan->asset->nama_asset ?? 'Asset';
-                $teknisiName = $perbaikan->teknisi->name ?? 'Teknisi';
-                
-                $isSelesai = $perbaikan->status === 'selesai';
-                
-                $title = $isSelesai 
-                    ? "✅ Perbaikan Selesai: {$assetName}"
-                    : "⚠️ Perbaikan Tidak Bisa: {$assetName}";
-                
-                $message = $isSelesai
-                    ? "Perbaikan oleh {$teknisiName} telah selesai. " . ($perbaikan->biaya_aktual ? "Biaya: Rp " . number_format($perbaikan->biaya_aktual, 0, ',', '.') : "")
-                    : "Perbaikan oleh {$teknisiName} tidak dapat diselesaikan. Alasan: " . substr($perbaikan->alasan_tidak_bisa, 0, 100);
-                
-                $data = [
-                    'perbaikan_id' => $perbaikan->perbaikanID,
-                    'kerusakan_id' => $kerusakan->kerusakanID,
-                    'kode_perbaikan' => $perbaikan->kode_perbaikan,
-                    'kode_laporan' => $kerusakan->kode_laporan,
-                    'asset_name' => $assetName,
-                    'status' => $perbaikan->status,
-                    'teknisi_name' => $teknisiName,
-                    'biaya_aktual' => $perbaikan->biaya_aktual,
-                    'alasan_tidak_bisa' => $perbaikan->alasan_tidak_bisa
-                ];
-                
-                // Kirim notifikasi ke setiap admin sekolah
-                foreach ($adminSekolah as $admin) {
-                    NotificationHelper::send(
-                        $admin->id,
-                        $isSelesai ? 'perbaikan_selesai' : 'perbaikan_tidak_bisa',
-                        $title,
-                        $message,
-                        $data,
-                        $isSelesai ? '✅' : '⚠️'
-                    );
-                }
+            if (! $perbaikan->wasChanged('status')) {
+                return;
             }
+
+            $kerusakan = $perbaikan->kerusakan;
+            $asset     = $kerusakan?->asset;
+
+            if (! $asset) {
+                return;
+            }
+
+            match ($perbaikan->status) {
+                'tidak_bisa_diperbaiki' => $asset->update([
+                    'status_asset' => 'non_aktif',
+                    'kondisi'      => 'tidak_berfungsi',
+                ]),
+                'selesai' => $asset->update([
+                    'status_asset' => 'aktif',
+                    'kondisi'      => 'baik',
+                ]),
+                'dalam_perbaikan' => $asset->update(['status_asset' => 'diperbaiki']),
+                default => null,
+            };
         });
     }
 

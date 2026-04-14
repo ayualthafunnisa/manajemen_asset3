@@ -58,7 +58,7 @@
                 @endif
                 
                 <!-- Page Content -->
-                <div class="space-y-6">
+                <div class="flex-1 bg-gray-50 min-h-screen p-6 overflow-x-auto">
                     @yield('content')
                 </div>
             </main>
