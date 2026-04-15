@@ -69,4 +69,6 @@ class Penyusutan extends Model
         $umur = $this->asset->umur_ekonomis;
         return $umur > 0 ? round(100 / $umur, 2) : null;
     }
+
+    
 }

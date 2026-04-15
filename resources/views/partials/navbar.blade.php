@@ -3,27 +3,17 @@
     <div class="px-4 md:px-6 py-3.5">
         <div class="flex items-center justify-between">
 
-            <!-- Left Section -->
+            <!-- Left Section - Mobile menu button only -->
             <div class="flex items-center space-x-4">
                 <button onclick="toggleSidebar()" class="lg:hidden p-2 rounded-xl hover:bg-neutral-100 transition-colors">
                     <svg class="w-5 h-5 text-neutral-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>
                 </button>
-                <div class="flex items-center space-x-2.5">
-                    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-dp">
-                        <svg class="w-[18px] h-[18px] text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-                        </svg>
-                    </div>
-                    <span class="text-xl font-extrabold tracking-tight text-neutral-800 hidden sm:inline">
-                        Aset<span class="text-primary-600">Ku</span>
-                    </span>
-                </div>
             </div>
 
             <!-- Right Section -->
-            <div class="flex ite ms-center space-x-2">
+            <div class="flex items-center space-x-2">
 
                 {{-- ── NOTIFICATION BELL ── --}}
                 <div class="relative" x-data="notificationComponent()" x-init="init()" @click.away="open = false">

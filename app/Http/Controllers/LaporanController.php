@@ -128,13 +128,17 @@ class LaporanController extends Controller
                 break;
 
             case 'penghapusan':
-                $query = Penghapusan::with(['asset.kategori', 'user']);
-
-                if (\Schema::hasColumn('penghapusans', 'tanggal_penghapusan')) {
-                    $query->whereBetween('tanggal_penghapusan', [$startDate->toDateString(), $endDate->toDateString()]);
-                } else {
-                    $query->whereBetween('created_at', [$startDate, $endDate]);
-                }
+                $query = Penghapusan::with(['asset.kategori', 'pengaju', 'penyetuju'])
+                    ->where(function($q) use ($startDate, $endDate) {
+                        $q->whereBetween('tanggal_pengajuan', [
+                                $startDate->toDateString(),
+                                $endDate->toDateString()
+                            ])
+                        ->orWhereBetween('tanggal_pengajuan', [
+                                $startDate->toDateString(),
+                                $endDate->toDateString()
+                            ]);
+                    });
 
                 $items = $query->orderByDesc('created_at')->get();
                 $total = Penghapusan::count();

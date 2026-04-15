@@ -66,9 +66,11 @@ Route::middleware(['auth', 'role:super_admin'])->prefix('super-admin')->group(fu
 Route::post('/midtrans/webhook', [RegisterController::class, 'midtransWebhook'])->name('midtrans.webhook');
 
 // Route login
-Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
-Route::post('/login', [LoginController::class, 'login'])->name('proseslogin');
-Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+Route::middleware(['prevent.back'])->group(function () {
+    Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [LoginController::class, 'login'])->name('proseslogin');
+    Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -76,7 +78,8 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'prevent.back'])->group(function () {
+
 
     // Super Admin Approval Routes
     Route::prefix('admin')->middleware(['auth', 'role:super_admin'])->group(function () {
@@ -144,6 +147,8 @@ Route::middleware('auth')->group(function () {
         Route::resource('lokasi',    LokasiAssetController::class);
         Route::resource('asset',     AssetController::class);
         Route::resource('penyusutan',PenyusutanController::class);
+        Route::get('penyusutan/{id}/pdf', [PenyusutanController::class, 'generatePDF'])->name('penyusutan.pdf');
+        
 
         Route::resource('penghapusan', PenghapusanController::class);
         Route::post('penghapusan/{penghapusan}/approve', [PenghapusanController::class, 'approve'])->name('penghapusan.approve');

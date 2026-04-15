@@ -152,17 +152,17 @@
                     <td class="px-4 py-3 text-gray-400">{{ $i + 1 }}</td>
                     <td class="px-4 py-3 font-mono text-xs text-gray-700">{{ $item->asset->kode_asset ?? '-' }}</td>
                     <td class="px-4 py-3 font-medium text-gray-900">{{ $item->asset->nama_asset ?? '-' }}</td>
-                    <td class="px-4 py-3 text-gray-600">{{ $item->asset->kategori->nama_kategori ?? '-' }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ $item->asset->kategori->NamaKategori ?? '-' }}</td>
                     <td class="px-4 py-3 text-gray-600 max-w-xs">
                         <span class="line-clamp-2">{{ $item->alasan ?? $item->keterangan ?? '-' }}</span>
                     </td>
                     <td class="px-4 py-3">
-                        @php $sp = strtolower($item->status ?? ''); @endphp
+                        @php $sp = strtolower($item->status_penghapusan ?? ''); @endphp
                         <span class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium
                             {{ $sp === 'disetujui' ? 'bg-green-100 text-green-700' :
                               ($sp === 'ditolak'   ? 'bg-red-100 text-red-700' :
                               ($sp === 'pending'   ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-600')) }}">
-                            {{ ucfirst($item->status ?? '-') }}
+                            {{ ucfirst($item->status_penghapusan ?? '-') }}
                         </span>
                     </td>
                     <td class="px-4 py-3 text-gray-600">{{ optional($item->pengaju ?? $item->diajukanOleh)->name ?? '-' }}</td>
@@ -209,7 +209,7 @@
                         {{ $np ? 'Rp ' . number_format($np, 0, ',', '.') : '-' }}
                     </td>
                     <td class="px-4 py-3 text-gray-600">{{ $item->metode ?? '-' }}</td>
-                    <td class="px-4 py-3 text-gray-600">{{ $item->masa_manfaat ? $item->masa_manfaat . ' Tahun' : '-' }}</td>
+                    <td class="px-4 py-3 text-gray-600">{{ $item->asset->umur_ekonomis }} thn</td>
                 </tr>
                 @empty
                 <tr><td colspan="8" class="px-4 py-10 text-center text-gray-400 text-sm">Tidak ada data penyusutan untuk periode ini.</td></tr>

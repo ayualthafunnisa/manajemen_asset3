@@ -17,6 +17,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'check.license' => CheckLicense::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,
+            'prevent.back' => \App\Http\Middleware\PreventBackHistory::class,
             //'instansi.active' => \App\Http\Middleware\EnsureInstansiActive::class,
         ]);
     })

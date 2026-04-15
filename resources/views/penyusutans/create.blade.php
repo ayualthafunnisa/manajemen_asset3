@@ -46,6 +46,16 @@
         background: #ede9fe; 
         color: #5b21b6; 
     }
+    
+    /* Styling untuk input date */
+    input[type="date"]::-webkit-calendar-picker-indicator {
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 0.375rem;
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator:hover {
+        background-color: #e5e5e5;
+    }
 </style>
 @endpush
 
@@ -131,7 +141,7 @@
                             </div>
                         </div>
 
-                        {{-- Tahun --}}
+                        {{-- Tahun - Kalender --}}
                         <div class="space-y-2">
                             <label for="tahun" class="block text-sm font-semibold text-neutral-700">
                                 Tahun <span class="text-danger-500">*</span>
@@ -142,15 +152,12 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                                     </svg>
                                 </div>
-                                <select name="tahun" id="tahun"
-                                        class="w-full pl-12 pr-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('tahun') border-danger-500 @enderror"
-                                        required>
-                                    <option value="">-- Pilih Tahun --</option>
-                                    @for($i = date('Y'); $i >= date('Y')-5; $i--)
-                                    <option value="{{ $i }}" {{ old('tahun') == $i ? 'selected' : '' }}>{{ $i }}</option>
-                                    @endfor
-                                </select>
+                                <input type="date" name="tahun" id="tahun"
+                                       value="{{ old('tahun') ? old('tahun') . '-01-01' : '' }}"
+                                       class="w-full pl-12 pr-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('tahun') border-danger-500 @enderror"
+                                       required>
                             </div>
+                            <p class="text-xs text-neutral-500">Pilih tanggal untuk menentukan tahun penyusutan (hanya tahun yang akan digunakan)</p>
                             @error('tahun')
                                 <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
                             @enderror
@@ -239,27 +246,40 @@
                     </div>
                 </div>
 
-                {{-- Preview Perhitungan --}}
+                {{-- Preview Perhitungan Tabel --}}
                 <div class="mt-4 p-5 bg-gradient-to-r from-primary-50 to-secondary-50 rounded-xl border border-primary-200">
                     <h3 class="font-semibold text-primary-900 mb-3 flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                         </svg>
-                        Preview Hasil Perhitungan
+                        Preview Hasil Perhitungan Penyusutan
                     </h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="bg-white p-4 rounded-xl shadow-sm">
-                            <p class="text-xs text-neutral-500">Nilai Awal</p>
-                            <p class="text-xl font-bold text-neutral-900" id="previewNilaiAwal">Rp 0</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-xl shadow-sm">
-                            <p class="text-xs text-neutral-500">Nilai Penyusutan</p>
-                            <p class="text-xl font-bold text-primary-600" id="previewNilaiPenyusutan">Rp 0</p>
-                        </div>
-                        <div class="bg-white p-4 rounded-xl shadow-sm">
-                            <p class="text-xs text-neutral-500">Nilai Akhir</p>
-                            <p class="text-xl font-bold text-success-600" id="previewNilaiAkhir">Rp 0</p>
-                        </div>
+                    
+                    {{-- Tabel Preview --}}
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full bg-white rounded-xl overflow-hidden shadow-sm border border-neutral-200">
+                            <thead>
+                                <tr class="bg-gradient-to-r from-primary-600 to-primary-700">
+                                    <th class="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">Tahun</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider">Biaya Perolehan</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider">Penyusutan</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider">Akum. Penyusutan</th>
+                                    <th class="px-4 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider">Nilai Buku</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewTableBody">
+                                <tr>
+                                    <td colspan="5" class="text-center py-8 text-neutral-500">Silakan pilih aset dan metode penyusutan terlebih dahulu</td>
+                                </tr>
+                            </tbody>
+                            <tfoot id="previewTableFoot" class="hidden">
+                                <tr class="bg-neutral-100 border-t-2 border-neutral-300">
+                                    <td colspan="5" class="px-4 py-3 text-xs text-neutral-600 italic">
+                                        Nilai buku akhir = Nilai Residu
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
                     </div>
                 </div>
 
@@ -279,7 +299,7 @@
                 <div class="rounded-lg bg-danger-50 border border-danger-200 p-4 animate-fade-in">
                     <div class="flex items-start gap-3">
                         <svg class="w-5 h-5 text-danger-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 7.707 7.293z" clip-rule="evenodd"/>
                         </svg>
                         <p class="text-sm text-danger-700">{{ session('error') }}</p>
                     </div>
@@ -327,6 +347,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const persentaseField = document.getElementById('persentaseField');
     const persentaseInput = document.getElementById('persentase_penyusutan');
     const assetSelect = document.getElementById('assetID');
+    const tahunInput = document.getElementById('tahun');
+
+    // Set default tahun ke tahun saat ini jika kosong
+    if (!tahunInput.value) {
+        const currentYear = new Date().getFullYear();
+        tahunInput.value = `${currentYear}-01-01`;
+    }
 
     // Toggle persentase field
     metodeSelect.addEventListener('change', function () {
@@ -337,7 +364,7 @@ document.addEventListener('DOMContentLoaded', function () {
             persentaseField.style.display = 'none';
             persentaseInput.required = false;
         }
-        updatePreview();
+        updatePreviewTable();
     });
 
     // Tampilkan info aset
@@ -353,40 +380,144 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             document.getElementById('assetInfo').classList.add('hidden');
         }
-        updatePreview();
+        updatePreviewTable();
     });
 
-    persentaseInput.addEventListener('input', updatePreview);
+    persentaseInput.addEventListener('input', updatePreviewTable);
 
-    function updatePreview() {
+    // Fungsi untuk mendapatkan tahun dari input date
+    function getSelectedYear() {
+        const dateValue = tahunInput.value;
+        if (dateValue) {
+            return parseInt(dateValue.split('-')[0]);
+        }
+        return new Date().getFullYear();
+    }
+
+    // Fungsi untuk update tabel preview
+    function updatePreviewTable() {
         const opt = assetSelect.options[assetSelect.selectedIndex];
-        if (!opt || !opt.value) return;
+        if (!opt || !opt.value) {
+            document.getElementById('previewTableBody').innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-8 text-neutral-500">Silakan pilih aset terlebih dahulu</td>
+                </tr>
+            `;
+            document.getElementById('previewTableFoot').classList.add('hidden');
+            return;
+        }
 
-        const nilai = parseFloat(opt.dataset.nilai) || 0;
-        const residu = parseFloat(opt.dataset.residu) || 0;
-        const umur = parseInt(opt.dataset.umur) || 1;
+        const nilaiPerolehan = parseFloat(opt.dataset.nilai) || 0;
+        const nilaiResidu = parseFloat(opt.dataset.residu) || 0;
+        const umurEkonomis = parseInt(opt.dataset.umur) || 1;
         const metode = metodeSelect.value;
         const persen = parseFloat(persentaseInput.value) || 0;
 
-        let penyusutan = 0;
-        if (metode === 'garis_lurus') {
-            penyusutan = (nilai - residu) / umur;
-        } else if (metode === 'saldo_menurun') {
-            penyusutan = nilai * (persen / 100);
+        if (!metode) {
+            document.getElementById('previewTableBody').innerHTML = `
+                <tr>
+                    <td colspan="5" class="text-center py-8 text-neutral-500">Silakan pilih metode penyusutan terlebih dahulu</td>
+                </tr>
+            `;
+            document.getElementById('previewTableFoot').classList.add('hidden');
+            return;
         }
 
-        // Jangan melebihi nilai - residu
-        penyusutan = Math.min(penyusutan, nilai - residu);
-        const akhir = nilai - penyusutan;
+        let rows = '';
+        let akumPenyusutan = 0;
+        let nilaiBuku = nilaiPerolehan;
+        const startYear = getSelectedYear();
 
-        document.getElementById('previewNilaiAwal').textContent = 'Rp ' + fmt(nilai);
-        document.getElementById('previewNilaiPenyusutan').textContent = 'Rp ' + fmt(penyusutan);
-        document.getElementById('previewNilaiAkhir').textContent = 'Rp ' + fmt(akhir);
+        // Hitung untuk setiap tahun (langsung dari tahun ke-1 sampai umur ekonomis)
+        for (let tahun = 1; tahun <= umurEkonomis; tahun++) {
+            let penyusutanTahun = 0;
+            
+            if (metode === 'garis_lurus') {
+                // Garis Lurus: (Nilai Perolehan - Nilai Residu) / Umur Ekonomis
+                penyusutanTahun = (nilaiPerolehan - nilaiResidu) / umurEkonomis;
+            } else if (metode === 'saldo_menurun') {
+                // Saldo Menurun: Nilai Buku Awal Tahun × Persentase
+                if (tahun === 1) {
+                    penyusutanTahun = nilaiPerolehan * (persen / 100);
+                } else {
+                    penyusutanTahun = nilaiBuku * (persen / 100);
+                }
+                
+                // Pastikan tidak melebihi nilai buku - residu di tahun terakhir
+                if (tahun === umurEkonomis) {
+                    const sisa = nilaiBuku - nilaiResidu;
+                    if (penyusutanTahun > sisa) {
+                        penyusutanTahun = sisa;
+                    }
+                }
+            }
+
+            // Pembulatan ke bawah untuk menghindari desimal berlebih
+            penyusutanTahun = Math.floor(penyusutanTahun);
+            
+            // Pastikan penyusutan tidak negatif
+            if (penyusutanTahun < 0) penyusutanTahun = 0;
+            
+            // Untuk tahun pertama, nilai awal adalah nilai perolehan
+            if (tahun === 1) {
+                // Tampilkan baris awal dengan nilai perolehan
+                rows += `
+                    <tr class="bg-primary-50 border-b border-neutral-200">
+                        <td class="px-4 py-3 text-sm font-medium text-primary-700">${startYear}</td>
+                        <td class="px-4 py-3 text-sm text-right font-mono">${formatRupiah(nilaiPerolehan)}</td>
+                        <td class="px-4 py-3 text-sm text-right font-mono">${formatRupiah(penyusutanTahun)}</td>
+                        <td class="px-4 py-3 text-sm text-right font-mono">${formatRupiah(penyusutanTahun)}</td>
+                        <td class="px-4 py-3 text-sm text-right font-mono font-semibold">${formatRupiah(nilaiPerolehan - penyusutanTahun)}</td>
+                    </tr>
+                `;
+                akumPenyusutan = penyusutanTahun;
+                nilaiBuku = nilaiPerolehan - penyusutanTahun;
+            } else {
+                akumPenyusutan += penyusutanTahun;
+                nilaiBuku = nilaiPerolehan - akumPenyusutan;
+                
+                // Pastikan nilai buku tidak kurang dari nilai residu di tahun terakhir
+                if (tahun === umurEkonomis && nilaiBuku < nilaiResidu) {
+                    nilaiBuku = nilaiResidu;
+                    akumPenyusutan = nilaiPerolehan - nilaiResidu;
+                    penyusutanTahun = akumPenyusutan - (akumPenyusutan - penyusutanTahun);
+                }
+
+                // Warna baris terakhir
+                let rowClass = '';
+                if (tahun === umurEkonomis) rowClass = 'bg-success-50';
+                const yearDisplay = startYear + (tahun - 1);
+
+                rows += `
+                    <tr class="${rowClass} border-b border-neutral-200 hover:bg-neutral-50 transition-colors">
+                        <td class="px-4 py-3 text-sm font-medium ${tahun === umurEkonomis ? 'text-success-700' : 'text-neutral-900'}">${yearDisplay}</td>
+                        <td class="px-4 py-3 text-sm text-right font-mono">${formatRupiah(nilaiPerolehan)}</td>
+                        <td class="px-4 py-3 text-sm text-right font-mono">${formatRupiah(penyusutanTahun)}</td>
+                        <td class="px-4 py-3 text-sm text-right font-mono">${formatRupiah(akumPenyusutan)}</td>
+                        <td class="px-4 py-3 text-sm text-right font-mono font-semibold ${tahun === umurEkonomis ? 'text-success-600' : 'text-neutral-900'}">
+                            ${formatRupiah(nilaiBuku)}
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
+        document.getElementById('previewTableBody').innerHTML = rows;
+        document.getElementById('previewTableFoot').classList.remove('hidden');
+    }
+
+    // Fungsi format Rupiah
+    function formatRupiah(angka) {
+        if (isNaN(angka)) return 'Rp 0';
+        return 'Rp ' + Math.round(angka).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 
     function fmt(angka) {
         return Math.round(angka).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
+
+    // Event listener untuk perubahan tahun
+    tahunInput.addEventListener('change', updatePreviewTable);
 
     // Real-time validation
     const requiredInputs = document.querySelectorAll('[required]');
@@ -402,7 +533,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // Trigger jika ada old value
-    if (assetSelect.value) assetSelect.dispatchEvent(new Event('change'));
+    if (assetSelect.value) {
+        assetSelect.dispatchEvent(new Event('change'));
+        updatePreviewTable();
+    }
     if (metodeSelect.value) metodeSelect.dispatchEvent(new Event('change'));
 });
 
@@ -421,6 +555,7 @@ function confirmSubmit() {
             const label = document.querySelector(`label[for="${field.id}"]`);
             let fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
             if (field.id === 'assetID') fieldName = 'Aset';
+            if (field.id === 'tahun') fieldName = 'Tahun';
             if (field.id === 'persentase_penyusutan') fieldName = 'Persentase Penyusutan';
             errorMessages.push(`${fieldName} wajib diisi`);
             if (!firstInvalid) firstInvalid = field;
@@ -442,27 +577,15 @@ function confirmSubmit() {
         }
     }
 
-    // Validasi preview tidak boleh nilai penyusutan = 0 jika nilai > residu
-    const assetSelect = document.getElementById('assetID');
-    const opt = assetSelect.options[assetSelect.selectedIndex];
-    if (opt && opt.value) {
-        const nilai = parseFloat(opt.dataset.nilai) || 0;
-        const residu = parseFloat(opt.dataset.residu) || 0;
-
-        if (nilai > residu) {
-            let previewPenyusutan = 0;
-            if (metode === 'garis_lurus') {
-                const umur = parseInt(opt.dataset.umur) || 1;
-                previewPenyusutan = (nilai - residu) / umur;
-            } else if (metode === 'saldo_menurun') {
-                const persen = parseFloat(document.getElementById('persentase_penyusutan').value) || 0;
-                previewPenyusutan = nilai * (persen / 100);
-            }
-
-            if (previewPenyusutan <= 0 && nilai > residu) {
-                isValid = false;
-                errorMessages.push('Perhitungan penyusutan menghasilkan nilai 0. Periksa kembali parameter yang dimasukkan.');
-            }
+    // Validasi tahun harus berupa angka 4 digit
+    const tahunInput = document.getElementById('tahun');
+    if (tahunInput.value) {
+        const year = parseInt(tahunInput.value.split('-')[0]);
+        if (isNaN(year) || year < 1900 || year > 2100) {
+            isValid = false;
+            tahunInput.classList.add('border-danger-500');
+            errorMessages.push('Tahun harus valid (1900-2100)');
+            if (!firstInvalid) firstInvalid = tahunInput;
         }
     }
 
@@ -477,19 +600,34 @@ function confirmSubmit() {
         return;
     }
 
-    // Tampilkan konfirmasi dengan preview hasil
-    const nilaiAwal = document.getElementById('previewNilaiAwal').textContent;
-    const nilaiPenyusutan = document.getElementById('previewNilaiPenyusutan').textContent;
-    const nilaiAkhir = document.getElementById('previewNilaiAkhir').textContent;
+    // Ambil data dari tabel preview untuk konfirmasi
+    const tableBody = document.getElementById('previewTableBody');
+    const lastRow = tableBody.querySelector('tr:last-child');
+    let nilaiAkhir = '-';
+    if (lastRow) {
+        const lastCell = lastRow.querySelector('td:last-child');
+        if (lastCell) nilaiAkhir = lastCell.textContent;
+    }
 
     const confirmMessage = `Apakah Anda yakin ingin menghitung dan menyimpan penyusutan ini?\n\n` +
                           `📊 Preview Perhitungan:\n` +
-                          `• Nilai Awal: ${nilaiAwal}\n` +
-                          `• Nilai Penyusutan: ${nilaiPenyusutan}\n` +
+                          `• Metode: ${metode === 'garis_lurus' ? 'Garis Lurus' : 'Saldo Menurun'}\n` +
                           `• Nilai Akhir: ${nilaiAkhir}\n\n` +
                           `Data penyusutan akan disimpan dan tidak dapat diubah.`;
 
     if (confirm(confirmMessage)) {
+        // Konversi input date menjadi format tahun sebelum submit
+        const tahunDate = document.getElementById('tahun').value;
+        if (tahunDate) {
+            const yearOnly = tahunDate.split('-')[0];
+            const hiddenTahun = document.createElement('input');
+            hiddenTahun.type = 'hidden';
+            hiddenTahun.name = 'tahun';
+            hiddenTahun.value = yearOnly;
+            form.appendChild(hiddenTahun);
+            // Nonaktifkan input date asli agar tidak terkirim
+            document.getElementById('tahun').disabled = true;
+        }
         form.submit();
     }
 }

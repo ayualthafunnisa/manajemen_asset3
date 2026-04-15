@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Penyusutan;
 use App\Models\Asset;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
+
 
 class PenyusutanController extends Controller
 {
@@ -28,7 +31,6 @@ class PenyusutanController extends Controller
 
     public function create()
     {
-        // Hanya tampilkan aset milik instansi ini (global scope di Asset model)
         $assets = Asset::all();
         return view('penyusutans.create', compact('assets'));
     }
@@ -42,8 +44,9 @@ class PenyusutanController extends Controller
     {
         $asset = Asset::findOrFail($assetID);
 
-        // FIX: nilai_awal aktual = nilai_akhir penyusutan terakhir, bukan nilai_perolehan mentah
+        // Filter per InstansiID agar tidak ambil data instansi lain
         $last = Penyusutan::where('assetID', $assetID)
+            ->where('InstansiID', Auth::user()->InstansiID)
             ->orderBy('tahun', 'desc')
             ->orderBy('bulan', 'desc')
             ->first();
@@ -52,10 +55,8 @@ class PenyusutanController extends Controller
         $nilai_residu = (float) ($asset->nilai_residu ?? 0);
         $umur         = (int)   $asset->umur_ekonomis;
 
-        // Sudah fully depreciated?
         $fully_depreciated = $nilai_awal <= $nilai_residu;
 
-        // Akumulasi sampai saat ini
         $akumulasi = (float) Penyusutan::where('assetID', $assetID)
             ->where('InstansiID', Auth::user()->InstansiID)
             ->sum('nilai_penyusutan');
@@ -76,33 +77,32 @@ class PenyusutanController extends Controller
 
     public function store(Request $request)
     {
-        // --- Validasi input ---
         $request->validate([
             'assetID' => 'required|exists:assets,assetID',
             'tahun'   => 'required|integer|min:2000|max:' . (date('Y') + 1),
             'bulan'   => 'nullable|integer|min:1|max:12',
             'metode'  => 'required|in:garis_lurus,saldo_menurun',
-
-            // FIX: hanya wajib untuk saldo_menurun
             'persentase_penyusutan' => 'required_if:metode,saldo_menurun|nullable|numeric|min:1|max:100',
-
             'catatan' => 'nullable|string|max:1000',
         ]);
 
         $asset = Asset::findOrFail($request->assetID);
 
-        // --- Guard: umur ekonomis valid ---
         if ($asset->umur_ekonomis <= 0) {
             return back()->withInput()->with('error', 'Umur ekonomis aset tidak valid.');
         }
 
-        // --- Guard: cek duplikat periode (unique per aset+tahun+bulan) ---
-        $duplikat = Penyusutan::where('assetID', $asset->assetID)
-            ->where('tahun', $request->tahun)
-            ->where('bulan', $request->bulan) // null == null handled by DB unique constraint
-            ->exists();
+        // Guard duplikat: gunakan whereNull untuk bulan null
+        $duplikatQuery = Penyusutan::where('assetID', $asset->assetID)
+            ->where('tahun', $request->tahun);
 
-        if ($duplikat) {
+        if ($request->filled('bulan')) {
+            $duplikatQuery->where('bulan', $request->bulan);
+        } else {
+            $duplikatQuery->whereNull('bulan');
+        }
+
+        if ($duplikatQuery->exists()) {
             return back()->withInput()->with('error',
                 'Penyusutan untuk aset ini pada periode ' .
                 $request->tahun .
@@ -111,27 +111,26 @@ class PenyusutanController extends Controller
             );
         }
 
-        // --- Tentukan nilai_awal: nilai_akhir periode terakhir ATAU nilai_perolehan ---
+        // Filter lastPenyusutan per InstansiID
         $lastPenyusutan = Penyusutan::where('assetID', $asset->assetID)
+            ->where('InstansiID', Auth::user()->InstansiID)
             ->orderBy('tahun', 'desc')
             ->orderBy('bulan', 'desc')
             ->first();
 
-        $nilai_awal = $lastPenyusutan
+        $nilai_awal   = $lastPenyusutan
             ? (float) $lastPenyusutan->nilai_akhir
             : (float) $asset->nilai_perolehan;
 
         $nilai_residu = (float) ($asset->nilai_residu ?? 0);
 
-        // --- Guard: sudah fully depreciated ---
         if ($nilai_awal <= $nilai_residu) {
             return back()->withInput()->with('error',
                 'Aset ini sudah mencapai nilai residu (fully depreciated). Tidak perlu dihitung ulang.'
             );
         }
 
-        // --- Guard: total akumulasi sudah maks ---
-        $total_sudah_susut  = (float) Penyusutan::where('assetID', $asset->assetID)
+        $total_sudah_susut = (float) Penyusutan::where('assetID', $asset->assetID)
             ->where('InstansiID', Auth::user()->InstansiID)
             ->sum('nilai_penyusutan');
 
@@ -143,33 +142,22 @@ class PenyusutanController extends Controller
             );
         }
 
-        // --- Hitung nilai penyusutan ---
         if ($request->metode === 'garis_lurus') {
-            /*
-             * Garis lurus: beban per periode selalu sama,
-             * dihitung dari nilai_perolehan (bukan nilai_awal saat ini).
-             * Ini BENAR secara akuntansi — beban penyusutan tidak berubah tiap tahun.
-             */
-            $nilai_penyusutan = ($asset->nilai_perolehan - $nilai_residu) / $asset->umur_ekonomis;
+            // Garis lurus: beban per periode selalu sama, dihitung dari nilai_perolehan
+            $nilai_penyusutan = ((float) $asset->nilai_perolehan - $nilai_residu) / $asset->umur_ekonomis;
         } else {
-            /*
-             * Saldo menurun: tarif % × nilai_awal (nilai buku saat ini).
-             * Dasar pengali mengecil setiap periode sehingga beban menurun.
-             */
+            // Saldo menurun: dasar pengali adalah nilai_awal (nilai buku saat ini)
             $nilai_penyusutan = $nilai_awal * ((float) $request->persentase_penyusutan / 100);
         }
 
-        // --- Pastikan nilai_akhir tidak jatuh di bawah nilai_residu ---
+        // Pastikan nilai_akhir tidak jatuh di bawah nilai_residu
         if (($nilai_awal - $nilai_penyusutan) < $nilai_residu) {
             $nilai_penyusutan = $nilai_awal - $nilai_residu;
         }
 
-        $nilai_akhir = $nilai_awal - $nilai_penyusutan;
-
-        // --- Hitung akumulasi baru (eksplisit filter instansi) ---
+        $nilai_akhir    = $nilai_awal - $nilai_penyusutan;
         $akumulasi_baru = $total_sudah_susut + $nilai_penyusutan;
 
-        // --- Simpan ---
         Penyusutan::create([
             'assetID'               => $asset->assetID,
             'InstansiID'            => Auth::user()->InstansiID,
@@ -180,7 +168,6 @@ class PenyusutanController extends Controller
             'nilai_akhir'           => $nilai_akhir,
             'akumulasi_penyusutan'  => $akumulasi_baru,
             'metode'                => $request->metode,
-            // FIX: simpan null untuk garis_lurus agar tidak menyimpan angka 0 yang menyesatkan
             'persentase_penyusutan' => $request->metode === 'saldo_menurun'
                                         ? $request->persentase_penyusutan
                                         : null,
@@ -191,6 +178,55 @@ class PenyusutanController extends Controller
 
         return redirect()->route('penyusutan.index')
             ->with('success', 'Data penyusutan berhasil ditambahkan.');
+    }
+
+    public function generatePDF($id)
+    {
+        try {
+            // Ambil data
+            $penyusutan = Penyusutan::with(['asset', 'instansi', 'creator', 'updater'])->findOrFail($id);
+            
+            // Log untuk debugging
+            Log::info('Generating PDF for penyusutan ID: ' . $id);
+            
+            // Pastikan tidak ada output sebelum PDF
+            if (ob_get_length()) {
+                ob_end_clean();
+            }
+            
+            // Generate PDF dengan opsi yang tepat
+            $pdf = Pdf::loadView('penyusutans.pdf', compact('penyusutan'));
+            $pdf->setPaper('a4', 'landscape');
+            
+            // Set opsi tambahan untuk mencegah error
+            $pdf->setOptions([
+                'defaultFont' => 'sans-serif',
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => true,
+                'isPhpEnabled' => true,
+                'debugCss' => false,
+                'debugLayout' => false,
+                'debugLayoutLines' => false,
+                'debugLayoutBlocks' => false,
+                'debugLayoutInline' => false,
+                'debugCss' => false,
+            ]);
+            
+            $filename = 'Laporan_Penyusutan_' . ($penyusutan->asset->kode_asset ?? 'Aset') . '_' . date('Ymd_His') . '.pdf';
+            
+            // Return PDF untuk download
+            return $pdf->download($filename);
+            
+        } catch (\Exception $e) {
+            Log::error('PDF Generation Error: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+            
+            if (request()->ajax()) {
+                return response()->json(['error' => $e->getMessage()], 500);
+            }
+            
+            return redirect()->back()->with('error', 'Gagal generate PDF: ' . $e->getMessage());
+        }
     }
 
     // ---------------------------------------------------------------
@@ -215,11 +251,13 @@ class PenyusutanController extends Controller
             abort(403, 'Hanya admin sekolah yang dapat menghapus data penyusutan.');
         }
 
-        // Global scope melindungi otomatis
         $penyusutan = Penyusutan::findOrFail($id);
         $penyusutan->delete();
 
         return redirect()->route('penyusutan.index')
             ->with('success', 'Data penyusutan berhasil dihapus.');
     }
+    
+    
+
 }

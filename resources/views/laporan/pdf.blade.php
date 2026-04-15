@@ -147,7 +147,7 @@
                 <td>{{ \Carbon\Carbon::parse($item->tanggal_laporan)->format('d/m/Y') }}</td>
                 <td>{{ ucfirst($item->status_perbaikan) }}</td>
                 <td>{{ $item->lokasi->NamaLokasi ?? '-' }}</td>
-                <td>{{ $item->user->name ?? '-' }}</td>
+                <td>{{ $item->pelapor->name ?? '-' }}</td>
                 @elseif($jenisLaporan == 'penghapusan')
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>{{ $item->asset->nama_asset ?? '-' }}</td>
@@ -155,17 +155,17 @@
                 <td>{{ \Carbon\Carbon::parse($item->tanggal_penghapusan)->format('d/m/Y') }}</td>
                 <td>{{ Str::limit($item->alasan_penghapusan, 50) }}</td>
                 <td>{{ ucfirst($item->status_penghapusan) }}</td>
-                <td>{{ $item->approved_by ?? '-' }}</td>
+                <td>{{ $item->penyetuju->name ?? '-' }}</td>
                 @elseif($jenisLaporan == 'penyusutan')
                 <td class="text-center">{{ $index + 1 }}</td>
                 <td>{{ $item->asset->nama_asset ?? '-' }}</td>
                 <td>{{ $item->asset->kode_asset ?? '-' }}</td>
                 <td class="text-right">Rp {{ number_format($item->nilai_awal, 0, ',', '.') }}</td>
                 <td class="text-right">Rp {{ number_format($item->nilai_akhir, 0, ',', '.') }}</td>
-                <td class="text-center">{{ $item->penyusutan_per_tahun }}%</td>
-                <td>{{ $item->metode_penyusutan }}</td>
-                <td>{{ \Carbon\Carbon::parse($item->tanggal_mulai)->format('d/m/Y') }}</td>
-                <td class="text-center">{{ $item->masa_manfaat }} thn</td>
+                <td class="text-center">{{ $item->persentase_penyusutan }}%</td>
+                <td>{{ $item->metode }}</td>
+                <td>{{ $item->bulan ? str_pad($item->bulan, 2, '0', STR_PAD_LEFT) . '/' : '' }}{{ $item->tahun ?? '-' }}</td>
+                <td class="text-center">{{ $item->asset->umur_ekonomis }} thn</td>
                 @endif
             </tr>
             @empty
