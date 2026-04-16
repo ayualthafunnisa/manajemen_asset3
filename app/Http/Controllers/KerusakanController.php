@@ -188,6 +188,7 @@ class KerusakanController extends Controller
             'asset.kategori',
             'lokasi',
             'pelapor',
+            'perbaikans' // Tambahkan relasi ini
         ])->findOrFail($id);
 
         $kerusakan->qrCode = QrCode::size(150)

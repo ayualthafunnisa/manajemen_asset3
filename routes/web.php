@@ -172,7 +172,7 @@ Route::middleware(['auth', 'prevent.back', 'role:super_admin,admin_sekolah,petug
     // ── Kerusakan ────────────────────────────────────────────────────────
     Route::resource('kerusakan', KerusakanController::class);
     Route::get('/kerusakan/{id}/qrcode', [KerusakanController::class, 'downloadQrCode'])->name('kerusakan.qrcode.download');
-    Route::post('kerusakan/{id}/update-status', [KerusakanController::class, 'updateStatus'])->name('kerusakan.updateStatus');
+    Route::post('kerusakan/{id}/update-status', [KerusakanController::class, 'updateStatus'])->name('kerusakan.update-status');
     });
 
     /*
