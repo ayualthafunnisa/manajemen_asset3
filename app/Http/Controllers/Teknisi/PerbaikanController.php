@@ -19,38 +19,117 @@ class PerbaikanController extends Controller
 
     public function index(Request $request)
     {
-        $query = Kerusakan::with(['asset', 'lokasi', 'pelapor', 'perbaikan'])
-            ->whereIn('status_perbaikan', ['dilaporkan', 'diproses']);
-
+        $query = Kerusakan::with(['asset', 'lokasi', 'perbaikan'])
+            ->where('status_perbaikan', '!=', 'selesai')
+            ->where('status_perbaikan', '!=', 'tidak_bisa_diperbaiki');
+        
+        // Filter search
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('kode_laporan', 'LIKE', "%{$search}%")
-                  ->orWhereHas('asset', fn($a) => $a->where('nama_asset', 'LIKE', "%{$search}%"));
+            $query->where(function($q) use ($search) {
+                $q->where('kode_laporan', 'like', "%{$search}%")
+                  ->orWhereHas('asset', function($asset) use ($search) {
+                      $asset->where('nama_asset', 'like', "%{$search}%");
+                  });
             });
         }
-
+        
+        // Filter prioritas
         if ($request->filled('prioritas')) {
             $query->where('prioritas', $request->prioritas);
         }
-
+        
+        // Filter jenis kerusakan
         if ($request->filled('jenis')) {
             $query->where('jenis_kerusakan', $request->jenis);
         }
-
-        $keluhanList = $query->orderByRaw("FIELD(prioritas,'kritis','tinggi','sedang','rendah')")
-                             ->orderByDesc('created_at')
-                             ->paginate(12);
-
+        
+        // PRIORITAS SORTING - Yang paling parah di atas
+        // Urutan prioritas: total (paling parah) > berat > sedang > ringan
+        // Urutan level prioritas: kritis > tinggi > sedang > rendah
+        $query->orderByRaw("
+            CASE 
+                WHEN jenis_kerusakan = 'total' THEN 1
+                WHEN jenis_kerusakan = 'berat' THEN 2
+                WHEN jenis_kerusakan = 'sedang' THEN 3
+                WHEN jenis_kerusakan = 'ringan' THEN 4
+                ELSE 5
+            END ASC
+        ");
+        
+        // Kemudian urutkan berdasarkan prioritas (kritis paling atas)
+        $query->orderByRaw("
+            CASE 
+                WHEN prioritas = 'kritis' THEN 1
+                WHEN prioritas = 'tinggi' THEN 2
+                WHEN prioritas = 'sedang' THEN 3
+                WHEN prioritas = 'rendah' THEN 4
+                ELSE 5
+            END ASC
+        ");
+        
+        // Terakhir urutkan berdasarkan tanggal laporan (terbaru)
+        $query->orderBy('tanggal_laporan', 'desc');
+        
+        $keluhanList = $query->paginate(10);
+        
+        // Summary untuk cards
         $summary = [
-            'total'      => Kerusakan::whereIn('status_perbaikan', ['dilaporkan', 'diproses'])->count(),
+            'total' => Kerusakan::where('status_perbaikan', '!=', 'selesai')
+                                ->where('status_perbaikan', '!=', 'tidak_bisa_diperbaiki')
+                                ->count(),
             'dilaporkan' => Kerusakan::where('status_perbaikan', 'dilaporkan')->count(),
-            'diproses'   => Kerusakan::where('status_perbaikan', 'diproses')->count(),
-            'kritis'     => Kerusakan::where('prioritas', 'kritis')
-                                     ->whereIn('status_perbaikan', ['dilaporkan', 'diproses'])->count(),
+            'diproses' => Kerusakan::where('status_perbaikan', 'diproses')->count(),
+            'kritis' => Kerusakan::where('prioritas', 'kritis')
+                                 ->where('status_perbaikan', '!=', 'selesai')
+                                 ->count(),
+            'total_parah' => Kerusakan::whereIn('jenis_kerusakan', ['total', 'berat'])
+                                      ->where('status_perbaikan', '!=', 'selesai')
+                                      ->count(), // Tambahan untuk kerusakan parah
         ];
-
+        
+        // Cek apakah ada kerusakan kritis atau total yang belum ditangani
+        $kerusakanKritis = Kerusakan::where('prioritas', 'kritis')
+            ->where('status_perbaikan', 'dilaporkan')
+            ->first();
+            
+        if ($kerusakanKritis && !session()->has('kritis_notified')) {
+            session()->flash('kritis_warning', true);
+            session()->flash('kritis_data', $kerusakanKritis);
+            session()->put('kritis_notified', true);
+        }
+        
         return view('keluhan.index', compact('keluhanList', 'summary'));
+    }
+    
+    // Method untuk mendapatkan notifikasi real-time via AJAX
+    public function getPrioritasNotifikasi()
+    {
+        $kerusakanKritis = Kerusakan::with(['asset', 'lokasi'])
+            ->where('prioritas', 'kritis')
+            ->where('status_perbaikan', 'dilaporkan')
+            ->orderBy('tanggal_laporan', 'desc')
+            ->get();
+            
+        $kerusakanTotal = Kerusakan::with(['asset', 'lokasi'])
+            ->where('jenis_kerusakan', 'total')
+            ->where('status_perbaikan', 'dilaporkan')
+            ->orderBy('tanggal_laporan', 'desc')
+            ->get();
+            
+        $kerusakanBerat = Kerusakan::with(['asset', 'lokasi'])
+            ->where('jenis_kerusakan', 'berat')
+            ->where('prioritas', 'tinggi')
+            ->where('status_perbaikan', 'dilaporkan')
+            ->orderBy('tanggal_laporan', 'desc')
+            ->get();
+            
+        return response()->json([
+            'kritis' => $kerusakanKritis,
+            'total' => $kerusakanTotal,
+            'berat' => $kerusakanBerat,
+            'total_count' => $kerusakanKritis->count() + $kerusakanTotal->count() + $kerusakanBerat->count()
+        ]);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -101,82 +180,77 @@ class PerbaikanController extends Controller
     public function store(Request $request, $kerusakanId)
     {
         $kerusakan = Kerusakan::findOrFail($kerusakanId);
-
-        $request->validate([
-            'kode_perbaikan'     => 'required|unique:perbaikans',
-            'tindakan_perbaikan' => 'required|min:10',
-            'catatan_perbaikan'  => 'nullable|string',
-            'komponen_diganti'   => 'nullable|string|max:255',
-            'biaya_aktual'       => 'nullable|numeric|min:0',
-            'foto_sesudah'       => 'nullable|image|max:2048',
-            'status'             => 'required|in:dalam_perbaikan,selesai,tidak_bisa_diperbaiki',
-            'alasan_tidak_bisa'  => 'required_if:status,tidak_bisa_diperbaiki',
-            'mulai_perbaikan'    => 'nullable|date',
-            'selesai_perbaikan'  => 'nullable|date|after_or_equal:mulai_perbaikan',
+        
+        // Cek apakah sudah ada perbaikan
+        if ($kerusakan->perbaikan) {
+            return redirect()->route('keluhan.show', $kerusakanId)
+                ->with('error', 'Keluhan ini sudah memiliki laporan perbaikan.');
+        }
+        
+        $validated = $request->validate([
+            'kode_perbaikan'      => 'required|unique:perbaikans',
+            'mulai_perbaikan'     => 'required|date',
+            'estimasi_selesai'    => 'required|date|after_or_equal:mulai_perbaikan', // VALIDASI BARU
+            'komponen_diganti'    => 'nullable|string|max:255',
+            'biaya_aktual'        => 'nullable|numeric|min:0',
+            'status'              => 'required|in:dalam_perbaikan,selesai,tidak_bisa_diperbaiki',
+            'selesai_perbaikan'   => 'nullable|date|after_or_equal:mulai_perbaikan',
+            'tindakan_perbaikan'  => 'required|string',
+            'catatan_perbaikan'   => 'nullable|string',
+            'foto_sesudah'        => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'alasan_tidak_bisa'   => 'required_if:status,tidak_bisa_diperbaiki|nullable|string',
         ]);
-
+        
+        // Handle file upload
         $fotoPath = null;
         if ($request->hasFile('foto_sesudah')) {
-            $fotoPath = $request->file('foto_sesudah')->store('perbaikan', 'public');
+            $fotoPath = $request->file('foto_sesudah')->store('perbaikan/foto_sesudah', 'public');
         }
-
-        $perbaikan = Perbaikan::create([
-            'kerusakanID'        => $kerusakanId,
-            'InstansiID'         => Auth::user()->InstansiID,
-            'kode_perbaikan'     => $request->kode_perbaikan,
-            'tindakan_perbaikan' => $request->tindakan_perbaikan,
-            'catatan_perbaikan'  => $request->catatan_perbaikan,
-            'komponen_diganti'   => $request->komponen_diganti,
-            'biaya_aktual'       => $request->biaya_aktual,
-            'foto_sesudah'       => $fotoPath,
-            'status'             => $request->status,
-            'alasan_tidak_bisa'  => $request->alasan_tidak_bisa,
-            'mulai_perbaikan'    => $request->mulai_perbaikan,
-            'selesai_perbaikan'  => $request->status === 'selesai' ? ($request->selesai_perbaikan ?? now()) : $request->selesai_perbaikan,
-            'teknisi_id'         => Auth::id(),
-            'ditugaskan_oleh'    => Auth::id(),
+        
+        // Update status kerusakan jika perbaikan dimulai
+        $kerusakan->update([
+            'status_perbaikan' => 'diproses'
         ]);
-
-        // Sinkronisasi status kerusakan
-        $statusKerusakan = match ($request->status) {
-            'selesai', 'tidak_bisa_diperbaiki' => 'selesai',
-            default                             => 'diproses',
-        };
-        $kerusakan->update(['status_perbaikan' => $statusKerusakan]);
-
-        // Sinkronisasi status_asset dan kondisi pada Asset
-        $asset = $kerusakan->asset;
-        if ($asset) {
-            if ($request->status === 'tidak_bisa_diperbaiki') {
-                // Aset tidak bisa diperbaiki → non-aktifkan dan tandai kondisi
-                $asset->update([
-                    'status_asset' => 'non_aktif',
-                    'kondisi'      => 'tidak_berfungsi',
-                ]);
-            } elseif ($request->status === 'selesai') {
-                // Perbaikan selesai → kembalikan aset ke aktif dan kondisi baik
-                $asset->update([
-                    'status_asset' => 'aktif',
-                    'kondisi'      => 'baik',
-                ]);
-            } elseif ($request->status === 'dalam_perbaikan') {
-                // Sedang diperbaiki → tandai status asset diperbaiki
-                $asset->update(['status_asset' => 'diperbaiki']);
-            }
+        
+        $perbaikan = Perbaikan::create([
+            'kerusakanID'          => $kerusakanId,
+            'InstansiID'           => $kerusakan->InstansiID,
+            'kode_perbaikan'       => $validated['kode_perbaikan'],
+            'mulai_perbaikan'      => $validated['mulai_perbaikan'],
+            'estimasi_selesai'     => $validated['estimasi_selesai'], // DATA BARU
+            'komponen_diganti'     => $validated['komponen_diganti'] ?? null,
+            'biaya_aktual'         => $validated['biaya_aktual'] ?? null,
+            'status'               => $validated['status'],
+            'selesai_perbaikan'    => $validated['selesai_perbaikan'] ?? null,
+            'tindakan_perbaikan'   => $validated['tindakan_perbaikan'],
+            'catatan_perbaikan'    => $validated['catatan_perbaikan'] ?? null,
+            'foto_sesudah'         => $fotoPath,
+            'alasan_tidak_bisa'    => $validated['alasan_tidak_bisa'] ?? null,
+            'teknisi_id'           => Auth::id(),
+            'ditugaskan_oleh'      => Auth::id(),
+        ]);
+        
+        // Kirim notifikasi ke admin sekolah bahwa perbaikan telah dimulai dengan estimasi
+        $admins = \App\Models\User::where('InstansiID', $kerusakan->InstansiID)
+            ->where('role', 'admin_sekolah')
+            ->get();
+        
+        foreach ($admins as $admin) {
+            NotificationHelper::send(
+                $admin->id,
+                'perbaikan_dimulai',
+                'Perbaikan Dimulai: ' . ($kerusakan->asset->nama_asset ?? 'Asset'),
+                'Estimasi selesai: ' . date('d/m/Y', strtotime($validated['estimasi_selesai'])) . ' - ' . $validated['tindakan_perbaikan'],
+                [
+                    'perbaikan_id' => $perbaikan->perbaikanID,
+                    'kerusakan_id' => $kerusakanId,
+                    'estimasi_selesai' => $validated['estimasi_selesai'],
+                ]
+            );
         }
-
-        // Kirim notifikasi ke admin sekolah jika perbaikan selesai atau tidak bisa diperbaiki
-        if (in_array($request->status, ['selesai', 'tidak_bisa_diperbaiki'])) {
-            $this->sendNotificationToAdmin($perbaikan);
-        }
-
-        $pesan = match ($request->status) {
-            'selesai'                => 'Perbaikan selesai! Aset telah dikembalikan ke status aktif.',
-            'tidak_bisa_diperbaiki'  => 'Laporan disimpan. Aset ditandai tidak bisa diperbaiki dan status diubah ke non-aktif.',
-            default                  => 'Laporan perbaikan disimpan. Status keluhan diubah ke "Diproses".',
-        };
-
-        return redirect()->route('riwayat.index')->with('success', $pesan);
+        
+        return redirect()->route('keluhan.show', $kerusakanId)
+            ->with('success', 'Laporan perbaikan berhasil dibuat. Estimasi selesai: ' . date('d/m/Y', strtotime($validated['estimasi_selesai'])));
     }
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -186,74 +260,83 @@ class PerbaikanController extends Controller
     public function updateStatus(Request $request, $id)
     {
         $perbaikan = Perbaikan::findOrFail($id);
-
-        // Hanya teknisi yang menangani yang boleh update
-        if ($perbaikan->teknisi_id !== Auth::id()) {
-            abort(403, 'Anda tidak berhak mengubah perbaikan ini.');
+        
+        // Cek apakah teknisi yang sedang login adalah teknisi yang ditugaskan
+        if ($perbaikan->teknisi_id != Auth::id() && Auth::user()->role != 'super_admin') {
+            return redirect()->back()->with('error', 'Anda tidak memiliki akses untuk mengubah status perbaikan ini.');
         }
-
-        $request->validate([
-            'status'             => 'required|in:dalam_perbaikan,selesai,tidak_bisa_diperbaiki',
-            'alasan_tidak_bisa'  => 'required_if:status,tidak_bisa_diperbaiki',
-            'selesai_perbaikan'  => 'nullable|date',
+        
+        $validated = $request->validate([
+            'status'            => 'required|in:dalam_perbaikan,selesai,tidak_bisa_diperbaiki',
+            'selesai_perbaikan' => 'required_if:status,selesai|nullable|date|after_or_equal:mulai_perbaikan',
+            'alasan_tidak_bisa' => 'required_if:status,tidak_bisa_diperbaiki|nullable|string',
+            'estimasi_selesai'  => 'nullable|date|after_or_equal:mulai_perbaikan', // BISA UPDATE ESTIMASI
         ]);
-
-        $oldStatus = $perbaikan->status;
-        $data = ['status' => $request->status];
-
-        if ($request->status === 'selesai') {
-            $data['selesai_perbaikan'] = $request->selesai_perbaikan ?? now();
+        
+        $updateData = [
+            'status' => $validated['status'],
+        ];
+        
+        // Jika update estimasi selesai
+        if ($request->has('estimasi_selesai') && $request->estimasi_selesai) {
+            $updateData['estimasi_selesai'] = $validated['estimasi_selesai'];
         }
-        if ($request->status === 'tidak_bisa_diperbaiki') {
-            $data['alasan_tidak_bisa'] = $request->alasan_tidak_bisa;
-        }
-
-        $perbaikan->update($data);
-
-        // Sinkron status kerusakan dan asset
-        $kerusakan = $perbaikan->kerusakan;
-        $asset     = $kerusakan?->asset;
-
-        if (in_array($request->status, ['selesai', 'tidak_bisa_diperbaiki'])) {
-            $kerusakan?->update(['status_perbaikan' => 'selesai']);
-
-            // Update status_asset dan kondisi berdasarkan hasil perbaikan
-            if ($asset) {
-                if ($request->status === 'tidak_bisa_diperbaiki') {
-                    $asset->update([
-                        'status_asset' => 'non_aktif',
-                        'kondisi'      => 'tidak_berfungsi',
-                    ]);
-                } elseif ($request->status === 'selesai') {
-                    $asset->update([
-                        'status_asset' => 'aktif',
-                        'kondisi'      => 'baik',
-                    ]);
+        
+        if ($validated['status'] == 'selesai') {
+            $updateData['selesai_perbaikan'] = $validated['selesai_perbaikan'] ?? now();
+            
+            // Update status kerusakan
+            $perbaikan->kerusakan->update([
+                'status_perbaikan' => 'selesai'
+            ]);
+            
+            // Kirim notifikasi bahwa perbaikan selesai
+            $pelapor = $perbaikan->kerusakan->pelapor;
+            if ($pelapor) {
+                NotificationHelper::send(
+                    $pelapor->id,
+                    'perbaikan_selesai',
+                    'Perbaikan Selesai: ' . ($perbaikan->kerusakan->asset->nama_asset ?? 'Asset'),
+                    'Perbaikan telah selesai dilakukan.',
+                    ['perbaikan_id' => $perbaikan->perbaikanID]
+                );
+            }
+            
+        } elseif ($validated['status'] == 'tidak_bisa_diperbaiki') {
+            $updateData['alasan_tidak_bisa'] = $validated['alasan_tidak_bisa'];
+            
+            // Update status kerusakan
+            $perbaikan->kerusakan->update([
+                'status_perbaikan' => 'tidak_bisa_diperbaiki'
+            ]);
+            
+        } elseif ($validated['status'] == 'dalam_perbaikan') {
+            // Jika ada update estimasi, kirim notifikasi
+            if ($request->has('estimasi_selesai') && $request->estimasi_selesai) {
+                $admins = \App\Models\User::where('InstansiID', $perbaikan->InstansiID)
+                    ->where('role', 'admin_sekolah')
+                    ->get();
+                
+                foreach ($admins as $admin) {
+                    NotificationHelper::send(
+                        $admin->id,
+                        'estimasi_diperbarui',
+                        'Estimasi Perbaikan Diperbarui: ' . ($perbaikan->kerusakan->asset->nama_asset ?? 'Asset'),
+                        'Estimasi baru: ' . date('d/m/Y', strtotime($validated['estimasi_selesai'])),
+                        ['perbaikan_id' => $perbaikan->perbaikanID]
+                    );
                 }
             }
-
-            // Kirim notifikasi ke admin sekolah jika status berubah ke selesai/tidak_bisa
-            if ($oldStatus !== $request->status) {
-                $this->sendNotificationToAdmin($perbaikan);
-            }
-
-            $pesan = $request->status === 'tidak_bisa_diperbaiki'
-                ? 'Perbaikan selesai. Aset ditandai tidak bisa diperbaiki dan dinonaktifkan.'
-                : 'Perbaikan selesai! Aset telah dikembalikan ke status aktif.';
-
-            return redirect()
-                ->route('riwayat.index')
-                ->with('success', $pesan);
         }
-
-        // Masih dalam_perbaikan → pastikan status asset = diperbaiki
-        if ($asset && $request->status === 'dalam_perbaikan') {
-            $asset->update(['status_asset' => 'diperbaiki']);
+        
+        $perbaikan->update($updateData);
+        
+        $message = 'Status perbaikan berhasil diperbarui';
+        if ($request->has('estimasi_selesai') && $request->estimasi_selesai) {
+            $message .= ' dengan estimasi selesai: ' . date('d/m/Y', strtotime($validated['estimasi_selesai']));
         }
-
-        return redirect()
-            ->route('keluhan.index')
-            ->with('success', 'Status perbaikan diperbarui.');
+        
+        return redirect()->back()->with('success', $message);
     }
 
     // ──────────────────────────────────────────────────────────────────────────

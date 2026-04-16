@@ -224,7 +224,7 @@
                         </span>
                     </td>
                     <td class="px-6 py-4">
-                        <a href="{{ route('kerusakan.show', $kerusakan->KerusakanID) }}" class="text-xs text-primary-600 hover:underline font-semibold">Detail</a>
+                        <a href="{{ route('kerusakan.show', $kerusakan->kerusakanID) }}" class="text-xs text-primary-600 hover:underline font-semibold">Detail</a>
                     </td>
                 </tr>
                 @empty

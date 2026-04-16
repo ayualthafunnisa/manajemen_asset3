@@ -2,6 +2,7 @@
 
 @section('title', 'Data Penghapusan Aset')
 
+@if(!in_array(auth()->user()->role, ['super_admin']))
 @section('header')
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
     <div>
@@ -23,6 +24,7 @@
     @endif
 </div>
 @endsection
+@endif
 
 @section('content')
 <div class="space-y-6">
@@ -59,6 +61,17 @@
                            class="pl-10 pr-4 py-2 w-full border border-neutral-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
                 </div>
                 <div class="flex items-center gap-2 flex-wrap">
+                    {{-- Filter Instansi untuk Super Admin --}}
+                    @if(auth()->user()->role === 'super_admin' && isset($instansis))
+                    <select id="filter_instansi" class="border border-neutral-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
+                        <option value="">Semua Instansi</option>
+                        @foreach($instansis as $instansi)
+                            <option value="{{ $instansi->InstansiID }}" {{ request('instansi') == $instansi->InstansiID ? 'selected' : '' }}>
+                                {{ $instansi->NamaSekolah }}
+                            </option>
+                        @endforeach
+                    </select>
+                    @endif
                     <select id="statusFilter" class="border border-neutral-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-purple-500">
                         <option value="">Semua Status</option>
                         <option value="diajukan">Diajukan</option>
@@ -122,7 +135,9 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Alasan</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Pengaju</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
+                        @if(!in_array(auth()->user()->role, ['super_admin']))
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-neutral-200" id="tableBody">
@@ -177,6 +192,7 @@
                                 {{ $statusLabel[$penghapusan->status_penghapusan] ?? ucfirst($penghapusan->status_penghapusan) }}
                             </span>
                         </td>
+                        @if(!in_array(auth()->user()->role, ['super_admin']))
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div class="flex items-center gap-2">
 
@@ -239,6 +255,7 @@
 
                             </div>
                         </td>
+                        @endif
                     </tr>
                     @empty
                     <tr>
@@ -349,6 +366,19 @@ document.addEventListener('DOMContentLoaded', function () {
     searchInput.addEventListener('input', applyFilters);
     statusFilter.addEventListener('change', applyFilters);
     alasanFilter.addEventListener('change', applyFilters);
+
+    const filterInstansi = document.getElementById('filter_instansi');
+    if (filterInstansi) {
+        filterInstansi.addEventListener('change', function() {
+            const url = new URL(window.location.href);
+            if (this.value) {
+                url.searchParams.set('instansi', this.value);
+            } else {
+                url.searchParams.delete('instansi');
+            }
+            window.location.href = url.toString();
+        });
+    }
 });
 
 function showRejectModal(id) {

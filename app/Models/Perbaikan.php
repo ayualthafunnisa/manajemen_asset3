@@ -21,6 +21,7 @@ class Perbaikan extends Model
         'status',
         'alasan_tidak_bisa',
         'mulai_perbaikan',
+        'estimasi_selesai',
         'selesai_perbaikan',
         'teknisi_id',
         'ditugaskan_oleh',
@@ -28,6 +29,7 @@ class Perbaikan extends Model
 
     protected $casts = [
         'mulai_perbaikan'   => 'datetime',
+
         'selesai_perbaikan' => 'datetime',
         'biaya_aktual'      => 'decimal:2',
     ];

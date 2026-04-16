@@ -3,6 +3,7 @@
 
 @section('title', 'Manajemen Asset')
 
+@if(!in_array(auth()->user()->role, ['super_admin']))
 @section('header')
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
     <div>
@@ -29,6 +30,7 @@
     </div>
 </div>
 @endsection
+@endif
 
 @section('content')
 
@@ -48,6 +50,18 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
             </svg>
         </div>
+        @if(auth()->user()->role === 'super_admin' && isset($instansis))
+        <div>
+            <select id="filter_instansi" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                <option value="">Semua Instansi</option>
+                @foreach($instansis as $instansi)
+                    <option value="{{ $instansi->InstansiID }}" {{ request('instansi') == $instansi->InstansiID ? 'selected' : '' }}>
+                        {{ $instansi->NamaSekolah }}
+                    </option>
+                @endforeach
+            </select>
+        </div>
+        @endif
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <select id="filter_kategori" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
                 <option value="">Semua Kategori</option>
@@ -94,7 +108,9 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Merk / S/N</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kondisi</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    @if(!in_array(auth()->user()->role, ['super_admin']))
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                    @endif
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200" id="asset-table-body">
@@ -167,6 +183,7 @@
                     <td class="px-4 py-3 whitespace-nowrap">
                         <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $statusClass }}">{{ ucfirst(str_replace('_', ' ', $asset->status_asset)) }}</span>
                     </td>
+                    @if(!in_array(auth()->user()->role, ['super_admin']))
                     <td class="px-4 py-3 whitespace-nowrap">
                         <div class="flex items-center gap-2">
                             <a href="{{ route('asset.show', $asset->assetID) }}" class="text-blue-600 hover:text-blue-900 transition" title="Detail">
@@ -180,6 +197,7 @@
                             </button>
                         </div>
                     </td>
+                    @endif
                 </tr>
                 @empty
                 <tr>
@@ -410,6 +428,19 @@ function generateBarcodePdf() {
     ids.forEach(id => { const i = document.createElement('input'); i.type='hidden'; i.name='asset_ids[]'; i.value=id; form.appendChild(i); });
     form.submit();
 }
+const filterInstansi = document.getElementById('filter_instansi');
+if (filterInstansi) {
+    filterInstansi.addEventListener('change', function() {
+        const url = new URL(window.location.href);
+        if (this.value) {
+            url.searchParams.set('instansi', this.value);
+        } else {
+            url.searchParams.delete('instansi');
+        }
+        window.location.href = url.toString();
+    });
+}
+
 function confirmDelete(id) { document.getElementById('deleteForm').action=`/asset/${id}`; document.getElementById('deleteModal').classList.remove('hidden'); }
 function closeDeleteModal() { document.getElementById('deleteModal').classList.add('hidden'); }
 document.getElementById('deleteModal')?.addEventListener('click', function(e) { if(e.target===this) closeDeleteModal(); });

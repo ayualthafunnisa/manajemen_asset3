@@ -221,6 +221,39 @@
                                 </td>
                             </tr>
                             <tr>
+                                <td class="py-3 text-sm font-medium text-gray-500">
+                                    Estimasi Selesai
+                                    <span class="text-xs text-gray-400 block">Perkiraan dari teknisi</span>
+                                </td>
+                                <td class="py-3 text-sm">
+                                    @if($kerusakan->perbaikan->estimasi_selesai)
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-semibold text-blue-700">
+                                                {{ \Carbon\Carbon::parse($kerusakan->perbaikan->estimasi_selesai)->format('d F Y') }}
+                                            </span>
+                                            @if($kerusakan->perbaikan->status == 'dalam_perbaikan')
+                                                @php
+                                                    $estimasiDate = \Carbon\Carbon::parse($kerusakan->perbaikan->estimasi_selesai);
+                                                    $today = \Carbon\Carbon::today();
+                                                    $daysLeft = $today->diffInDays($estimasiDate, false);
+                                                @endphp
+                                                @if($daysLeft < 0)
+                                                    <span class="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-700">
+                                                        Terlambat {{ abs($daysLeft) }} hari
+                                                    </span>
+                                                @elseif($daysLeft <= 2)
+                                                    <span class="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-700">
+                                                        Sisa {{ $daysLeft }} hari
+                                                    </span>
+                                                @endif
+                                            @endif
+                                        </div>
+                                    @else
+                                        <span class="text-gray-400">-</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
                                 <td class="py-3 text-sm font-medium text-gray-500">Selesai Perbaikan</td>
                                 <td class="py-3 text-sm text-gray-900">
                                     {{ $kerusakan->perbaikan->selesai_perbaikan ? \Carbon\Carbon::parse($kerusakan->perbaikan->selesai_perbaikan)->format('d F Y') : '-' }}
@@ -249,41 +282,51 @@
 
                     {{-- Update Status Form (hanya jika status dalam_perbaikan dan milik teknisi ini) --}}
                     @if($kerusakan->perbaikan->status === 'dalam_perbaikan' && $kerusakan->perbaikan->teknisi_id === Auth::id())
-                    <div class="mt-6 pt-6 border-t border-gray-200">
-                        <h4 class="text-sm font-semibold text-gray-700 mb-3">Perbarui Status Perbaikan</h4>
-                        <form action="{{ route('perbaikan.updateStatus', $kerusakan->perbaikan->perbaikanID) }}" method="POST" class="space-y-3">
-                            @csrf
-                            @method('POST')
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">Status Baru</label>
-                                    <select name="status" id="statusUpdate"
+                        <div class="mt-6 pt-6 border-t border-gray-200">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">Perbarui Status Perbaikan</h4>
+                            <form action="{{ route('perbaikan.updateStatus', $kerusakan->perbaikan->perbaikanID) }}" method="POST" class="space-y-3">
+                                @csrf
+                                @method('POST')
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Status Baru</label>
+                                        <select name="status" id="statusUpdate"
+                                                class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                            <option value="dalam_perbaikan">Masih Dalam Perbaikan</option>
+                                            <option value="selesai">Selesai</option>
+                                            <option value="tidak_bisa_diperbaiki">Tidak Bisa Diperbaiki</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">
+                                            Update Estimasi Selesai <span class="text-gray-400">(Opsional)</span>
+                                        </label>
+                                        <input type="date" name="estimasi_selesai" id="estimasiUpdate"
+                                            value="{{ $kerusakan->perbaikan->estimasi_selesai ? \Carbon\Carbon::parse($kerusakan->perbaikan->estimasi_selesai)->format('Y-m-d') : '' }}"
+                                            min="{{ date('Y-m-d') }}"
                                             class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="dalam_perbaikan">Masih Dalam Perbaikan</option>
-                                        <option value="selesai">Selesai</option>
-                                        <option value="tidak_bisa_diperbaiki">Tidak Bisa Diperbaiki</option>
-                                    </select>
+                                        <p class="text-xs text-gray-400 mt-1">Perbarui jika estimasi berubah</p>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-600 mb-1">Tanggal Selesai</label>
+                                        <input type="date" name="selesai_perbaikan" id="selesaiUpdate"
+                                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    </div>
                                 </div>
-                                <div>
-                                    <label class="block text-xs font-medium text-gray-600 mb-1">Tanggal Selesai</label>
-                                    <input type="date" name="selesai_perbaikan"
-                                           class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <div id="alasanFieldUpdate" class="hidden">
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Alasan Tidak Bisa Diperbaiki <span class="text-red-500">*</span></label>
+                                    <textarea name="alasan_tidak_bisa" rows="2"
+                                            class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"></textarea>
                                 </div>
-                            </div>
-                            <div id="alasanField" class="hidden">
-                                <label class="block text-xs font-medium text-gray-600 mb-1">Alasan Tidak Bisa Diperbaiki <span class="text-red-500">*</span></label>
-                                <textarea name="alasan_tidak_bisa" rows="2"
-                                          class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"></textarea>
-                            </div>
-                            <button type="submit"
-                                    class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition duration-150">
-                                <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                </svg>
-                                Simpan Perubahan Status
-                            </button>
-                        </form>
-                    </div>
+                                <button type="submit"
+                                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition duration-150">
+                                    <svg class="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                    </svg>
+                                    Simpan Perubahan
+                                </button>
+                            </form>
+                        </div>
                     @endif
                 </div>
             </div>
@@ -386,13 +429,27 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    const statusSelect  = document.getElementById('statusUpdate');
-    const alasanField   = document.getElementById('alasanField');
-    if (!statusSelect) return;
-
-    statusSelect.addEventListener('change', function () {
-        alasanField.classList.toggle('hidden', this.value !== 'tidak_bisa_diperbaiki');
-    });
+    const statusSelect = document.getElementById('statusUpdate');
+    const alasanField = document.getElementById('alasanFieldUpdate');
+    const selesaiField = document.getElementById('selesaiUpdate');
+    
+    if (statusSelect) {
+        statusSelect.addEventListener('change', function () {
+            const val = this.value;
+            alasanField.classList.toggle('hidden', val !== 'tidak_bisa_diperbaiki');
+            selesaiField.closest('div').classList.toggle('hidden', val !== 'selesai');
+            
+            if (val === 'selesai') {
+                selesaiField.required = true;
+                // Set default tanggal selesai ke hari ini
+                if (!selesaiField.value) {
+                    selesaiField.value = new Date().toISOString().split('T')[0];
+                }
+            } else {
+                selesaiField.required = false;
+            }
+        });
+    }
 });
 </script>
 @endpush

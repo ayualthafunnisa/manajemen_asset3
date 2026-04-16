@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Kerusakan;
+use App\Models\Instansi;
 use App\Models\Asset;
 use App\Models\LokasiAsset;
 use Illuminate\Http\Request;
@@ -29,7 +30,12 @@ class KerusakanController extends Controller
     public function index(Request $request)
     {
         $query = Kerusakan::with(['asset', 'lokasi', 'pelapor'])
-        ->whereIn('status_perbaikan', ['dilaporkan', 'diproses']);
+            ->whereIn('status_perbaikan', ['dilaporkan', 'diproses']);
+
+        // SUPER_ADMIN bisa lihat semua
+        if (auth()->user()->role !== 'super_admin') {
+            $query->where('InstansiID', auth()->user()->InstansiID);
+        }
 
         // Search
         if ($request->filled('search')) {
@@ -51,10 +57,20 @@ class KerusakanController extends Controller
             $query->where('jenis_kerusakan', $request->jenis);
         }
 
+        // Filter instansi untuk super_admin
+        if (auth()->user()->role === 'super_admin' && $request->filled('instansi')) {
+            $query->where('InstansiID', $request->instansi);
+        }
+
         $kerusakans = $query->orderByDesc('created_at')->paginate(15);
 
         // Summary (global scope sudah aktif, data terisolasi per instansi)
-        $base    = Kerusakan::query();
+        $baseQuery = Kerusakan::query();
+        if (auth()->user()->role !== 'super_admin') {
+            $baseQuery->where('InstansiID', auth()->user()->InstansiID);
+        }
+        
+        $base = clone $baseQuery;
         $summary = [
             'total'      => (clone $base)->count(),
             'dilaporkan' => (clone $base)->where('status_perbaikan', 'dilaporkan')->count(),
@@ -68,6 +84,12 @@ class KerusakanController extends Controller
                 ->format('svg')
                 ->errorCorrection('M')
                 ->generate($kerusakan->kode_laporan);
+        }
+
+        $instansis = Instansi::all(); // untuk filter super_admin
+
+        if (auth()->user()->role === 'super_admin') {
+            return view('kerusakans.index', compact('kerusakans', 'summary', 'instansis'));
         }
 
         return view('kerusakans.index', compact('kerusakans', 'summary'));

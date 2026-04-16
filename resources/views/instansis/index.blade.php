@@ -2,6 +2,7 @@
 
 @section('title', 'Instansi - Jobie')
 
+@if(!in_array(auth()->user()->role, ['super_admin']))
 @section('header')
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
     <div>
@@ -19,6 +20,7 @@
     </div>
 </div>
 @endsection
+@endif
 
 @section('content')
 <div class="space-y-6">
@@ -82,7 +84,9 @@
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Jenjang</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Kepala Sekolah</th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Status</th>
+                        @if(!in_array(auth()->user()->role, ['super_admin']))
                         <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Aksi</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="bg-white divide-y divide-neutral-200" id="tableBody">
@@ -126,6 +130,7 @@
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            @if(!in_array(auth()->user()->role, ['super_admin']))
                             <div class="flex items-center gap-2">
                                 <a href="{{ route('instansi.edit', $instansi->InstansiID) }}"
                                    title="Edit" class="text-purple-600 hover:text-purple-900 transition duration-150">
@@ -144,6 +149,7 @@
                                     </button>
                                 </form>
                             </div>
+                            @endif
                         </td>
                     </tr>
                     @empty

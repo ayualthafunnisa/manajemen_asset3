@@ -25,9 +25,8 @@
         </a>
     </div>
 
-    {{-- ===== NAVIGATION (Flexible, tanpa scroll) ===== --}}
+    {{-- ===== NAVIGATION ===== --}}
     <nav class="flex-1 px-3 py-4 overflow-y-auto scrollbar-thin scrollbar-thumb-neutral-200">
-        {{-- Konten navigasi yang mungkin panjang, tapi tetap diskroll di area ini saja --}}
         @php
             $user  = auth()->user();
             $role  = $user->role ?? null;
@@ -37,12 +36,14 @@
 
             $navItems = [];
 
+            // ==================== DASHBOARD (SEMUA ROLE) ====================
             $dashRoutes = [
                 'super_admin'   => 'dashboard.superadmin',
                 'admin_sekolah' => 'dashboard.admin',
-                'staf_asset'    => 'dashboard.staf',
+                'petugas'       => 'dashboard.staf',
                 'teknisi'       => 'dashboard.teknisi',
             ];
+            
             if (isset($dashRoutes[$role])) {
                 $navItems[] = [
                     'route'  => $dashRoutes[$role],
@@ -53,42 +54,122 @@
                 ];
             }
 
+            // ==================== SUPER ADMIN ====================
             if ($role === 'super_admin') {
                 $navItems[] = [
                     'route'  => 'instansi.index',
                     'label'  => 'Instansi',
                     'icon'   => 'M3 21h18M5 21V7a2 2 0 012-2h10a2 2 0 012 2v14M9 9h2m-2 4h2m4-4h2m-2 4h2',
-                    'group'  => 'Manajemen',
+                    'group'  => 'Master Data',
+                    'bypass' => true,
+                ];
+                
+                $navItems[] = [
+                    'route'  => 'user.index',
+                    'label'  => 'User',
+                    'icon'   => 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+                    'group'  => 'Master Data',
                     'bypass' => true,
                 ];
             }
 
+            // ==================== ADMIN SEKOLAH ====================
             if ($role === 'admin_sekolah') {
-                $navItems[] = ['route' => 'kategori.index', 'label' => 'Kategori',    'icon' => 'M3 7a2 2 0 012-2h3l2 2h9a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z',                'group' => 'Master Data'];
-                $navItems[] = ['route' => 'lokasi.index',  'label' => 'Lokasi Asset', 'icon' => 'M12 21s-6-5.686-6-10a6 6 0 1112 0c0 4.314-6 10-6 10zM12 11a2 2 0 100-4 2 2 0 000 4z', 'group' => 'Master Data'];
-                $navItems[] = ['route' => 'user.index',    'label' => 'User',         'icon' => 'M17 20h5v-2a4 4 0 00-5.477-3.685M9 20H4v-2a4 4 0 015.477-3.685M15 7a4 4 0 11-8 0 4 4 0 018 0z', 'group' => 'Master Data'];
+                $navItems[] = [
+                    'route'  => 'kategori.index',
+                    'label'  => 'Kategori',
+                    'icon'   => 'M3 7a2 2 0 012-2h3l2 2h9a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z',
+                    'group'  => 'Master Data'
+                ];
+                
+                $navItems[] = [
+                    'route'  => 'lokasi.index',
+                    'label'  => 'Lokasi Asset',
+                    'icon'   => 'M12 21s-6-5.686-6-10a6 6 0 1112 0c0 4.314-6 10-6 10zM12 11a2 2 0 100-4 2 2 0 000 4z',
+                    'group'  => 'Master Data'
+                ];
+                
+                $navItems[] = [
+                    'route'  => 'user.index',
+                    'label'  => 'User',
+                    'icon'   => 'M17 20h5v-2a4 4 0 00-5.477-3.685M9 20H4v-2a4 4 0 015.477-3.685M15 7a4 4 0 11-8 0 4 4 0 018 0z',
+                    'group'  => 'Master Data'
+                ];
             }
 
+            // ==================== MANAJEMEN ASSET (admin_sekolah, petugas, super_admin) ====================
             if (in_array($role, ['admin_sekolah', 'petugas', 'super_admin'])) {
-                $navItems[] = ['route' => 'asset.index',       'label' => 'Asset',       'icon' => 'M20 7l-8-4-8 4m16 0v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7m16 0l-8 4-8-4',           'group' => 'Manajemen'];
-                $navItems[] = ['route' => 'kerusakan.index',   'label' => 'Kerusakan',   'icon' => 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'group' => 'Manajemen'];
-                $navItems[] = ['route' => 'penghapusan.index', 'label' => 'Penghapusan', 'icon' => 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16', 'group' => 'Manajemen'];
-                $navItems[] = ['route' => 'penyusutan.index',  'label' => 'Penyusutan',  'icon' => 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6',                                     'group' => 'Manajemen'];
+                $navItems[] = [
+                    'route'  => 'asset.index',
+                    'label'  => 'Asset',
+                    'icon'   => 'M20 7l-8-4-8 4m16 0v10a2 2 0 01-2 2H6a2 2 0 01-2-2V7m16 0l-8 4-8-4',
+                    'group'  => 'Manajemen Asset'
+                ];
+                
+                $navItems[] = [
+                    'route'  => 'kerusakan.index',
+                    'label'  => 'Kerusakan',
+                    'icon'   => 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z',
+                    'group'  => 'Manajemen Asset'
+                ];
+                
+                $navItems[] = [
+                    'route'  => 'penghapusan.index',
+                    'label'  => 'Penghapusan',
+                    'icon'   => 'M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16',
+                    'group'  => 'Manajemen Asset'
+                ];
+                
+                $navItems[] = [
+                    'route'  => 'penyusutan.index',
+                    'label'  => 'Penyusutan',
+                    'icon'   => 'M13 17h8m0 0V9m0 8l-8-8-4 4-6-6',
+                    'group'  => 'Manajemen Asset'
+                ];
             }
 
-            if (in_array($role, ['admin_sekolah', 'petugas', 'super_admin'])) {
-                $navItems[] = ['route' => 'laporan_masuk.index', 'label' => 'Laporan Perbaikan', 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'group' => 'Laporan'];
-                $navItems[] = ['route' => 'laporan.index',        'label' => 'Laporan',            'icon' => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'group' => 'Laporan'];
+            // ==================== LAPORAN (admin_sekolah & petugas) ====================
+            if (in_array($role, ['admin_sekolah', 'petugas'])) {
+                $navItems[] = [
+                    'route'  => 'laporan_masuk.index',
+                    'label'  => 'Laporan Perbaikan',
+                    'icon'   => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+                    'group'  => 'Laporan'
+                ];
+                
+                $navItems[] = [
+                    'route'  => 'laporan.index',
+                    'label'  => 'Laporan Asset',
+                    'icon'   => 'M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+                    'group'  => 'Laporan'
+                ];
             }
 
+            // ==================== TEKNISI ====================
             if ($role === 'teknisi') {
-                $navItems[] = ['route' => 'keluhan.index', 'label' => 'Keluhan Masuk',     'icon' => 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z', 'group' => 'Pekerjaan'];
-                $navItems[] = ['route' => 'riwayat.index', 'label' => 'Riwayat Perbaikan', 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z', 'group' => 'Pekerjaan'];
+                $navItems[] = [
+                    'route'  => 'keluhan.index',
+                    'label'  => 'Keluhan Masuk',
+                    'icon'   => 'M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z',
+                    'group'  => 'Pekerjaan'
+                ];
+                
+                $navItems[] = [
+                    'route'  => 'riwayat.index',
+                    'label'  => 'Riwayat Perbaikan',
+                    'icon'   => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+                    'group'  => 'Pekerjaan'
+                ];
             }
 
+            // Grouping items
             $grouped = [];
             foreach ($navItems as $item) {
-                $grouped[$item['group'] ?? ''][] = $item;
+                $groupKey = $item['group'] ?? '';
+                if (!isset($grouped[$groupKey])) {
+                    $grouped[$groupKey] = [];
+                }
+                $grouped[$groupKey][] = $item;
             }
         @endphp
 
@@ -103,7 +184,7 @@
                 @php
                     $isActive  = request()->routeIs($item['route']);
                     $bypass    = $item['bypass'] ?? false;
-                    $isBlocked = !$instansiLengkap && !$bypass;
+                    $isBlocked = !$instansiLengkap && !$bypass && $role !== 'super_admin';
                     $href      = isset($item['params']) ? route($item['route'], $item['params']) : route($item['route']);
                 @endphp
 
@@ -155,9 +236,9 @@
         @endforeach
     </nav>
 
-    {{-- ===== BANNER & FOOTER (selalu di bawah, tidak ikut scroll) ===== --}}
+    {{-- ===== BANNER & FOOTER ===== --}}
     <div class="flex-shrink-0">
-        @if(!$instansiLengkap)
+        @if(!$instansiLengkap && $role !== 'super_admin')
         <div class="mx-3 mb-3 p-3 rounded-xl bg-orange-50 border border-orange-200">
             <div class="flex items-start gap-2">
                 <svg class="w-4 h-4 text-orange-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -178,7 +259,7 @@
         <div class="px-4 py-4 border-t border-neutral-100">
             <div class="flex items-center gap-3 px-3 py-3 bg-neutral-50 rounded-xl mb-3">
                 @php $instansi = $user->instansi ?? null; @endphp
-                @if($instansi && $instansi->Logo)
+                @if($instansi && $instansi->Logo && $role !== 'super_admin')
                     <img src="{{ asset('storage/' . $instansi->Logo) }}" alt="Logo" class="w-9 h-9 rounded-full object-cover border-2 border-white shadow-sm">
                 @else
                     <div class="w-9 h-9 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
@@ -188,11 +269,14 @@
                 <div class="flex-1 min-w-0">
                     <p class="text-sm font-semibold text-neutral-800 truncate">{{ $user->name ?? 'User' }}</p>
                     <p class="text-[11px] text-neutral-400 truncate">{{ $user->email ?? 'user@email.com' }}</p>
+                    <p class="text-[10px] text-primary-500 font-medium mt-0.5">
+                        {{ ucfirst(str_replace('_', ' ', $role ?? '')) }}
+                    </p>
                 </div>
             </div>
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-50 hover:text-red-600">
+                <button type="submit" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-50 hover:text-red-600 transition">
                     <span class="w-8 h-8 flex items-center justify-center rounded-lg text-red-400">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>

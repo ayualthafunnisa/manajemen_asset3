@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Penyusutan;
 use App\Models\Asset;
+use App\Models\Instansi;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
@@ -16,11 +17,50 @@ class PenyusutanController extends Controller
     // INDEX
     // ---------------------------------------------------------------
 
-    public function index()
+    public function index(Request $request)
     {
-        $penyusutans = Penyusutan::with(['asset', 'instansi'])
-            ->latest()
-            ->paginate(10);
+        $query = Penyusutan::with(['asset', 'instansi']);
+
+        // SUPER_ADMIN bisa lihat semua
+        if (auth()->user()->role !== 'super_admin') {
+            $query->where('InstansiID', Auth::user()->InstansiID);
+        }
+
+        // Filter instansi untuk super_admin
+        if (auth()->user()->role === 'super_admin' && $request->filled('instansi')) {
+            $query->where('InstansiID', $request->instansi);
+        }
+
+        // Filter metode
+        if ($request->filled('metode')) {
+            $query->where('metode', $request->metode);
+        }
+
+        // Filter tahun
+        if ($request->filled('tahun')) {
+            $query->where('tahun', $request->tahun);
+        }
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function($q) use ($search) {
+                $q->whereHas('asset', function($a) use ($search) {
+                    $a->where('nama_asset', 'LIKE', "%{$search}%")
+                      ->orWhere('kode_asset', 'LIKE', "%{$search}%");
+                })->orWhereHas('instansi', function($i) use ($search) {
+                    $i->where('NamaSekolah', 'LIKE', "%{$search}%");
+                });
+            });
+        }
+
+        $penyusutans = $query->latest()->paginate(10);
+
+        $instansis = Instansi::all(); // untuk filter super_admin
+
+        if (auth()->user()->role === 'super_admin') {
+            return view('penyusutans.index', compact('penyusutans', 'instansis'));
+        }
 
         return view('penyusutans.index', compact('penyusutans'));
     }

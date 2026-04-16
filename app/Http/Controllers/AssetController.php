@@ -22,8 +22,8 @@ class AssetController extends Controller
     {
         $query = Asset::with(['kategori', 'instansi', 'lokasi']);
         
-        // Filter berdasarkan role
-        if (auth()->user()->role == 'admin_sekolah') {
+        // Filter berdasarkan role - SUPER_ADMIN bisa lihat semua
+        if (auth()->user()->role !== 'super_admin') {
             $query->where('InstansiID', auth()->user()->InstansiID);
         }
         
@@ -52,10 +52,16 @@ class AssetController extends Controller
             $query->where('KategoriID', $request->kategori);
         }
         
+        // Filter instansi (untuk super_admin)
+        if (auth()->user()->role === 'super_admin' && $request->has('instansi') && $request->instansi != '') {
+            $query->where('InstansiID', $request->instansi);
+        }
+        
         $assets = $query->orderBy('created_at', 'desc')->paginate(15);
         
         // Get data untuk filter
         $kategoris = Kategori::all();
+        $instansis = Instansi::all(); // untuk filter super_admin
         
         // Generate QR Code untuk setiap asset
         foreach ($assets as $asset) {
@@ -63,6 +69,11 @@ class AssetController extends Controller
                 ->format('svg')
                 ->errorCorrection('M')
                 ->generate($asset->kode_asset);
+        }
+        
+        // Untuk super_admin, kirim data instansi ke view
+        if (auth()->user()->role === 'super_admin') {
+            return view('assets.index', compact('assets', 'kategoris', 'instansis'));
         }
         
         return view('assets.index', compact('assets', 'kategoris'));

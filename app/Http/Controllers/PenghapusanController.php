@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Penghapusan;
 use App\Models\Asset;
+use App\Models\Instansi;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -11,21 +12,34 @@ use Illuminate\Support\Facades\Storage;
 
 class PenghapusanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // Staf hanya melihat pengajuan yang dia buat sendiri.
+        // SUPER_ADMIN bisa lihat semua
         $query = Penghapusan::with(['asset', 'pengaju', 'penyetuju']);
 
-        if (Auth::user()->role === 'petugas') {
+        if (auth()->user()->role === 'petugas') {
             $query->where('diajukan_oleh', Auth::id());
+        } elseif (auth()->user()->role !== 'super_admin') {
+            $query->where('InstansiID', Auth::user()->InstansiID);
+        }
+
+        // Filter instansi untuk super_admin
+        if (auth()->user()->role === 'super_admin' && $request->filled('instansi')) {
+            $query->where('InstansiID', $request->instansi);
         }
 
         $penghapusans = $query->latest()->paginate(10);
 
         // Summary card
         $summaryQuery = Penghapusan::query();
-        if (Auth::user()->role === 'petugas') {
+        if (auth()->user()->role === 'petugas') {
             $summaryQuery->where('diajukan_oleh', Auth::id());
+        } elseif (auth()->user()->role !== 'super_admin') {
+            $summaryQuery->where('InstansiID', Auth::user()->InstansiID);
+        }
+
+        if (auth()->user()->role === 'super_admin' && $request->filled('instansi')) {
+            $summaryQuery->where('InstansiID', $request->instansi);
         }
 
         $summary = [
@@ -34,6 +48,12 @@ class PenghapusanController extends Controller
             'disetujui' => (clone $summaryQuery)->where('status_penghapusan', 'disetujui')->count(),
             'ditolak'   => (clone $summaryQuery)->where('status_penghapusan', 'ditolak')->count(),
         ];
+
+        $instansis = Instansi::all(); // untuk filter super_admin
+
+        if (auth()->user()->role === 'super_admin') {
+            return view('penghapusans.index', compact('penghapusans', 'summary', 'instansis'));
+        }
 
         return view('penghapusans.index', compact('penghapusans', 'summary'));
     }

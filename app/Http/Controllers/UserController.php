@@ -13,12 +13,52 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('instansi')
-            ->where('InstansiID', Auth::user()->InstansiID)
-            ->latest()
-            ->paginate(10);
+        $query = User::with('instansi');
+
+        // 🔐 Filter berdasarkan role:
+        // - Super Admin bisa lihat semua user dari semua instansi
+        // - Selain Super Admin hanya melihat user di instansinya sendiri
+        if (auth()->user()->role !== 'super_admin') {
+            $query->where('InstansiID', auth()->user()->InstansiID);
+        }
+
+        // 🔍 Filter tambahan untuk Super Admin berdasarkan Instansi
+        if (auth()->user()->role === 'super_admin' && $request->filled('instansi')) {
+            $query->where('InstansiID', $request->instansi);
+        }
+
+        // 🔍 Filter role
+        if ($request->filled('role')) {
+            $query->where('role', $request->role);
+        }
+
+        // 🔍 Filter status
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        // 🔍 Pencarian nama, email, atau nama instansi
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%")
+                    ->orWhere('email', 'LIKE', "%{$search}%")
+                    ->orWhereHas('instansi', function ($instansi) use ($search) {
+                        $instansi->where('NamaSekolah', 'LIKE', "%{$search}%");
+                    });
+            });
+        }
+
+        $users = $query->latest()->paginate(10);
+
+        // 📦 Data untuk filter dropdown (khusus Super Admin)
+        $instansis = Instansi::where('Status', 'Aktif')->get();
+
+        if (auth()->user()->role === 'super_admin') {
+            return view('users.index', compact('users', 'instansis'));
+        }
 
         return view('users.index', compact('users'));
     }

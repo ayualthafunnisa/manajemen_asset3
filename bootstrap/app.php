@@ -2,6 +2,8 @@
 
  
 use App\Http\Middleware\CheckLicense;
+use App\Http\Middleware\PreventBackHistory;
+use App\Http\Middleware\CheckCrudPermission;
 use App\Http\Middleware\RoleMiddleware;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -18,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.license' => CheckLicense::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,
             'prevent.back' => \App\Http\Middleware\PreventBackHistory::class,
+            'crud.perm' => \App\Http\Middleware\CheckCrudPermission::class,
             //'instansi.active' => \App\Http\Middleware\EnsureInstansiActive::class,
         ]);
     })

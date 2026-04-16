@@ -1,3 +1,5 @@
+{{-- resources/views/teknisi/perbaikan/create.blade.php --}}
+
 @extends('layouts.app')
 
 @section('title', 'Buat Laporan Perbaikan - Jobie')
@@ -96,7 +98,7 @@
                         {{-- Mulai Perbaikan --}}
                         <div class="space-y-2">
                             <label for="mulai_perbaikan" class="block text-sm font-semibold text-neutral-700">
-                                Mulai Perbaikan
+                                Mulai Perbaikan <span class="text-danger-500">*</span>
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -106,17 +108,40 @@
                                 </div>
                                 <input type="date" name="mulai_perbaikan" id="mulai_perbaikan"
                                        value="{{ old('mulai_perbaikan', date('Y-m-d')) }}"
-                                       class="w-full pl-12 pr-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('mulai_perbaikan') border-danger-500 @enderror">
+                                       class="w-full pl-12 pr-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('mulai_perbaikan') border-danger-500 @enderror"
+                                       required>
                             </div>
                             @error('mulai_perbaikan')
                                 <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        {{-- Komponen Diganti --}}
-                        <div class="space-y-2">
+                        {{-- Estimasi Selesai Perbaikan (untuk semua status kecuali selesai) --}}
+                        <div class="space-y-2" id="estimasiField">
+                            <label for="estimasi_selesai" class="block text-sm font-semibold text-neutral-700">
+                                Estimasi Selesai Perbaikan <span class="text-danger-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <svg class="h-5 w-5 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                </div>
+                                <input type="date" name="estimasi_selesai" id="estimasi_selesai"
+                                       value="{{ old('estimasi_selesai', date('Y-m-d', strtotime('+3 days'))) }}"
+                                       min="{{ date('Y-m-d') }}"
+                                       class="w-full pl-12 pr-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('estimasi_selesai') border-danger-500 @enderror">
+                            </div>
+                            <p class="text-xs text-neutral-500 mt-1">Perkiraan kapan perbaikan akan selesai (estimasi awal)</p>
+                            @error('estimasi_selesai')
+                                <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
+                            @enderror
+                        </div>
+
+                        {{-- Komponen Diganti (hanya untuk status selesai) --}}
+                        <div class="space-y-2 hidden" id="komponenField">
                             <label for="komponen_diganti" class="block text-sm font-semibold text-neutral-700">
-                                Komponen Diganti <span class="text-neutral-400 text-xs">(Opsional)</span>
+                                Komponen Diganti <span class="text-danger-500">*</span>
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -134,10 +159,10 @@
                             @enderror
                         </div>
 
-                        {{-- Biaya Aktual --}}
-                        <div class="space-y-2">
+                        {{-- Biaya Aktual (hanya untuk status selesai) --}}
+                        <div class="space-y-2 hidden" id="biayaField">
                             <label for="biaya_aktual" class="block text-sm font-semibold text-neutral-700">
-                                Biaya Aktual <span class="text-neutral-400 text-xs">(Opsional)</span>
+                                Biaya Aktual <span class="text-danger-500">*</span>
                             </label>
                             <div class="relative">
                                 <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-neutral-500 text-sm pointer-events-none">Rp</span>
@@ -172,10 +197,10 @@
                             @enderror
                         </div>
 
-                        {{-- Selesai Perbaikan --}}
-                        <div class="space-y-2" id="selesaiField">
+                        {{-- Selesai Perbaikan (hanya untuk status selesai) --}}
+                        <div class="space-y-2 hidden" id="selesaiField">
                             <label for="selesai_perbaikan" class="block text-sm font-semibold text-neutral-700">
-                                Selesai Perbaikan
+                                Tanggal Selesai Aktual <span class="text-danger-500">*</span>
                             </label>
                             <div class="relative">
                                 <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -184,18 +209,20 @@
                                     </svg>
                                 </div>
                                 <input type="date" name="selesai_perbaikan" id="selesai_perbaikan"
-                                       value="{{ old('selesai_perbaikan') }}"
+                                       value="{{ old('selesai_perbaikan', date('Y-m-d')) }}"
+                                       min="{{ date('Y-m-d') }}"
                                        class="w-full pl-12 pr-4 py-3 border-2 border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-all duration-200 @error('selesai_perbaikan') border-danger-500 @enderror">
                             </div>
+                            <p class="text-xs text-neutral-500 mt-1">Tanggal perbaikan benar-benar selesai</p>
                             @error('selesai_perbaikan')
                                 <p class="text-sm text-danger-600 mt-1">{{ $message }}</p>
                             @enderror
                         </div>
 
-                        {{-- Foto Sesudah --}}
-                        <div class="space-y-2">
+                        {{-- Foto Sesudah (hanya untuk status selesai) --}}
+                        <div class="space-y-2 hidden" id="fotoField">
                             <label for="foto_sesudah" class="block text-sm font-semibold text-neutral-700">
-                                Foto Sesudah Perbaikan <span class="text-neutral-400 text-xs">(Opsional)</span>
+                                Foto Sesudah Perbaikan <span class="text-danger-500">*</span>
                             </label>
                             <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-neutral-200 border-dashed rounded-lg hover:border-primary-400 hover:bg-primary-50 transition-all duration-200">
                                 <div class="space-y-1 text-center">
@@ -233,7 +260,7 @@
                     @enderror
                 </div>
 
-                {{-- Tindakan Perbaikan --}}
+                {{-- Tindakan Perbaikan (wajib untuk semua status) --}}
                 <div class="space-y-2">
                     <label for="tindakan_perbaikan" class="block text-sm font-semibold text-neutral-700">
                         Tindakan Perbaikan <span class="text-danger-500">*</span>
@@ -247,7 +274,7 @@
                     @enderror
                 </div>
 
-                {{-- Catatan --}}
+                {{-- Catatan (opsional untuk semua status) --}}
                 <div class="space-y-2">
                     <label for="catatan_perbaikan" class="block text-sm font-semibold text-neutral-700">
                         Catatan Tambahan <span class="text-neutral-400 text-xs">(Opsional)</span>
@@ -314,27 +341,131 @@ document.addEventListener('DOMContentLoaded', function () {
     const statusSelect = document.getElementById('status');
     const alasanField = document.getElementById('alasanField');
     const selesaiField = document.getElementById('selesaiField');
+    const estimasiField = document.getElementById('estimasiField');
+    const komponenField = document.getElementById('komponenField');
+    const biayaField = document.getElementById('biayaField');
+    const fotoField = document.getElementById('fotoField');
+    const estimasiSelesai = document.getElementById('estimasi_selesai');
+    const mulaiPerbaikan = document.getElementById('mulai_perbaikan');
+    const selesaiPerbaikan = document.getElementById('selesai_perbaikan');
+    const komponenDiganti = document.getElementById('komponen_diganti');
+    const biayaAktual = document.getElementById('biaya_aktual');
+    const fotoSesudah = document.getElementById('foto_sesudah');
 
     function toggleFields() {
         const val = statusSelect.value;
-        alasanField.classList.toggle('hidden', val !== 'tidak_bisa_diperbaiki');
-        if (val === 'tidak_bisa_diperbaiki') {
+        
+        // Reset semua field terlebih dahulu
+        alasanField.classList.add('hidden');
+        selesaiField.classList.add('hidden');
+        estimasiField.classList.remove('hidden');
+        komponenField.classList.add('hidden');
+        biayaField.classList.add('hidden');
+        fotoField.classList.add('hidden');
+        
+        // Hapus required attributes
+        document.getElementById('alasan_tidak_bisa').required = false;
+        selesaiPerbaikan.required = false;
+        estimasiSelesai.required = false;
+        komponenDiganti.required = false;
+        biayaAktual.required = false;
+        fotoSesudah.required = false;
+        
+        if (val === 'dalam_perbaikan') {
+            // Hanya estimasi yang required
+            estimasiField.classList.remove('hidden');
+            estimasiSelesai.required = true;
+            
+        } else if (val === 'selesai') {
+            // Sembunyikan estimasi, tampilkan field selesai
+            estimasiField.classList.add('hidden');
+            selesaiField.classList.remove('hidden');
+            komponenField.classList.remove('hidden');
+            biayaField.classList.remove('hidden');
+            fotoField.classList.remove('hidden');
+            
+            // Set required untuk field selesai
+            selesaiPerbaikan.required = true;
+            komponenDiganti.required = true;
+            biayaAktual.required = true;
+            fotoSesudah.required = true;
+            
+            // Set default tanggal selesai ke hari ini jika kosong
+            if (!selesaiPerbaikan.value) {
+                selesaiPerbaikan.value = new Date().toISOString().split('T')[0];
+            }
+            
+        } else if (val === 'tidak_bisa_diperbaiki') {
+            // Sembunyikan estimasi, tampilkan alasan
+            estimasiField.classList.add('hidden');
+            alasanField.classList.remove('hidden');
             document.getElementById('alasan_tidak_bisa').required = true;
+        }
+    }
+
+    // Validasi estimasi selesai tidak boleh sebelum mulai perbaikan
+    function validateEstimasiSelesai() {
+        const mulai = mulaiPerbaikan.value;
+        const estimasi = estimasiSelesai.value;
+        
+        if (mulai && estimasi && new Date(estimasi) < new Date(mulai)) {
+            estimasiSelesai.classList.add('border-danger-500');
+            estimasiSelesai.setCustomValidity('Estimasi selesai tidak boleh sebelum tanggal mulai perbaikan');
         } else {
-            document.getElementById('alasan_tidak_bisa').required = false;
+            estimasiSelesai.classList.remove('border-danger-500');
+            estimasiSelesai.setCustomValidity('');
+        }
+    }
+    
+    // Validasi tanggal selesai tidak boleh sebelum mulai perbaikan
+    function validateSelesaiPerbaikan() {
+        const mulai = mulaiPerbaikan.value;
+        const selesai = selesaiPerbaikan.value;
+        
+        if (mulai && selesai && new Date(selesai) < new Date(mulai)) {
+            selesaiPerbaikan.classList.add('border-danger-500');
+            selesaiPerbaikan.setCustomValidity('Tanggal selesai tidak boleh sebelum tanggal mulai perbaikan');
+        } else {
+            selesaiPerbaikan.classList.remove('border-danger-500');
+            selesaiPerbaikan.setCustomValidity('');
         }
     }
 
     statusSelect.addEventListener('change', toggleFields);
+    mulaiPerbaikan.addEventListener('change', function() {
+        validateEstimasiSelesai();
+        validateSelesaiPerbaikan();
+    });
+    estimasiSelesai.addEventListener('change', validateEstimasiSelesai);
+    selesaiPerbaikan.addEventListener('change', validateSelesaiPerbaikan);
+    
+    // Jalankan toggleFields saat pertama kali load
     toggleFields();
 
     // Preview foto sesudah
-    const fotoSesudah = document.getElementById('foto_sesudah');
+    const fotoSesudahInput = document.getElementById('foto_sesudah');
     const fotoSesudahName = document.getElementById('foto_sesudah_name');
 
-    fotoSesudah.addEventListener('change', function () {
+    fotoSesudahInput.addEventListener('change', function () {
         const file = this.files[0];
         if (file) {
+            // Validasi ukuran file (2MB = 2 * 1024 * 1024 bytes)
+            if (file.size > 2 * 1024 * 1024) {
+                alert('Ukuran file terlalu besar. Maksimal 2MB.');
+                this.value = '';
+                fotoSesudahName.classList.add('hidden');
+                return;
+            }
+            
+            // Validasi tipe file
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+            if (!allowedTypes.includes(file.type)) {
+                alert('Format file tidak didukung. Gunakan JPG, PNG, atau JPEG.');
+                this.value = '';
+                fotoSesudahName.classList.add('hidden');
+                return;
+            }
+            
             fotoSesudahName.textContent = `File: ${file.name}`;
             fotoSesudahName.classList.remove('hidden');
         } else {
@@ -342,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Real-time validation
+    // Real-time validation untuk required fields
     const requiredInputs = document.querySelectorAll('[required]');
     requiredInputs.forEach(input => {
         if (input.type !== 'file') {
@@ -358,37 +489,88 @@ document.addEventListener('DOMContentLoaded', function () {
 
 function confirmSubmit() {
     const form = document.getElementById('perbaikanForm');
-    const requiredFields = form.querySelectorAll('[required]');
+    const status = document.getElementById('status').value;
     let isValid = true;
     let firstInvalid = null;
     let errorMessages = [];
 
-    requiredFields.forEach(field => {
-        if (field.type === 'file') {
-            // File tidak wajib, skip
-            return;
-        }
-        if (field.type !== 'hidden' && !field.value.trim()) {
+    // Validasi berdasarkan status
+    if (status === 'dalam_perbaikan') {
+        const estimasi = document.getElementById('estimasi_selesai');
+        if (!estimasi.value) {
             isValid = false;
-            field.classList.add('border-danger-500');
-            field.classList.remove('border-neutral-200');
-            const label = document.querySelector(`label[for="${field.id}"]`);
-            let fieldName = label ? label.innerText.replace('*', '').trim() : field.name;
-            errorMessages.push(`${fieldName} wajib diisi`);
-            if (!firstInvalid) firstInvalid = field;
-        } else {
-            field.classList.remove('border-danger-500');
-            field.classList.add('border-neutral-200');
+            estimasi.classList.add('border-danger-500');
+            errorMessages.push('Estimasi selesai perbaikan wajib diisi');
+            if (!firstInvalid) firstInvalid = estimasi;
         }
-    });
+    } else if (status === 'selesai') {
+        const selesai = document.getElementById('selesai_perbaikan');
+        const komponen = document.getElementById('komponen_diganti');
+        const biaya = document.getElementById('biaya_aktual');
+        const foto = document.getElementById('foto_sesudah');
+        
+        if (!selesai.value) {
+            isValid = false;
+            selesai.classList.add('border-danger-500');
+            errorMessages.push('Tanggal selesai perbaikan wajib diisi');
+            if (!firstInvalid) firstInvalid = selesai;
+        }
+        
+        if (!komponen.value.trim()) {
+            isValid = false;
+            komponen.classList.add('border-danger-500');
+            errorMessages.push('Komponen yang diganti wajib diisi');
+            if (!firstInvalid) firstInvalid = komponen;
+        }
+        
+        if (!biaya.value) {
+            isValid = false;
+            biaya.classList.add('border-danger-500');
+            errorMessages.push('Biaya aktual wajib diisi');
+            if (!firstInvalid) firstInvalid = biaya;
+        }
+        
+        if (!foto.files || foto.files.length === 0) {
+            isValid = false;
+            foto.closest('.border-dashed').classList.add('border-danger-500');
+            errorMessages.push('Foto sesudah perbaikan wajib diupload');
+            if (!firstInvalid) firstInvalid = foto;
+        }
+    } else if (status === 'tidak_bisa_diperbaiki') {
+        const alasan = document.getElementById('alasan_tidak_bisa');
+        if (!alasan.value.trim()) {
+            isValid = false;
+            alasan.classList.add('border-danger-500');
+            errorMessages.push('Alasan tidak bisa diperbaiki wajib diisi');
+            if (!firstInvalid) firstInvalid = alasan;
+        }
+    }
 
-    // Validasi tanggal selesai tidak boleh sebelum tanggal mulai
+    // Validasi tindakan perbaikan (wajib untuk semua)
+    const tindakan = document.getElementById('tindakan_perbaikan');
+    if (!tindakan.value.trim()) {
+        isValid = false;
+        tindakan.classList.add('border-danger-500');
+        errorMessages.push('Tindakan perbaikan wajib diisi');
+        if (!firstInvalid) firstInvalid = tindakan;
+    }
+
+    // Validasi tanggal
     const mulai = document.getElementById('mulai_perbaikan').value;
+    const estimasi = document.getElementById('estimasi_selesai').value;
     const selesai = document.getElementById('selesai_perbaikan').value;
+    
+    if (mulai && estimasi && new Date(estimasi) < new Date(mulai)) {
+        isValid = false;
+        document.getElementById('estimasi_selesai').classList.add('border-danger-500');
+        errorMessages.push('Estimasi selesai tidak boleh sebelum tanggal mulai perbaikan');
+        if (!firstInvalid) firstInvalid = document.getElementById('estimasi_selesai');
+    }
+    
     if (mulai && selesai && new Date(selesai) < new Date(mulai)) {
         isValid = false;
         document.getElementById('selesai_perbaikan').classList.add('border-danger-500');
-        errorMessages.push('Tanggal selesai tidak boleh sebelum tanggal mulai');
+        errorMessages.push('Tanggal selesai tidak boleh sebelum tanggal mulai perbaikan');
         if (!firstInvalid) firstInvalid = document.getElementById('selesai_perbaikan');
     }
 

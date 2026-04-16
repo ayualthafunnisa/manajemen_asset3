@@ -140,27 +140,39 @@ Route::middleware(['auth', 'prevent.back'])->group(function () {
     | Master Data
     |----------------------------------------------------------------------
     */
-    Route::middleware('role:super_admin,admin_sekolah,petugas')->group(function () {
-        Route::resource('instansi',  InstansiController::class);
-        Route::resource('kategori',  KategoriController::class);
-        Route::resource('user',      UserController::class);
-        Route::resource('lokasi',    LokasiAssetController::class);
-        Route::resource('asset',     AssetController::class);
-        Route::resource('penyusutan',PenyusutanController::class);
-        Route::get('penyusutan/{id}/pdf', [PenyusutanController::class, 'generatePDF'])->name('penyusutan.pdf');
-        
-
-        Route::resource('penghapusan', PenghapusanController::class);
-        Route::post('penghapusan/{penghapusan}/approve', [PenghapusanController::class, 'approve'])->name('penghapusan.approve');
-        Route::post('penghapusan/{penghapusan}/reject',  [PenghapusanController::class, 'reject'])->name('penghapusan.reject');
-
-        Route::resource('kerusakan', KerusakanController::class);
-        Route::post('kerusakan/{id}/update-status', [KerusakanController::class, 'updateStatus'])->name('kerusakan.updateStatus');
-
-        Route::post('user/{id}/active', [UserController::class, 'activate'])->name('user.active');
-        Route::get('/asset/{id}/qrcode',      [AssetController::class, 'downloadQrCode'])->name('asset.qrcode.download');
-        Route::get('/kerusakan/{id}/qrcode',  [KerusakanController::class, 'downloadQrCode'])->name('kerusakan.qrcode.download');
-        Route::post('asset/barcode-pdf',      [AssetController::class, 'generateBarcodePdf'])->name('asset.barcode-pdf');
+Route::middleware(['auth', 'prevent.back', 'role:super_admin,admin_sekolah,petugas', 'crud.perm'])->group(function () {
+        // ── Instansi ─────────────────────────────────────────────────────────
+    Route::resource('instansi', InstansiController::class);
+ 
+    // ── Kategori ─────────────────────────────────────────────────────────
+    Route::resource('kategori', KategoriController::class);
+ 
+    // ── User ─────────────────────────────────────────────────────────────
+    Route::resource('user', UserController::class);
+    Route::post('user/{id}/active', [UserController::class, 'activate'])->name('user.active');
+ 
+    // ── Lokasi ───────────────────────────────────────────────────────────
+    Route::resource('lokasi', LokasiAssetController::class);
+ 
+    // ── Asset ────────────────────────────────────────────────────────────
+    Route::resource('asset', AssetController::class);
+    Route::get('/asset/{id}/qrcode',    [AssetController::class, 'downloadQrCode'])->name('asset.qrcode.download');
+    Route::post('asset/barcode-pdf',    [AssetController::class, 'generateBarcodePdf'])->name('asset.barcode-pdf');
+ 
+    // ── Penyusutan ───────────────────────────────────────────────────────
+    Route::resource('penyusutan', PenyusutanController::class);
+    Route::get('penyusutan/{id}/pdf',   [PenyusutanController::class, 'generatePDF'])->name('penyusutan.pdf');
+ 
+    // ── Penghapusan ──────────────────────────────────────────────────────
+    Route::resource('penghapusan', PenghapusanController::class);
+    // Approve/reject tetap butuh aksi write, diblokir untuk super_admin oleh middleware
+    Route::post('penghapusan/{penghapusan}/approve', [PenghapusanController::class, 'approve'])->name('penghapusan.approve');
+    Route::post('penghapusan/{penghapusan}/reject',  [PenghapusanController::class, 'reject'])->name('penghapusan.reject');
+ 
+    // ── Kerusakan ────────────────────────────────────────────────────────
+    Route::resource('kerusakan', KerusakanController::class);
+    Route::get('/kerusakan/{id}/qrcode', [KerusakanController::class, 'downloadQrCode'])->name('kerusakan.qrcode.download');
+    Route::post('kerusakan/{id}/update-status', [KerusakanController::class, 'updateStatus'])->name('kerusakan.updateStatus');
     });
 
     /*
